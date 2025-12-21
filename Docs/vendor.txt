@@ -1,0 +1,83 @@
+
+1
+
+Automatic Zoom
+These prompts are battle-tested for production quality UI generation. They include all
+necessary details for visual design, interactions, responsive behavior, and accessibility
+requirements.last ui and ux and infrastructure for vendors look up for inquires matched his
+scope and can create a quotation on his panel to manage his quotations by status4:12
+PMVendor Portal: Complete UI/UX & Infrastructure Prompt
+🏢 VENDOR PORTAL - Comprehensive Implementation Guide
+PROMPT 6: Vendor Portal - Main Dashboard & RFQ Management
+Create a professional vendor/supplier portal for "Nexus Industrial" where vendors can view
+incoming RFQs, create quotations, and manage their business on the platform.
+DESIGN SYSTEM:
+- Brand Colors:
+* Primary: #0066CC (Blue)
+* Success: #10B981 (Green)
+* Warning: #F59E0B (Orange)
+* Danger: #EF4444 (Red)
+* Neutral: #64748B (Gray)
+* Background: #F8FAFC (Light) / #0F172A (Dark)
+- Typography:
+* Headings: Poppins (600-700 weight)
+* Body: Inter (400-500 weight)
+* Monospace: JetBrains Mono (for part numbers)
+---
+LAYOUT STRUCTURE:
+1. TOP NAVIGATION BAR (Fixed, 64px):
+- Left side:
+* Logo: "Nexus Industrial" + "Vendor Portal" badge
+* Company name: "[Vendor Company Name]" (bold)
+- Center:
+* Quick search: "Search RFQs, parts..." (400px width)
+* Shortcut hint: "⌘K"
+- Right side:
+* Notification bell (badge with count: "3 new")
+* Messages icon (badge: "2 unread")
+* User dropdown:
+- Avatar + Name
+- Menu: Profile, Settings, Billing, Logout
+2. SIDEBAR (Left, Fixed, 260px):
+NAVIGATION MENU:
+- Dashboard (LayoutDashboard icon) - Active
+- Incoming RFQs (Inbox icon) - Badge: "12 new"
+- My Quotations (FileText icon)
+* Submenu:
+- Draft (3)
+- Sent (8)
+- Accepted (2)
+- Rejected (5)
+- Expired (4)
+- Orders (ShoppingCart icon)
+- Products Catalog (Package icon)
+- Analytics (BarChart3 icon)
+- Messages (MessageSquare icon)
+- Settings (Settings icon)
+BOTTOM SECTION:
+- Performance Score:
+* Circular progress: "9.2/10" (green)
+* Text: "Excellent rating"
+- Help & Support button
+- Language: EN/AR toggle
+---
+MAIN DASHBOARD CONTENT:
+SECTION 1: KPI CARDS (4-column grid):
+Card 1: "New RFQs"
+- Large number: "12" (bold, blue)
+- Subtitle: "Awaiting your response"
+- Action: "View All" link
+- Icon: Inbox (animated pulse on new RFQ)
+- Mini trend: "+3 today" (green, up arrow)
+Card 2: "Active Quotations"
+- Number: "8"
+- Subtitle: "Sent, awaiting decision"
+- Progress: "2 expiring soon" (orange warning)
+- Icon: FileText
+- Action: "Review" link
+Card 3: "Acceptance Rate"
+- Percentage: "65%" (large)
+- Visual: Progress arc/donut chart
+- Target: "Industry avg: 45%" (green badge)
+- Icon: TrendingUp
+- Subtitle: "Last 30 days"

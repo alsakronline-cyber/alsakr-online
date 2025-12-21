@@ -1,0 +1,70 @@
+
+1
+
+Automatic Zoom
+Nexus Industrial: Complete Production
+Implementation Guide for Antigravity IDE
++ Oracle Free Tier
+📋 Project Overview
+This guide provides step-by-step instructions for building Nexus Industrial (alsakr online) -
+an AI-powered industrial spare parts marketplace using Antigravity IDE with Oracle Cloud
+Free Tier infrastructure.
+Total Cost: $0/month | Timeline: 8-10 weeks | Tech Stack: 100% Open Source
+🎯 PHASE 1: Oracle Cloud Foundation & Environment
+Setup (Week 1)
+Objective
+Set up Oracle Cloud Free Tier infrastructure with the optimal configuration for AI workloads.
+Step 1.1: Create Oracle Cloud Account
+bash
+# Actions:
+1. Go to oracle.com/cloud/free
+2. Create account (requires credit card for verification, never charged)
+3. Verify email and complete identity verification
+4. Wait for account activation (usually 30 minutes)
+Step 1.2: Provision Free Tier VM Instances
+Always Free Resources Available:
+● 4 ARM-based Ampere A1 cores (24 GB RAM total)
+● 2 AMD-based VM.Standard.E2.1.Micro instances
+● 200 GB Block Storage
+● 10 GB Object Storage
+Recommended Configuration:
+Instance 1: Main Application Server (ARM)
+yaml
+Shape: VM.Standard.A1.Flex
+CPUs: 3 OCPU
+RAM: 18 GB
+Boot Volume: 100 GB
+OS: Ubuntu 22.04 LTS (ARM)
+Purpose: Backend API, PocketBase, n8n, Qdrant
+Instance 2: AI Inference Server (ARM)
+yaml
+Shape: VM.Standard.A1.Flex
+CPUs: 1 OCPU
+RAM: 6 GB
+Boot Volume: 50 GB
+OS: Ubuntu 22.04 LTS (ARM)
+Purpose: Ollama, AI models
+Instance 3: Database & Backups (AMD - Optional)
+yaml
+Shape: VM.Standard.E2.1.Micro
+CPUs: 1 OCPU
+RAM: 1 GB
+Boot Volume: 50 GB
+OS: Ubuntu 22.04 LTS
+Purpose: Backup storage, monitoring
+Step 1.3: Network & Security Configuration
+bash
+# In Oracle Cloud Console:
+1. Create VCN (Virtual Cloud Network):
+- Name: nexus-industrial-vcn
+- CIDR Block: 10.0.0.0/16
+- Create Public Subnet: 10.0.1.0/24
+2. Configure Security List:
+# Ingress Rules (Inbound):
+- Port 22 (SSH) - Your IP only
+- Port 80 (HTTP) - 0.0.0.0/0
+- Port 443 (HTTPS) - 0.0.0.0/0
+- Port 8000 (FastAPI) - Internal only
+- Port 8090 (PocketBase) - Internal only
+- Port 5678 (n8n) - Your IP only
+- Port 6333 (Qdrant) - Internal only

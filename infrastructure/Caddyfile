@@ -1,0 +1,23 @@
+{
+    email admin@alsakronline.com
+}
+
+app.alsakronline.com {
+    reverse_proxy frontend:3000
+    encode gzip zstd
+}
+
+api.app.alsakronline.com {
+    reverse_proxy backend:8000
+    encode gzip
+}
+
+crm.app.alsakronline.com {
+    reverse_proxy pocketbase:8090
+    encode gzip
+}
+
+workflows.app.alsakronline.com {
+    reverse_proxy n8n:5678
+    encode gzip
+}

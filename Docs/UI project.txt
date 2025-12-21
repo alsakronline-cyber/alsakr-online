@@ -1,0 +1,86 @@
+
+1
+
+Automatic Zoom
+Comprehensive UI Generation Prompt for Nexus Industrial Dashboard
+🎨 Project Context for AI UI Generators (v0.dev, Lovable, Bolt.new, etc.)
+PROMPT 1: Landing Page (Marketing Site)
+Create a modern, professional landing page for "Nexus Industrial" - an AI-powered industrial
+spare parts marketplace for the MENA region.
+DESIGN REQUIREMENTS:
+- Style: Modern SaaS landing page with industrial/technical aesthetic
+- Color Scheme:
+* Primary: Deep Blue (#0066CC)
+* Secondary: Orange (#FF6B35)
+* Accent: Teal (#00B4D8)
+* Background: White (#FFFFFF) with Light Gray sections (#F8F9FA)
+* Text: Dark Gray (#2D3748)
+- Typography:
+* Headings: Poppins (Bold, 600-700 weight)
+* Body: Inter (Regular, 400-500 weight)
+* Arabic Support: IBM Plex Sans Arabic
+- Responsive: Mobile-first, works on 320px to 4K screens
+SECTIONS TO INCLUDE:
+1. HERO SECTION:
+- Full viewport height with gradient background (blue to teal)
+- Headline: "Find Any Industrial Part in Seconds" (Large, bold, white text)
+- Subheadline: "AI-powered multimodal search for 100,000+ spare parts from ABB,
+Siemens, Schneider Electric, and more" (Medium, white text, 70% opacity)
+- Search bar: Large input with placeholder "Search by part number, description, or upload
+image..."
+- CTA buttons:
+* "Start Searching" (Primary - Orange, large)
+* "Watch Demo" (Secondary - White outline)
+- Hero image/illustration: Abstract 3D industrial components floating (gears, circuits,
+motors) with subtle animation
+2. FEATURES SECTION:
+- Title: "How Nexus Industrial Works"
+- 3-column grid with icon cards:
+Card 1: "Multimodal Search"
+- Icon: Camera + Microphone + Text (combined)
+- Text: "Upload a photo of worn parts, speak in Arabic, or type descriptions. Our AI
+understands all formats."
+Card 2: "Automated RFQ"
+- Icon: Email with checkmark
+- Text: "Get quotes from 5+ verified vendors automatically. Compare prices, lead times,
+and reliability scores instantly."
+Card 3: "Smart Catalog"
+- Icon: Database with sparkles
+- Text: "Access 100,000+ parts from global brands. Find obsolete part replacements with
+AI-powered recommendations."
+3. STATS SECTION:
+- Dark background (#1A202C)
+- 4 animated counter cards in a row:
+* "100,000+ Parts" (Large number with pulsing animation)
+* "5 Major Brands" (ABB, Siemens, Schneider, SICK, Murrelektronik logos)
+* "< 2 Second Search" (Clock icon)
+* "Arabic + English" (Bilingual flags icon)
+4. DEMO SECTION:
+- Title: "See It In Action"
+- Split screen (50/50):
+* Left: Mockup of dashboard interface (show image upload in progress)
+* Right: Step-by-step animation:
+1. Upload worn motor bearing photo
+2. AI identifies: "SKF 6205-2RS"
+3. Shows 5 vendor quotes with prices
+4. User selects best option
+- Add subtle parallax scroll effect
+5. PRICING SECTION:
+- Title: "Simple, Transparent Pricing"
+- 3 pricing cards (side by side):
+FREE TIER:
+- Price: $0/month
+- Features:
+* 10 searches/day
+* Basic AI identification
+* Manual RFQ sending
+* Email support
+- Button: "Get Started Free"
+PROFESSIONAL:
+- Price: $49/month
+- Badge: "Most Popular" (orange)
+- Features:
+* Unlimited searches
+* Priority AI processing
+* Automated RFQ to 10 vendors
+* Live chat support

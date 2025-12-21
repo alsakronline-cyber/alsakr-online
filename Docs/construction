@@ -1,0 +1,419 @@
+
+11
+
+Automatic Zoom
+│ │ ├── base_scraper.py (Abstract base class)
+│ │ ├── abb_scraper.py
+│ │ ├── siemens_scraper.py
+│ │ ├── schneider_scraper.py
+│ │ ├── sick_scraper.py
+│ │ └── murrelektronik_scraper.py
+│ ├── utils/
+│ │ ├── __init__.py
+│ │ ├── pdf_extractor.py (Extract text from PDF datasheets)
+│ │ ├── image_downloader.py (Save product images)
+│ │ └── text_cleaner.py (Normalize part numbers, remove HTML)
+│ └── api/
+│ └── scraper_routes.py (Admin endpoints to trigger scraping)
+2. BASE SCRAPER CLASS (base_scraper.py):
+Create an abstract class with:
+- __init__(self, brand_name, base_url, database_session)
+- scrape_catalog() → main orchestration method
+- extract_part_details(product_url) → individual part scraping
+- save_to_database(part_data) → insert/update parts table
+- handle_rate_limiting() → random delays (2-5 seconds)
+- validate_part_number(part_num) → check format
+- Error handling with retry logic (3 attempts)
+3. MANUFACTURER-SPECIFIC SCRAPERS:
+For EACH manufacturer, create a scraper that inherits from BaseScraper:
+ABB Scraper (abb_scraper.py):
+- Target: ABB product catalog pages
+- Extract: Part number, product name, category, image, datasheet PDF link
+- Handle: JavaScript-loaded content using Playwright
+- Special logic: ABB uses product series numbering (e.g., 1SNA)
+Siemens Scraper (siemens_scraper.py):
+- Target: Siemens Mall or product pages
+- Extract: MLFB part number, technical specs table, images
+- Handle: Multi-page catalogs with pagination
+- Special logic: Siemens has "successor parts" metadata
+Schneider Electric Scraper (schneider_scraper.py):
+- Target: Schneider Electric product database
+- Extract: Reference number, product range, datasheet
+- Handle: Country-specific catalogs (detect Egypt/MENA region)
+SICK Scraper (sick_scraper.py):
+- Target: SICK sensor catalog
+- Extract: Part number, sensor type, specifications
+- Handle: Technical specification tables
+Murrelektronik Scraper (murrelektronik_scraper.py):
+- Target: Murrelektronik product finder
+- Extract: Article number, product family, datasheet
+4. PDF DATASHEET EXTRACTOR (pdf_extractor.py):
+Create functions:
+- download_pdf(url, save_path) → download datasheet
+- extract_text_from_pdf(pdf_path) → use PyMuPDF to get all text
+- extract_specifications_table(pdf_text) → parse key-value pairs
+- detect_successor_parts(pdf_text) → find replacement part mentions
+- Return structured JSON: {
+"technical_specs": {...},
+"dimensions": {...},
+"successor_part": "..."
+}
+5. ADMIN API ENDPOINTS (scraper_routes.py):
+Create FastAPI routes:
+- POST /api/admin/scraper/start/{brand} → Start scraping for specific brand
+- GET /api/admin/scraper/status → Check scraping job status
+- GET /api/admin/scraper/logs → View scraping logs
+- POST /api/admin/scraper/stop → Emergency stop
+- Require admin authentication (JWT token validation)
+6. SCRAPING CONFIGURATION (scrapers/config.json):
+Create a JSON config file:
+{
+"abb": {
+"base_url": "https://new.abb.com/products",
+"catalog_url": "...",
+"selectors": {
+"product_card": ".product-item",
+"part_number": ".part-number",
+"datasheet_link": "a[href*='datasheet']"
+},
+"rate_limit_seconds": 3
+},
+// ... repeat for other brands
+}
+7. UPDATE requirements.txt:
+Add these packages:
+playwright==1.40.0
+PyMuPDF==1.23.8
+beautifulsoup4==4.12.2
+aiohttp==3.9.1
+fake-useragent==1.4.0
+8. INITIALIZATION SCRIPT (scrapers/__init__.py):
+Create a ScraperManager class:
+- register_scraper(brand_name, scraper_class)
+- get_scraper(brand_name) → return scraper instance
+- run_all_scrapers() → sequential execution
+- get_scraping_stats() → total parts scraped per brand
+DELIVERABLES:
+✅ 5 working manufacturer scrapers (ABB, Siemens, Schneider, SICK, Murrelektronik)
+✅ PDF datasheet extraction pipeline
+✅ Admin API to control scraping jobs
+✅ Error handling and logging for failed scrapes
+✅ Rate limiting to avoid IP bans
+VALIDATION:
+Run test scrape: POST http://localhost:8000/api/admin/scraper/start/abb
+Verify: Check SQLite database for new part entries
+Check: Datasheet PDFs saved in /backend/data/datasheets/
+CODE QUALITY REQUIREMENTS:
+- Use async/await for Playwright operations
+- Implement proper exception handling (TimeoutError, NetworkError)
+- Log all scraping activity to backend/logs/scraper.log
+- Use Pydantic models for scraped data validation
+- Comment complex CSS selectors and XPath expressions
+IMPORTANT NOTES:
+- Do NOT scrape all products at once (start with 50 parts per brand for testing)
+- Respect robots.txt (check before implementing)
+- Use rotating User-Agent headers to avoid detection
+- Store raw HTML snapshots for debugging (optional)
+Generate all files with complete, production-ready code. Include example usage in
+README.
+🤖 PHASE 3: AI Multimodal Search Engine (Vision + Chat)
+PROJECT CONTEXT:
+You are implementing Phase 3 of alsakr online: The AI-Powered Multimodal Search Engine.
+This system allows users to find online parts using:
+1. Text descriptions (English/Arabic)
+2. Image uploads (nameplate photos, worn parts)
+3. Voice input (Arabic/English speech-to-text)
+PREVIOUS PHASES:
+✅ Phase 1: FastAPI backend + database models
+✅ Phase 2: Web scraping system with 5 manufacturer scrapers
+TECHNICAL REQUIREMENTS:
+- Vision AI: CLIP model (OpenAI's CLIP-ViT-B-32)
+- Language AI: Sentence Transformers (multilingual-e5-large)
+- Vector Database: Qdrant (for semantic search)
+- Voice AI: Faster-Whisper (for speech-to-text)
+- LLM: Ollama with Llama 3.2 (for conversational queries)
+YOUR TASK:
+Create the complete AI search system:
+1. NEW DIRECTORY STRUCTURE:
+backend/
+├── app/
+│ ├── ai/
+│ │ ├── __init__.py
+│ │ ├── vision_agent.py (Image-based part identification)
+│ │ ├── text_search.py (Semantic text search)
+│ │ ├── voice_processor.py (Speech-to-text handler)
+│ │ ├── embeddings.py (Vector embedding generation)
+│ │ └── qdrant_client.py (Vector DB operations)
+│ ├── api/
+│ │ └── search_routes.py (Search API endpoints)
+│ └── models/
+│ └── search.py (Search request/response models)
+├── data/
+│ ├── images/ (uploaded user images)
+│ ├── audio/ (uploaded voice notes)
+│ └── embeddings/ (cached embeddings)
+2. VECTOR DATABASE SETUP (qdrant_client.py):
+Create QdrantManager class:
+- initialize_collections() → Create 2 collections:
+* "parts_text" (for text embeddings, dim=1024)
+* "parts_images" (for image embeddings, dim=512)
+- upsert_part_embedding(part_id, embedding, metadata)
+- search_by_vector(query_embedding, top_k=10)
+- filter_by_brand(brand_name) → Apply metadata filters
+- get_part_by_id(part_id)
+3. VISION AGENT (vision_agent.py):
+Implement VisionAgent class:
+- __init__() → Load CLIP model from transformers
+- identify_part_from_image(image_path) → Main method:
+* Preprocess image (resize, normalize)
+* Extract CLIP image embedding (512-dim vector)
+* Search Qdrant "parts_images" collection
+* Return top 5 matching parts with similarity scores
+- extract_text_from_image(image_path) → Use EasyOCR:
+* Extract visible text (part numbers, brand names)
+* Support Arabic + English text
+* Return cleaned text strings
+- detect_nameplate_region(image_path) → Crop to nameplate:
+* Use simple object detection (optional, OpenCV)
+* Focus on text-dense regions
+4. TEXT SEARCH ENGINE (text_search.py):
+Create TextSearchEngine class:
+- __init__() → Load multilingual-e5-large model
+- search_by_description(query_text, language="en") → Main search:
+* Generate text embedding (1024-dim vector)
+* Search Qdrant "parts_text" collection
+* Apply language filter (match description_en or description_ar)
+* Return ranked results with scores
+- search_by_part_number(part_num) → Exact match search:
+* Normalize part number (remove spaces, uppercase)
+* Query SQLite database directly
+- hybrid_search(text_query, filters) → Combine:
+* Vector search + SQL filters (brand, category)
+* Re-rank results by relevance
+5. VOICE PROCESSOR (voice_processor.py):
+Implement VoiceProcessor class:
+- __init__() → Load Faster-Whisper model ("base" size)
+- transcribe_audio(audio_file_path, language="ar") → Main method:
+* Detect language automatically if not specified
+* Convert audio to text (supports Arabic dialects)
+* Return: {"text": "...", "language": "ar", "confidence": 0.95}
+- process_voice_search(audio_file) → Complete pipeline:
+* Transcribe audio → Extract text
+* Pass text to TextSearchEngine.search_by_description()
+* Return search results
+6. EMBEDDING GENERATOR (embeddings.py):
+Create EmbeddingService class:
+- generate_text_embedding(text) → Returns numpy array (1024-dim)
+- generate_image_embedding(image_path) → Returns numpy array (512-dim)
+- batch_embed_parts() → For initial database population:
+* Read all parts from SQLite
+* Generate embeddings for description_en + description_ar
+* Generate embeddings from image_url
+* Store in Qdrant collections
+- update_single_part_embedding(part_id) → For new scraped parts
+7. SEARCH API ENDPOINTS (search_routes.py):
+Create FastAPI routes:
+POST /api/search/text
+- Body: {"query": "motor bearings high temperature", "language": "en"}
+- Response: List of matching parts with scores
+POST /api/search/image
+- Body: Multipart form with image file
+- Process: Save image → VisionAgent.identify_part_from_image()
+- Response: Top 5 matching parts with similarity percentages
+POST /api/search/voice
+- Body: Multipart form with audio file (MP3, WAV)
+- Process: Save audio → VoiceProcessor.transcribe_audio() → TextSearch
+- Response: Transcription + search results
+GET /api/search/part/{part_id}
+- Response: Full part details + related parts
+POST /api/search/advanced
+- Body: Complex filters (brand, category, specs, price range)
+- Process: Hybrid search (vector + SQL filters)
+8. PYDANTIC MODELS (models/search.py):
+Define request/response schemas:
+- TextSearchRequest (query, language, filters)
+- ImageSearchRequest (image file)
+- VoiceSearchRequest (audio file, language)
+- SearchResult (part_id, part_number, score, thumbnail)
+- SearchResponse (results: List[SearchResult], query_time_ms, total_found)
+9. OLLAMA INTEGRATION (Optional - Conversational Search):
+Create chat_agent.py:
+- query_llm(user_message, context_parts) → Ask Llama 3.2:
+* User: "I need a replacement for Siemens 6ES7 series PLC"
+* LLM: Generates search query + suggests filters
+* Call TextSearchEngine with generated query
+- Bilingual system prompt (English + Arabic instructions)
+10. UPDATE requirements.txt:
+Add these packages:
+qdrant-client==1.7.0
+sentence-transformers==2.2.2
+transformers==4.36.0
+torch==2.1.0
+pillow==10.1.0
+easyocr==1.7.0
+faster-whisper==0.10.0
+opencv-python==4.8.1
+numpy==1.24.3
+11. INITIALIZATION SCRIPT:
+Create backend/scripts/initialize_ai.py:
+```python
+# Run once to setup AI models and vector DB
+# 1. Download all AI models
+# 2. Create Qdrant collections
+# 3. Generate embeddings for existing parts (from Phase 2 scraped data)
+# 4. Verify search functionality with test queries
+```
+DELIVERABLES:
+✅ Working image search (upload photo → get matching parts)
+✅ Working text search (English + Arabic semantic search)
+✅ Working voice search (Arabic speech → text → parts)
+✅ Qdrant vector database with embeddings for all scraped parts
+✅ API endpoints with proper error handling
+VALIDATION TESTS:
+1. Image Search Test:
+- Upload photo of ABB circuit breaker nameplate
+- Should return correct ABB part + similar alternatives
+2. Text Search Test (English):
+- Query: "24V proximity sensor IP67 rated"
+- Should return SICK/Murrelektronik sensors
+3. Text Search Test (Arabic):
+- Query: " ركحميئابرھكةعرسةیلاع " (high-speed electric motor)
+- Should return relevant motors with Arabic descriptions
+4. Voice Search Test:
+- Upload Arabic voice note: " ثحبأنعساسحطغض "
+- Should transcribe correctly and return pressure sensors
+5. Performance Test:
+- Search response time < 2 seconds
+- Qdrant search on 10,000+ parts should be under 500ms
+CODE QUALITY REQUIREMENTS:
+- All AI model loading should be lazy (load on first use, not at startup)
+- Implement proper memory management (clear GPU cache after inference)
+- Use async operations for file uploads
+- Add request validation (max file size: 10MB for images, 5MB for audio)
+- Implement rate limiting (max 20 searches per minute per user)
+- Log all search queries to backend/logs/search_queries.log for analytics
+IMPORTANT NOTES:
+- Download AI models during initialization, not at runtime
+- Use GPU if available (CUDA), fallback to CPU
+- Cache embeddings for frequently searched terms
+- Implement search result caching (Redis in future phase)
+- Store user search history for personalization (future feature)
+Generate all files with complete, production-ready code. Include API usage examples in
+README.
+🤝 PHASE 4: RFQ Automation & Vendor Management (Negotiator Agent)
+PROJECT CONTEXT:
+You are implementing Phase 4 of alsakr online: The Negotiator Agent - an automated
+system that sends RFQs (Request for Quotation) to vendors, aggregates responses, and
+manages the quote comparison workflow.
+PREVIOUS PHASES:
+✅ Phase 1: FastAPI backend + database
+✅ Phase 2: Web scraping (5 manufacturers)
+✅ Phase 3: AI multimodal search (vision/text/voice)
+TECHNICAL REQUIREMENTS:
+- Email automation: SMTP (Gmail) + IMAP (for reading responses)
+- Workflow engine: n8n (self-hosted) OR custom Python scheduler
+- PDF generation: ReportLab (for quote PDFs)
+- Quote parsing: LLM-based (Ollama with Llama 3.2) to extract price/lead time from emails
+YOUR TASK:
+Create the complete RFQ automation system:
+1. NEW DIRECTORY STRUCTURE:
+backend/
+├── app/
+│ ├── rfq/
+│ │ ├── __init__.py
+│ │ ├── negotiator_agent.py (Main RFQ orchestrator)
+│ │ ├── email_sender.py (SMTP email handler)
+│ │ ├── email_parser.py (Parse vendor responses)
+│ │ ├── quote_aggregator.py (Compare quotes)
+│ │ └── pdf_generator.py (Generate quote comparison PDF)
+│ ├── models/
+│ │ ├── rfq.py (RFQ database model)
+│ │ └── quote.py (Quote database model)
+│ ├── api/
+│ │ └── rfq_routes.py (RFQ API endpoints)
+│ └── templates/
+│ ├── email_rfq_en.html (English RFQ email template)
+│ ├── email_rfq_ar.html (Arabic RFQ email template)
+│ └── quote_comparison.html (HTML template for PDF)
+2. DATABASE MODELS:
+Add new SQLAlchemy models:
+RFQ Model (models/rfq.py):
+- id (UUID primary key)
+- user_id (foreign key to users)
+- part_id (foreign key to parts)
+- quantity, urgency ("normal", "urgent", "emergency")
+- target_price, max_lead_time_days
+- status ("draft", "sent", "quoted", "closed")
+- notes, created_at, sent_at
+- Relationship: rfq.quotes (one-to-many)
+Quote Model (models/quote.py):
+- id (UUID primary key)
+- rfq_id (foreign key to rfqs)
+- vendor_id (foreign key to vendors)
+- price_per_unit, total_price, currency
+- lead_time_days, shipping_cost
+- availability ("in_stock", "2_weeks", "4_weeks", "discontinued")
+- quote_validity_days
+- notes, raw_email_text
+- status ("pending", "accepted", "rejected")
+- created_at, expires_at
+3. NEGOTIATOR AGENT (negotiator_agent.py):
+Create NegotiatorAgent class with workflow:
+Main method: process_rfq(rfq_id):
+Step 1: Load RFQ details from database
+Step 2: Find relevant vendors (query vendors table)
+- Filter by: country, part_category, reliability_score > 3.0
+- Select top 5 vendors
+Step 3: Generate personalized email for each vendor
+- Use bilingual templates (detect vendor language)
+- Include: Part details, quantity, urgency, delivery location
+Step 4: Send emails via EmailSender
+Step 5: Update RFQ status to "sent"
+Step 6: Schedule follow-up (check for responses after 48 hours)
+Helper methods:
+- select_vendors(part_id, quantity) → Returns List[Vendor]
+- generate_rfq_email(vendor, rfq, language) → Returns HTML string
+- estimate_shipping_cost(vendor_country, user_country, weight) → Returns float
+- calculate_landed_cost(quote) → price + shipping + customs_estimate
+4. EMAIL SENDER (email_sender.py):
+Create EmailSender class:
+- __init__(smtp_server, smtp_port, username, password)
+- send_rfq_email(to_email, subject, html_body, attachments=None)
+- send_bulk_rfqs(rfq_id, vendor_list) → Send to multiple vendors
+- track_email_status(email_id) → Check if sent successfully
+- handle_bounce_emails() → Mark vendor email as invalid
+Email template variables:
+- {{vendor_name}}, {{part_number}}, {{part_description}}
+- {{quantity}}, {{urgency_badge}}, {{delivery_location}}
+- {{user_company}}, {{user_contact}}, {{rfq_reference_number}}
+5. EMAIL PARSER (email_parser.py):
+Create EmailParser class using Ollama LLM:
+Main method: parse_vendor_response(email_text, rfq_id):
+Step 1: Extract key information using LLM:
+- Prompt: "Extract: price per unit, lead time, availability, currency"
+- Use Llama 3.2 with structured output
+Step 2: Validate extracted data:
+- Price must be numeric and > 0
+- Lead time must be in days (convert from text: "2 weeks" → 14)
+Step 3: Create Quote object and save to database
+Step 4: Notify user via push notification (future: implement WebSocket)
+LLM Prompt template:
+You are parsing a vendor quote email. Extract the following:
+Price per unit (numeric value)
+Currency (USD, EUR, EGP, etc.)
+Lead time in days
+Availability status (in stock, 2 weeks, 4 weeks, discontinued)
+Shipping cost (if mentioned)
+Quote validity period
+Email text:
+{{email_content}}
+Return JSON format:
+{
+"price_per_unit": 0.0,
+"currency": "USD",
+"lead_time_days": 0,
+"availability": "in_stock",
+"shipping_cost": 0.0,
+"quote_validity_days": 30
+}
+6. QUOTE AGGREGATOR (quote_aggregator.py):

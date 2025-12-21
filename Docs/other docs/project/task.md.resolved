@@ -1,0 +1,51 @@
+# Task List: Nexus Industrial - Full Production Scope
+
+## Phase 1: Infrastructure & Foundation (Oracle & Coolify)
+- [x] Initialize Git Repo & Project Structure <!-- id: 0 -->
+    - [x] `backend/` (FastAPI), `frontend/` (Next.js), `infrastructure/` (Docker/Caddy)
+- [x] Configure [docker-compose.yml](file:///c:/Users/pc%20shop/Downloads/ai%20marketplace/infrastructure/docker-compose.yml) (Backend, PocketBase, Qdrant, Ollama, n8n, Caddy) <!-- id: 1 -->
+- [/] Deploy Core Infrastructure to Oracle Cloud via Coolify <!-- id: 2 -->
+    - [x] Setup Caddy Reverse Proxy (Subdomains: api, crm, workflows)
+    - [ ] Verify SSL & Security Headers
+
+## Phase 2: Backend - AI & Scrapers (FastAPI)
+- [/] **Core Setup**: FastAPI, Auth (PocketBase), DB Models, Logging <!-- id: 3 -->
+- [/] **Scrapers System** (Phase 2 Spec) <!-- id: 4 -->
+    - [x] Base Scraper Class & Playwright Setup
+    - [x] Implement Scraper: **SICK Sensors** (Priority)
+    - [ ] (Deferred) ABB, Siemens, Schneider, Murrelektronik
+    - [ ] Admin API: Scraper Control (Start/Stop/Status)
+- [ ] **AI Search Engine** (Phase 3 Spec) <!-- id: 5 -->
+    - [ ] **Vector DB**: Qdrant Schema Setup (Text & Image Collections)
+    - [ ] **Vision Agent**: CLIP Model Integration + EasyOCR
+    - [ ] **Voice Processor**: Faster-Whisper Integration
+    - [ ] **Text Search**: Multilingual-e5-large + Hybrid Search Logic
+- [ ] **RFQ Automation** (Phase 4 Spec) <!-- id: 6 -->
+    - [ ] Negotiator Agent (n8n/Python)
+    - [ ] Email Parser (LLM-based) & PDF Generator
+
+## Phase 3: Frontend - User, Vendor & Admin Portals (Next.js)
+- [/] **Landing Page** (Public) <!-- id: 7 -->
+    - [ ] Hero, Feature Cards, Live Demo, Pricing (per `UI project.txt`)
+- [ ] **User Dashboard** (Buyer) <!-- id: 8 -->
+    - [ ] Smart Search Interface (Text, Image Upload, Voice Recorder)
+    - [ ] Product Results with AI Recommendations
+    - [ ] RFQ Creation Flow
+- [ ] **Vendor Portal** (Supplier) <!-- id: 9 -->
+    - [ ] Dashboard (KPI Cards: New RFQs, Win Rate) (per [vendor.txt](file:///c:/Users/pc%20shop/Downloads/ai%20marketplace/Docs/vendor.txt))
+    - [ ] Incoming RFQ Management & Quoting Interface
+    - [ ] Catalog Management
+- [ ] **Admin Panel** (Internal) <!-- id: 10 -->
+    - [ ] Scraper Status Monitor & Logs
+    - [ ] User/Vendor Verification Management
+
+## Phase 4: Integration & Production Verification
+- [ ] **End-to-End Testing** <!-- id: 11 -->
+    - [ ] Test Search: Image of a part -> Correct result
+    - [ ] Test Voice: Arabic voice command -> Correct transcription & search
+    - [ ] Test RFQ: Buyer request -> Email sent -> Vendor Quote -> Buyer parsed info
+- [ ] **Performance Tuning** <!-- id: 12 -->
+    - [ ] Optimize Docker Images (ARM64)
+    - [ ] Configure Caching (Redis/CDN)
+- [ ] **Final Deployment** <!-- id: 13 -->
+    - [ ] Full stack deployment on Oracle Ampere A1

@@ -1,0 +1,48 @@
+# Walkthrough - Nexus Industrial Production
+
+## Progress Tracker
+
+### Infrastructure
+- [ ] Oracle Instance (Ampere A1) Ready
+- [ ] Coolify & Caddy Configured
+- [ ] Domain DNS Records Set
+
+### Backend - Core & AI
+- [ ] **Scrapers**:
+    - [ ] SICK Sensors Verified
+    - [ ] Admin Control API Verified
+- [ ] **AI Services**:
+    - [ ] Qdrant Collections Created
+    - [ ] Vision Model (CLIP) Loaded & Tested
+    - [ ] Voice Model (Whisper) Loaded & Tested
+- [ ] **RFQ System**:
+    - [ ] Email Sending (SMTP) Verified
+    - [ ] Email Parsing (Llama 3) Verified
+
+### Frontend - Portals
+- [ ] **Landing Page**: Visual Check (Mobile/Desktop)
+- [ ] **Buyer Dashboard**:
+    - [ ] Search (Text/Voice/Image) Flow
+- [ ] **Vendor Portal**:
+    - [ ] Quoting Flow
+- [ ] **Admin Panel**:
+    - [ ] System Monitoring
+
+## Verification Log
+
+### [Date] Project Structure Initialization
+- **Action**: Created full directory structure and configuration files without execution.
+- **Directories**: `backend/`, `frontend/`, `infrastructure/`.
+- **Files Created**: [docker-compose.yml](file:///c:/Users/pc%20shop/Downloads/ai%20marketplace/infrastructure/docker-compose.yml), [backend/Dockerfile](file:///c:/Users/pc%20shop/Downloads/ai%20marketplace/backend/Dockerfile), [frontend/package.json](file:///c:/Users/pc%20shop/Downloads/ai%20marketplace/frontend/package.json), [frontend/app/page.tsx](file:///c:/Users/pc%20shop/Downloads/ai%20marketplace/frontend/app/page.tsx), `SICK Scraper`.
+- **Status**: ✅ COMPLETED
+
+### [Date] AI Capabilities Test
+- **Input**: Image `test_relay.jpg`
+- **Result**: JSON `{ "part_number": "MY4N-D2", "confidence": 0.96 }`
+- **Status**: ✅ PASS
+
+### [Date] Voice Search Test
+- **Input**: Audio `search_ar.wav` ("مفتاح قاطع شنايدر")
+- **Transcript**: "Schneider Circuit Breaker"
+- **Result**: 5 matching Schneider parts.
+- **Status**: ✅ PASS

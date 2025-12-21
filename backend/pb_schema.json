@@ -1,0 +1,47 @@
+[
+    {
+        "name": "products",
+        "type": "base",
+        "schema": [
+            {
+                "name": "product_name",
+                "type": "text",
+                "required": true
+            },
+            {
+                "name": "sku_id",
+                "type": "text",
+                "required": true,
+                "unique": true
+            },
+            {
+                "name": "specifications",
+                "type": "json"
+            },
+            {
+                "name": "images",
+                "type": "json"
+            }
+        ]
+    },
+    {
+        "name": "rfqs",
+        "type": "base",
+        "schema": [
+            {
+                "name": "user_id",
+                "type": "relation",
+                "collectionId": "_pb_users_auth_"
+            },
+            {
+                "name": "status",
+                "type": "select",
+                "options": [
+                    "draft",
+                    "sent",
+                    "completed"
+                ]
+            }
+        ]
+    }
+]
