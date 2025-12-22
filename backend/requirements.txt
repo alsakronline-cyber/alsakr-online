@@ -13,7 +13,7 @@ aiohttp==3.9.3
 sentence-transformers==2.3.1
 torch==2.2.0
 pillow==10.2.0
-faster-whisper==0.10.0
+faster-whisper==0.9.0
 python-decouple==3.8
 transformers==4.36.2
 easyocr==1.7.0
