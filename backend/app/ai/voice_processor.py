@@ -10,14 +10,10 @@ class VoiceProcessor:
         if self.model:
             return
 
-        try:
-            from faster_whisper import WhisperModel
-            logger.info("Loading Whisper Model...")
-            # Use 'tiny' or 'base' for VPS performance
-            self.model = WhisperModel("base", device="cpu", compute_type="int8")
-        except ImportError:
-            logger.error("faster-whisper not found. Voice transcription disabled.")
-            self.model = None
+        from faster_whisper import WhisperModel
+        logger.info("Loading Whisper Model...")
+        # Use 'tiny' or 'base' for VPS performance
+        self.model = WhisperModel("base", device="cpu", compute_type="int8")
 
     async def transcribe_audio(self, audio_path: str, language: str = None):
         self.load_model()

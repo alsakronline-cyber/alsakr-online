@@ -12,13 +12,16 @@ COPY requirements.txt .
 RUN apt-get update && apt-get install -y \
     pkg-config \
     ffmpeg \
-    libavcodec-dev \
     libavformat-dev \
-    libavutil-dev \
+    libavcodec-dev \
     libavdevice-dev \
+    libavutil-dev \
     libavfilter-dev \
     libswscale-dev \
     libswresample-dev \
+    libopus-dev \
+    libvpx-dev \
+    libx264-dev \
     gcc \
     g++ \
     && rm -rf /var/lib/apt/lists/*
