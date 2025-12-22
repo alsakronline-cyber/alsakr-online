@@ -3,7 +3,7 @@ import { LucideCamera, LucideMic, LucideSearch, LucidePackage, LucideZap, Lucide
 
 export default function LandingPage() {
     return (
-        <div className="flex flex-col min-h-screen bg-background font-sans">
+        <div className="flex flex-col min-h-screen bg-slate-950 font-sans">
             {/* Transparent Glass Header */}
             <header className="fixed top-0 w-full z-50 px-4 lg:px-6 h-20 flex items-center backdrop-blur-md bg-background/50 border-b border-white/10 transition-all">
                 <div className="container mx-auto flex items-center justify-between">
