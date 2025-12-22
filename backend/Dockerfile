@@ -9,6 +9,19 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
+RUN apt-get update && apt-get install -y \
+    pkg-config \
+    ffmpeg \
+    libavcodec-dev \
+    libavformat-dev \
+    libavutil-dev \
+    libavdevice-dev \
+    libavfilter-dev \
+    libswscale-dev \
+    libswresample-dev \
+    gcc \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
 RUN pip install --no-cache-dir --user -r requirements.txt
 
 FROM python:3.11-slim
