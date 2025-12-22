@@ -1,35 +1,31 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from app.config import settings
-from app.api import auth, search, rfq, admin
+from app.database import engine, Base, get_db
+from sqlalchemy.orm import Session
+from app.models import user, part, inquiry, vendor
+import uvicorn
+
+# Initialize Database
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
-    title="Alsakr Online API",
-    version="1.0.0",
-    description="AI-Powered Industrial Spare Parts Marketplace"
+    title="Nexus Industrial API",
+    description="Backend for Alsakr Online - Industrial Spare Parts Marketplace",
+    version="1.0.0"
 )
 
+# CORS Middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "https://app.alsakronline.com",
-        "https://alsakr-online-frontend"
-    ],
+    allow_origins=["*"],  # In production, specify exact domains
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-app.include_router(auth.router, prefix="/api/auth", tags=["Auth"])
-app.include_router(search.router, prefix="/api/search", tags=["Search"])
-app.include_router(rfq.router, prefix="/api/rfq", tags=["RFQ"])
-app.include_router(admin.router, prefix="/api/admin", tags=["Admin"])
-
-@app.get("/")
-async def root():
-    return {"message": "Alsakr Online API Operational"}
-
 @app.get("/api/health")
-async def health_check():
-    return {"status": "healthy"}
+def health_check():
+    return {"status": "healthy", "version": "1.0.0"}
+
+if __name__ == "__main__":
+    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
