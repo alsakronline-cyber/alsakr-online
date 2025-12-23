@@ -52,7 +52,7 @@ def health_check():
 
 # Import Routers
 # Import Routers
-from app.api import search_routes, scraper_routes, rfq, quote_routes
+from app.api import search_routes, scraper_routes, rfq, quote_routes, dashboard_routes
 
 # Mock Auth router if it doesn't exist yet, or import if it does.
 # For now, to avoid errors, we'll skip Auth or assume it's there. 
@@ -68,6 +68,7 @@ app.include_router(search_routes.router, prefix="/api/search", tags=["Search"])
 app.include_router(scraper_routes.router, prefix="/api/scrape", tags=["Scrapers"])
 app.include_router(rfq.router, prefix="/api/rfq", tags=["RFQ"])
 app.include_router(quote_routes.router, prefix="/api/quotes", tags=["Quotes"])
+app.include_router(dashboard_routes.router, prefix="/api/dashboard", tags=["Dashboard"])
 
 if __name__ == "__main__":
     uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
