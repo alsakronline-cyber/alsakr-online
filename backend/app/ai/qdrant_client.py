@@ -12,10 +12,10 @@ class QdrantManager:
         self.image_collection = "parts_images"
 
     def initialize_collections(self):
-        # Create text collection (1024 dim for e5-large)
+        # Create text collection (512 dim for CLIP text embedding)
         self.client.recreate_collection(
             collection_name=self.text_collection,
-            vectors_config=models.VectorParams(size=1024, distance=models.Distance.COSINE),
+            vectors_config=models.VectorParams(size=512, distance=models.Distance.COSINE),
         )
         # Create image collection (512 dim for CLIP)
         self.client.recreate_collection(
