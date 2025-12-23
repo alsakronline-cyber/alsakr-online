@@ -48,9 +48,71 @@ function BuyerDashboardContent() {
         }
     };
 
+
+    // Side Panel Component
+    const ProductDetailsPanel = ({ part, onClose }: { part: any, onClose: () => void }) => (
+        <div className="fixed inset-y-0 right-0 w-full md:w-[480px] bg-slate-900 border-l border-white/10 shadow-2xl p-6 overflow-y-auto transform transition-transform animate-in slide-in-from-right z-50">
+            <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-white">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+
+            <h2 className="text-2xl font-bold mb-2">{part.payload.part_number}</h2>
+            <p className="text-primary font-medium mb-6">{part.payload.manufacturer}</p>
+
+            {part.payload.image_url && (
+                <div className="bg-white p-4 rounded-xl mb-6">
+                    <img src={part.payload.image_url} alt={part.payload.part_number} className="w-full h-64 object-contain" />
+                </div>
+            )}
+
+            <div className="space-y-6">
+                <div>
+                    <h3 className="text-lg font-semibold mb-2 border-b border-white/10 pb-2">Description</h3>
+                    <p className="text-gray-300 leading-relaxed">{part.payload.description_en}</p>
+                </div>
+
+                <div>
+                    <h3 className="text-lg font-semibold mb-2 border-b border-white/10 pb-2">Technical Specifications</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                        {part.payload.specifications && Object.entries(part.payload.specifications).map(([key, value]) => (
+                            <div key={key} className="bg-white/5 p-3 rounded-lg">
+                                <span className="text-xs text-gray-400 uppercase block mb-1">{key.replace(/_/g, ' ')}</span>
+                                <span className="text-sm font-medium break-words">{String(value)}</span>
+                            </div>
+                        ))}
+                    </div>
+                    {!part.payload.specifications && <p className="text-gray-500 italic">No detailed specifications available.</p>}
+                </div>
+
+                <div>
+                    <h3 className="text-lg font-semibold mb-2 border-b border-white/10 pb-2">Availability</h3>
+                    <div className="flex items-center gap-2">
+                        <span className={`w-3 h-3 rounded-full ${part.payload.status === 'active' ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                        <span className="capitalize">{part.payload.status || 'Unknown'}</span>
+                    </div>
+                </div>
+
+                <button className="w-full bg-primary hover:bg-blue-600 text-white font-bold py-3 rounded-xl transition-colors mt-4">
+                    Request Quote
+                </button>
+            </div>
+        </div>
+    );
+
+    const [selectedPart, setSelectedPart] = useState<any | null>(null);
+
     return (
-        <div className="min-h-screen bg-slate-950 text-white p-8">
+        <div className="min-h-screen bg-slate-950 text-white p-8 relative">
             <h1 className="text-3xl font-bold mb-6">Find Parts</h1>
+
+            {/* Side Panel Overlay */}
+            {selectedPart && (
+                <>
+                    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40" onClick={() => setSelectedPart(null)} />
+                    <ProductDetailsPanel part={selectedPart} onClose={() => setSelectedPart(null)} />
+                </>
+            )}
+
             <div className="max-w-4xl mx-auto space-y-6">
                 <div className="flex gap-2">
                     <input
@@ -133,7 +195,7 @@ function BuyerDashboardContent() {
                                         <div className="flex justify-between items-center">
                                             <span className="text-xs bg-white/10 px-2 py-1 rounded text-gray-300">{part.payload.manufacturer || "Generic"}</span>
                                             <button
-                                                onClick={() => alert(JSON.stringify(part.payload, null, 2))}
+                                                onClick={() => setSelectedPart(part)}
                                                 className="text-primary hover:text-blue-400 text-sm font-medium"
                                             >
                                                 View Details →
