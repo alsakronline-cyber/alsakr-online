@@ -1,3 +1,4 @@
+'use client';
 import Link from "next/link"
 import { useState } from "react"
 import { LucideCamera, LucideMic, LucideSearch, LucidePackage, LucideZap, LucideDatabase, LucideArrowRight } from "lucide-react"
