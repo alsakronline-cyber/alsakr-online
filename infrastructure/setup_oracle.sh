@@ -21,9 +21,32 @@ echo \
 sudo apt-get update
 sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
-# 3. Setup Project Directory
-mkdir -p alsakr-online/infrastructure
+# 3. Setup Project Directory Structure
+echo "Creating directory structure..."
+mkdir -p alsakr-online/{backend,frontend,infrastructure}
+mkdir -p alsakr-online/infrastructure/{caddy,monitoring}
+# Create data directories (even if using named volumes, having the structure is good practice as per prompt)
+mkdir -p alsakr-online/infrastructure/data/{ollama,qdrant,pocketbase}
+
 cd alsakr-online
+
+# 4. Configure Firewall (UFW)
+echo "Configuring UFW..."
+# Check if UFW is installed
+if ! command -v ufw &> /dev/null; then
+    sudo apt-get install -y ufw
+fi
+
+sudo ufw default deny incoming
+sudo ufw default allow outgoing
+# Allow SSH (Port 22) - CRITICAL to do this first
+sudo ufw allow 22/tcp
+# Allow HTTP/HTTPS
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+# Enable without prompting
+echo "y" | sudo ufw enable
+sudo ufw status verbose
 
 # 4. (Manual Step) Copy files from your local machine to this VPS
 # scp -r backend frontend infrastructure user@your-oracle-ip:~/alsakr-online/
