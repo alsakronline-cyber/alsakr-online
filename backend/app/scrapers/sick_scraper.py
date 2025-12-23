@@ -11,57 +11,74 @@ class SICKScraper(BaseScraper):
     async def extract_part_details(self, product_url: str) -> dict:
         print(f"[{self.brand_name}] Scraping URL: {product_url}")
         
-        try:
-            import requests
-            from bs4 import BeautifulSoup
+        from playwright.async_api import async_playwright
+        
+        async with async_playwright() as p:
+            browser = await p.chromium.launch(headless=True)
+            page = await browser.new_page()
             
-            # 1. Fetch Page
-            headers = {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-            }
-            response = requests.get(product_url, headers=headers, timeout=10)
-            response.raise_for_status()
-            
-            soup = BeautifulSoup(response.content, 'html.parser')
-            
-            # 2. Extract Basic Info
-            # Try to find part number in title or specific meta tags
-            # SICK usually puts part number in h1 or breadcrumbs
-            h1_text = soup.find('h1').get_text(strip=True) if soup.find('h1') else "Unknown Part"
-            
-            # 3. Extract Image
-            image_url = None
-            img_tag = soup.find('img', {'itemprop': 'image'})
-            if img_tag:
-                image_url = img_tag.get('src')
-                if image_url and not image_url.startswith('http'):
-                    image_url = f"https://www.sick.com{image_url}"
-            
-            # 4. Extract Technical Specs
-            specs = {}
-            # Look for technical data tables
-            # This is a generic approach; might need refinement for SICK's specific DOM
-            tables = soup.find_all('table')
-            for table in tables:
-                rows = table.find_all('tr')
-                for row in rows:
-                    cols = row.find_all(['th', 'td'])
-                    if len(cols) == 2:
-                        key = cols[0].get_text(strip=True)
-                        value = cols[1].get_text(strip=True)
-                        if key and value:
-                            specs[key] = value
+            try:
+                # 1. Navigate and Wait
+                await page.goto(product_url, timeout=30000)
+                await page.wait_for_selector('h1', timeout=15000)
+                
+                # 2. Extract Basic Info
+                # Get Part Number (Type Code from H1)
+                h1_element = await page.query_selector('h1')
+                h1_text = await h1_element.inner_text() if h1_element else "Unknown Part"
+                part_number = h1_text.strip().replace("\n", " ")
 
-            return {
-                "part_number": h1_text, # Simplification
-                "manufacturer": "SICK",
-                "description_en": h1_text,
-                "image_url": image_url,
-                "technical_specs": specs,
-                "source_url": product_url,
-                "status": "active"
-            }
-            
-        except Exception as e:
-            print(f"Scraping failed: {e}")
-            raise e
+                # Get Description (fallback to H1 if specific desc not found)
+                description = part_number
+
+                # 3. Extract Image
+                # Look for the main image in the gallery
+                image_url = None
+                img_element = await page.query_selector('ui-akamai-image figure picture img')
+                if img_element:
+                    image_url = await img_element.get_attribute('src') or await img_element.get_attribute('data-src')
+                    if image_url and not image_url.startswith('http'):
+                        image_url = f"https://www.sick.com{image_url}"
+                
+                # 4. Extract Technical Specs
+                specs = {}
+                
+                # Expand technical details if needed (accordion)
+                # Ensure the 'Technical details' section is visible/loaded
+                # In the provided HTML, it seems tabs are used inside the accordion.
+                # We'll try to select all keys and values from tables inside the technical details area.
+                
+                # Wait for tables to be present - sometimes loaded async
+                try:
+                    await page.wait_for_selector('div.tech-table table', timeout=5000)
+                except:
+                    print("Timeout waiting for tech tables")
+
+                # Iterate over all rows in all tech tables
+                rows = await page.query_selector_all('div.tech-table table tr')
+                
+                for row in rows:
+                    cells = await row.query_selector_all('td')
+                    if len(cells) == 2:
+                        key = await cells[0].inner_text()
+                        value = await cells[1].inner_text()
+                        if key and value:
+                            specs[key.strip()] = value.strip()
+
+                return {
+                    "part_number": part_number,
+                    "manufacturer": "SICK",
+                    "description_en": description,
+                    "image_url": image_url,
+                    "technical_specs": specs,
+                    "source_url": product_url,
+                    "status": "active"
+                }
+
+            except Exception as e:
+                print(f"Playwright scraping failed: {e}")
+                # Save screenshot for debugging
+                await page.screenshot(path="error_screenshot.png")
+                raise e
+            finally:
+                await browser.close()

@@ -40,6 +40,9 @@ RUN apt-get update && apt-get install -y \
 COPY --from=builder /root/.local /root/.local
 ENV PATH=/root/.local/bin:$PATH
 
+# Install Playwright browsers (needs to be after PATH is set to find playwright)
+RUN playwright install --with-deps chromium
+
 COPY . .
 
 # Create necessary directories for AI data
