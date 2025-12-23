@@ -40,27 +40,39 @@ class SICKScraper(BaseScraper):
                 # Check page title and content for debugging
                 page_title = await page.title()
                 print(f"Page Title: {page_title}")
-                
-                # Check for potential 'Agree' or 'Cookie' overlays if H1 is not found immediately
-                # (Simple check, can be expanded)
 
-                # Wait specifically for the product headline
+                # 2. Extract Basic Info with Fallbacks
+                part_number = "Unknown Part"
+                description = "Unknown Description"
+
                 try:
-                    await page.wait_for_selector('h1', timeout=30000)
+                    # Try getting from H1 first
+                    await page.wait_for_selector('h1', timeout=5000)
+                    h1_element = await page.query_selector('h1')
+                    if h1_element:
+                        h1_text = await h1_element.inner_text()
+                        part_number = h1_text.strip().replace("\n", " ")
+                        description = part_number
                 except Exception:
-                    print("Detailed Wait failed. Dumping usage info:")
-                    content = await page.content()
-                    print(f"Page Content Snippet: {content[:1000]}")
-                    raise
+                    print("H1 selector not found, attempting fallback to title/meta...")
                 
-                # 2. Extract Basic Info
-                # Get Part Number (Type Code from H1)
-                h1_element = await page.query_selector('h1')
-                h1_text = await h1_element.inner_text() if h1_element else "Unknown Part"
-                part_number = h1_text.strip().replace("\n", " ")
+                # Fallback: Extract from Title
+                if part_number == "Unknown Part" and page_title:
+                    # Format usually: "PartNumber - Product Family | SICK"
+                    parts = page_title.split(' - ')
+                    if len(parts) > 0:
+                        part_number = parts[0].strip()
+                        description = page_title
 
-                # Get Description (fallback to H1 if specific desc not found)
-                description = part_number
+                # Fallback: Extract Description from Meta
+                try:
+                    meta_desc = await page.query_selector('meta[name="description"]')
+                    if meta_desc:
+                        content = await meta_desc.get_attribute('content')
+                        if content:
+                            description = content
+                except:
+                    pass
 
                 # 3. Extract Image
                 # Look for the main image in the gallery
