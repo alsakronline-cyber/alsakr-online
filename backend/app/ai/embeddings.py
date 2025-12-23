@@ -16,7 +16,7 @@ class EmbeddingService:
 
     def generate_text_embedding(self, text: str):
         self.load_model()
-        inputs = self.processor(text=[text], return_tensors="pt", padding=True).to(self.device)
+        inputs = self.processor(text=[text], return_tensors="pt", padding=True, truncation=True, max_length=77).to(self.device)
         with torch.no_grad():
             outputs = self.model.get_text_features(**inputs)
         return outputs.cpu().numpy().flatten().tolist()
