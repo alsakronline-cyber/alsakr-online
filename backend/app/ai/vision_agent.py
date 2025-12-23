@@ -32,6 +32,7 @@ class VisionAgent:
     async def analyze_with_vision_llm(self, image_path: str, ocr_text: str):
         import requests
         import base64
+        import json
         from app.config import settings
 
         with open(image_path, "rb") as img_file:
@@ -54,6 +55,16 @@ class VisionAgent:
                 },
                 timeout=30
             )
-            return response.json().get("response", {})
+            
+            response_data = response.json()
+            llm_response_str = response_data.get("response", "{}")
+            
+            # Parse the stringified JSON returned by Ollama
+            try:
+                return json.loads(llm_response_str)
+            except json.JSONDecodeError:
+                print(f"Failed to parse LLM response: {llm_response_str}")
+                return {}
+                
         except Exception as e:
             return {"error": f"Vision LLM failed: {str(e)}"}
