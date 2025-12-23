@@ -26,8 +26,9 @@ export default function AdminDashboard() {
             if (res.ok && data.data) {
                 setScrapedData(data.data);
             }
-        } catch (error) {
-            setStatus('Error: Failed to connect to server');
+        } catch (error: any) {
+            console.error('Scrape Error:', error);
+            setStatus(`Error: ${error.message || 'Failed to connect to server'}`);
         } finally {
             setLoading(false);
         }
