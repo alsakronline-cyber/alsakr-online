@@ -22,7 +22,13 @@ export default function AdminDashboard() {
                 body: JSON.stringify({ brand: 'SICK', url: url })
             });
             const data = await res.json();
-            setStatus(res.ok ? `Success: ${data.message}` : `Error: ${data.detail}`);
+            console.log('API Response:', data); // Debug log
+
+            if (!data) {
+                throw new Error('Empty response from server');
+            }
+
+            setStatus(res.ok ? `Success: ${data.message || 'Complete'}` : `Error: ${data.detail || 'Unknown error'}`);
             if (res.ok && data.data) {
                 setScrapedData(data.data);
             }
