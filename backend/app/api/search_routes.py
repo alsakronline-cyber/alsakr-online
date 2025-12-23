@@ -21,7 +21,9 @@ async def search_text(request: TextSearchRequest):
 
 @router.post("/image")
 async def search_image(file: UploadFile = File(...)):
+    import os
     start_time = time.time()
+    os.makedirs("data/images", exist_ok=True)
     file_path = f"data/images/{file.filename}"
     with open(file_path, "wb") as buffer:
         buffer.write(await file.read())
@@ -38,6 +40,8 @@ async def search_image(file: UploadFile = File(...)):
 
 @router.post("/voice")
 async def search_voice(file: UploadFile = File(...)):
+    import os
+    os.makedirs("data/audio", exist_ok=True)
     file_path = f"data/audio/{file.filename}"
     with open(file_path, "wb") as buffer:
         buffer.write(await file.read())

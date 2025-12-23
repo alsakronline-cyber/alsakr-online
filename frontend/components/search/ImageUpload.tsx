@@ -55,14 +55,22 @@ export function ImageUpload() {
 
             {uploading && <p className="mt-4 text-primary animate-pulse">Analyzing image...</p>}
 
-            {results && (
-                <div className="mt-6 text-left bg-gray-900/50 p-4 rounded-lg">
+            {results && results.length > 0 ? (
+                <div className="mt-6 text-left bg-gray-900/50 p-4 rounded-lg space-y-2">
                     <p className="text-green-400 font-medium mb-2">Analysis Complete!</p>
-                    <div className="flex gap-2 items-center text-sm text-gray-300">
-                        <span className="font-mono bg-white/10 px-1 rounded">confidence: 95%</span>
-                        <span>Found: Sample Part</span>
-                    </div>
+                    {results.map((result: any, idx: number) => (
+                        <div key={idx} className="flex gap-2 items-center text-sm text-gray-300">
+                            <span className="font-mono bg-white/10 px-1 rounded">{(result.score * 100).toFixed(0)}%</span>
+                            <span>{result.name || result.payload?.name || "Unknown Part"}</span>
+                        </div>
+                    ))}
                 </div>
+            ) : results && (
+                <p className="mt-4 text-gray-400">No matching parts found.</p>
+            )}
+
+            {results && results.error && (
+                <p className="mt-4 text-red-400">Error: {results.error}</p>
             )}
         </div>
     );

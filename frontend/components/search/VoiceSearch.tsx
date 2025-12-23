@@ -54,13 +54,16 @@ export function VoiceSearch() {
                 body: formData,
             });
 
-            if (!response.ok) throw new Error('Transcription failed');
+            if (!response.ok) {
+                const errText = await response.text();
+                throw new Error(`Status ${response.status}: ${errText}`);
+            }
 
             const data = await response.json();
             setTranscript(data.text);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Voice search failed:', error);
-            setTranscript('Error processing voice search.');
+            setTranscript(`Error: ${error.message}`);
         } finally {
             setIsProcessing(false);
         }
