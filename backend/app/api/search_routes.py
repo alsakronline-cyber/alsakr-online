@@ -11,12 +11,26 @@ router = APIRouter(prefix="/api/search", tags=["AI Search"])
 async def search_text(request: TextSearchRequest):
     start_time = time.time()
     engine = TextSearchEngine()
-    results = await engine.search_by_description(request.query)
+    raw_results = await engine.search_by_description(request.query)
+    
+    # Transform Qdrant ScoredPoint objects to SearchResult format
+    from app.models.search import SearchResult
+    formatted_results = [
+        SearchResult(
+            part_id=str(result.id),
+            part_number=result.payload.get("name", "Unknown"),
+            manufacturer=result.payload.get("manufacturer", "Generic"),
+            description=result.payload.get("description", ""),
+            score=result.score,
+            thumbnail_url=result.payload.get("image_url")
+        )
+        for result in raw_results
+    ]
     
     return SearchResponse(
-        results=results,
+        results=formatted_results,
         query_time_ms=(time.time() - start_time) * 1000,
-        total_found=len(results)
+        total_found=len(formatted_results)
     )
 
 @router.post("/image")
