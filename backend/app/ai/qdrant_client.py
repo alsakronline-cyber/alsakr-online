@@ -12,27 +12,29 @@ class QdrantManager:
         self.image_collection = "parts_images"
 
     def initialize_collections(self):
-        # Create text collection if not exists
         try:
-            if not self.client.collection_exists(self.text_collection):
+            # Fetch all existing collections
+            existing_collections = self.client.get_collections().collections
+            existing_names = [c.name for c in existing_collections]
+            
+            # Create text collection if not exists
+            if self.text_collection not in existing_names:
                 self.client.create_collection(
                     collection_name=self.text_collection,
                     vectors_config=models.VectorParams(size=512, distance=models.Distance.COSINE),
                 )
                 print(f"Created collection: {self.text_collection}")
-        except Exception as e:
-            print(f"Error initializing text collection: {e}")
-        
-        # Create image collection if not exists
-        try:
-            if not self.client.collection_exists(self.image_collection):
+            
+            # Create image collection if not exists
+            if self.image_collection not in existing_names:
                 self.client.create_collection(
                     collection_name=self.image_collection,
                     vectors_config=models.VectorParams(size=512, distance=models.Distance.COSINE),
                 )
                 print(f"Created collection: {self.image_collection}")
+                
         except Exception as e:
-            print(f"Error initializing image collection: {e}")
+            print(f"Error initializing Qdrant collections: {e}")
 
     def upsert_part_embedding(self, part_id: str, vector: list, metadata: dict, collection_type: str = "text"):
         collection = self.text_collection if collection_type == "text" else self.image_collection
