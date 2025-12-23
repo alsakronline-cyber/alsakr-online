@@ -4,7 +4,10 @@ from app.config import settings
 
 class QdrantManager:
     def __init__(self):
-        self.client = QdrantClient(host=settings.QDRANT_HOST, port=settings.QDRANT_PORT)
+        host = settings.QDRANT_HOST.replace("http://", "").replace("https://", "")
+        if ":" in host:
+            host = host.split(":")[0]
+        self.client = QdrantClient(host=host, port=settings.QDRANT_PORT)
         self.text_collection = "parts_text"
         self.image_collection = "parts_images"
 
