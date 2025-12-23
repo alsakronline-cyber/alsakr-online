@@ -24,7 +24,10 @@ class SICKScraper(BaseScraper):
             page = await context.new_page()
             
             try:
-                await page.goto(product_url, timeout=60000, wait_until='domcontentloaded')
+                # Use networkidle to wait for redirects/SPA hydration to finish
+                await page.goto(product_url, timeout=90000, wait_until='networkidle')
+                # Brief sleep to ensure DOM stability
+                await page.wait_for_timeout(2000)
                 
                 # Check for the specific structure mentioned in the plan: ui-product-detail
                 # If not found, fall back to generic selectors
