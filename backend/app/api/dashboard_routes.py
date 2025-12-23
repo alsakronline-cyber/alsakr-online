@@ -11,36 +11,39 @@ router = APIRouter()
 
 @router.get("/vendor/{vendor_id}/stats")
 def get_vendor_stats(vendor_id: str, db: Session = Depends(get_db)):
-    # 1. Active RFQs (Inquiries pending)
-    # Ideally, this would be inquiries matched to this vendor that are pending.
-    # For now, we count generic pending inquiries or Quotes by this vendor?
-    # Let's count Inquiries where this vendor has NOT quoted yet but could? 
-    # Or just count Quotes in progress.
-    
-    # Let's just count total pending inquiries in system as "New RFQs" for demo purposes 
-    # if we don't have explicit "MatchedVendor" table yet.
-    new_rfqs_count = db.query(Inquiry).filter(Inquiry.status == "pending").count()
-    
-    # 2. Active Quotations (Quotes submitted by this vendor)
-    active_quotes_count = db.query(Quote).filter(Quote.vendor_id == vendor_id).count()
-    
-    # 3. Acceptance Rate (Mock logic or real calculation)
-    # Count quotes where is_winner=True / total quotes
-    total_quotes = active_quotes_count
-    won_quotes = db.query(Quote).filter(Quote.vendor_id == vendor_id, Quote.is_winner == True).count()
-    
-    acceptance_rate = 0
-    if total_quotes > 0:
-        acceptance_rate = int((won_quotes / total_quotes) * 100)
-    
-    return {
-        "new_rfqs": new_rfqs_count,
-        "active_quotes": active_quotes_count,
-        "acceptance_rate": acceptance_rate,
-        # Mocking the daily change
-        "new_rfqs_change": "+2 today",
-        "active_quotes_expire": "1 expiring"
-    }
+    try:
+        # 1. Active RFQs (Inquiries pending)
+        new_rfqs_count = db.query(Inquiry).filter(Inquiry.status == "pending").count()
+        
+        # 2. Active Quotations (Quotes submitted by this vendor)
+        active_quotes_count = db.query(Quote).filter(Quote.vendor_id == vendor_id).count()
+        
+        # 3. Acceptance Rate
+        total_quotes = active_quotes_count
+        won_quotes = db.query(Quote).filter(Quote.vendor_id == vendor_id, Quote.is_winner == True).count()
+        
+        acceptance_rate = 0
+        if total_quotes > 0:
+            acceptance_rate = int((won_quotes / total_quotes) * 100)
+        
+        return {
+            "new_rfqs": new_rfqs_count,
+            "active_quotes": active_quotes_count,
+            "acceptance_rate": acceptance_rate,
+            "new_rfqs_change": "+2 today",
+            "active_quotes_expire": "1 expiring"
+        }
+    except Exception as e:
+        import traceback
+        return {
+            "error": str(e),
+            "traceback": traceback.format_exc(),
+            "new_rfqs": 0,
+            "active_quotes": 0,
+            "acceptance_rate": 0,
+            "new_rfqs_change": "Error",
+            "active_quotes_expire": "Error"
+        }
 
 @router.get("/vendor/{vendor_id}/inquiries")
 def get_vendor_inquiries(vendor_id: str, db: Session = Depends(get_db)):
