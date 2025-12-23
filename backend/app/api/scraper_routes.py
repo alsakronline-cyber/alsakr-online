@@ -88,3 +88,42 @@ def get_scraper_status():
 @router.post("/stop")
 def stop_scraper():
     return {"status": "stopped"}
+
+@router.post("/reindex")
+def reindex_all(db: Session = Depends(get_db)):
+    """
+    Re-indexes all parts from the database into Qdrant.
+    Useful after a backend restart or if the vector index is lost.
+    """
+    try:
+        from app.models.part import Part
+        from app.ai.embeddings import EmbeddingService
+        from app.ai.qdrant_client import QdrantManager
+        
+        parts = db.query(Part).all()
+        embedder = EmbeddingService()
+        qdrant = QdrantManager()
+        
+        count = 0
+        for part in parts:
+            search_text = f"{part.manufacturer} {part.part_number} {part.description_en}"
+            # Truncate text if too long to avoid token issues, though embedder handles it now
+            vector = embedder.generate_text_embedding(search_text)
+            
+            qdrant.upsert_part_embedding(
+                part_id=part.id,
+                vector=vector,
+                metadata={
+                    "name": part.part_number,
+                    "description": part.description_en,
+                    "manufacturer": part.manufacturer,
+                    "image_url": part.technical_specs.get("image_url") if part.technical_specs else None
+                },
+                collection_type="text"
+            )
+            count += 1
+            
+        return {"status": "success", "reindexed_count": count}
+    except Exception as e:
+        print(f"Reindexing failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

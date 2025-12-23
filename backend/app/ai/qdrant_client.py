@@ -12,16 +12,21 @@ class QdrantManager:
         self.image_collection = "parts_images"
 
     def initialize_collections(self):
-        # Create text collection (512 dim for CLIP text embedding)
-        self.client.recreate_collection(
-            collection_name=self.text_collection,
-            vectors_config=models.VectorParams(size=512, distance=models.Distance.COSINE),
-        )
-        # Create image collection (512 dim for CLIP)
-        self.client.recreate_collection(
-            collection_name=self.image_collection,
-            vectors_config=models.VectorParams(size=512, distance=models.Distance.COSINE),
-        )
+        # Create text collection if not exists
+        if not self.client.collection_exists(self.text_collection):
+            self.client.create_collection(
+                collection_name=self.text_collection,
+                vectors_config=models.VectorParams(size=512, distance=models.Distance.COSINE),
+            )
+            print(f"Created collection: {self.text_collection}")
+        
+        # Create image collection if not exists
+        if not self.client.collection_exists(self.image_collection):
+            self.client.create_collection(
+                collection_name=self.image_collection,
+                vectors_config=models.VectorParams(size=512, distance=models.Distance.COSINE),
+            )
+            print(f"Created collection: {self.image_collection}")
 
     def upsert_part_embedding(self, part_id: str, vector: list, metadata: dict, collection_type: str = "text"):
         collection = self.text_collection if collection_type == "text" else self.image_collection
