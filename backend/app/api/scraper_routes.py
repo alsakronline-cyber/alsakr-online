@@ -29,12 +29,16 @@ async def scrape_specific_url(brand: str, url: str, db: Session = Depends(get_db
     if not scraper:
         raise HTTPException(status_code=404, detail="Scraper not found")
     
-    result = await scraper.extract_part_details(url)
-    if result:
-        await scraper.save_to_database(result)
-        return {"message": "Scraped successfully", "data": result}
-    
-    raise HTTPException(status_code=500, detail="Scraping failed")
+    try:
+        result = await scraper.extract_part_details(url)
+        if result:
+            await scraper.save_to_database(result)
+            return {"message": "Scraped successfully", "data": result}
+        
+        raise HTTPException(status_code=404, detail="Product not found or scraping failed")
+    except Exception as e:
+        print(f"Error in scraping route: {e}")
+        raise HTTPException(status_code=500, detail=f"Scraping failed: {str(e)}")
 
 @router.post("/{brand}")
 async def trigger_scrape(brand: str, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
