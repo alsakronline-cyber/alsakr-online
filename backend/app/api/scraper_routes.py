@@ -35,7 +35,11 @@ async def scrape_specific_url(brand: str, url: str, db: Session = Depends(get_db
             await scraper.save_to_database(result)
             return {"message": "Scraped successfully", "data": result}
         
+        # If we get here, result is None -> 404
         raise HTTPException(status_code=404, detail="Product not found or scraping failed")
+
+    except HTTPException:
+        raise # Re-raise HTTP exceptions as-is
     except Exception as e:
         print(f"Error in scraping route: {e}")
         raise HTTPException(status_code=500, detail=f"Scraping failed: {str(e)}")
