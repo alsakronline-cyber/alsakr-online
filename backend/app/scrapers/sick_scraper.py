@@ -28,6 +28,10 @@ class SICKScraper(BaseScraper):
                 page_title = await page.title()
                 print(f"[{self.brand_name}] Page Title: {page_title}")
                 
+                if "not found" in page_title.lower() or "page not found" in page_title.lower():
+                    print(f"[{self.brand_name}] Page Not Found (404): {product_url}")
+                    return None
+
                 # Wait for main product container to ensure page is rendered
                 try:
                     await page.wait_for_selector('webx-product-detail', state='attached', timeout=10000)
@@ -224,7 +228,6 @@ class SICKScraper(BaseScraper):
                 return {
                     "part_number": part_number,
                     "manufacturer": self.brand_name,
-                    "description": description,
                     "description_en": description,
                     "specifications": technical_specs, # Qdrant expects 'specifications'
                     "technical_specs": technical_specs, # Frontend might expect this
