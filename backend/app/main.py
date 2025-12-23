@@ -23,6 +23,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from app.api import search_routes, scraper_routes, auth, admin
+
+app.include_router(auth.router)
+app.include_router(search_routes.router)
+app.include_router(scraper_routes.router)
+app.include_router(admin.router)
+
 @app.get("/api/health")
 def health_check():
     return {"status": "healthy", "version": "1.0.0"}
