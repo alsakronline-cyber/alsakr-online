@@ -1,7 +1,7 @@
 from app.scrapers.base_scraper import BaseScraper
 from playwright.async_api import async_playwright
 
-class MurrScraper(BaseScraper):
+class MurrelektronikScraper(BaseScraper):
     def __init__(self, db_session):
         super().__init__("Murrelektronik", "https://shop.murrelektronik.com", db_session)
 

@@ -5,7 +5,7 @@ from app.scrapers.sick_scraper import SICKScraper
 from app.scrapers.abb_scraper import ABBScraper
 from app.scrapers.siemens_scraper import SiemensScraper
 from app.scrapers.schneider_scraper import SchneiderScraper
-from app.scrapers.murrelektronik_scraper import MurrScraper
+from app.scrapers.murrelektronik_scraper import MurrelektronikScraper
 
 router = APIRouter()
 
@@ -20,7 +20,7 @@ def get_scraper(brand: str, db: Session):
     elif brand == "schneider":
         return SchneiderScraper(db)
     elif brand == "murr":
-        return MurrScraper(db)
+        return MurrelektronikScraper(db)
     return None
 
 @router.post("/scrape/{brand}")
