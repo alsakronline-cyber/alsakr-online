@@ -1,4 +1,4 @@
-const API_BASE_url = "http://localhost:8000/api"; // Adjust if needed
+const API_BASE_url = "/api"; // Relative path handles both dev (with proxy) and prod
 
 export async function fetchVendorStats(vendorId: string) {
     try {
