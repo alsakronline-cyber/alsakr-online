@@ -1,5 +1,5 @@
 # Multi-stage build for ARM64 compatibility
-FROM python:3.11-slim as builder
+FROM python:3.11-slim-bookworm as builder
 
 WORKDIR /app
 
@@ -27,21 +27,41 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 RUN pip install --no-cache-dir --user -r requirements.txt
 
-FROM python:3.11-slim
+FROM python:3.11-slim-bookworm
 
 WORKDIR /app
 
+# Install runtime dependencies for Playwright and Multimedia
 RUN apt-get update && apt-get install -y \
     libgomp1 \
     curl \
     ffmpeg \
+    libnss3 \
+    libnspr4 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libcups2 \
+    libdrm2 \
+    libxkbcommon0 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxfixes3 \
+    librandr2 \
+    libgbm1 \
+    libasound2 \
+    libpango-1.0-0 \
+    libpangocairo-1.0-0 \
+    libgtk-3-0 \
+    fonts-liberation \
+    fonts-unifont \
+    xdg-utils \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /root/.local /root/.local
 ENV PATH=/root/.local/bin:$PATH
 
-# Install Playwright browsers (needs to be after PATH is set to find playwright)
-RUN playwright install --with-deps chromium
+# Install Playwright browsers (chromium only)
+RUN playwright install chromium
 
 COPY . .
 
