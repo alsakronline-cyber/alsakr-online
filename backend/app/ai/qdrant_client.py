@@ -3,8 +3,11 @@ from qdrant_client.http import models
 
 class QdrantManager:
     def __init__(self):
-        # In production, use standard server URL
-        self.client = QdrantClient(host="localhost", port=6333)
+        import os
+        # Use simple host/port configuration to avoid URL parsing issues
+        host = os.getenv("QDRANT_HOST", "localhost").replace("http://", "").replace("https://", "").split(":")[0]
+        port = 6333
+        self.client = QdrantClient(host=host, port=port)
         self.text_collection = "parts_text"
         self.image_collection = "parts_images"
 
