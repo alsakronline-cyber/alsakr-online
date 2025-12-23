@@ -1,7 +1,13 @@
 import Link from "next/link"
+import { useState } from "react"
 import { LucideCamera, LucideMic, LucideSearch, LucidePackage, LucideZap, LucideDatabase, LucideArrowRight } from "lucide-react"
+import { ImageUpload } from "@/components/search/ImageUpload"
+import { VoiceSearch } from "@/components/search/VoiceSearch"
 
 export default function LandingPage() {
+    const [showImageSearch, setShowImageSearch] = useState(false);
+    const [showVoiceSearch, setShowVoiceSearch] = useState(false);
+
     return (
         <div className="flex flex-col min-h-screen bg-slate-950 font-sans">
             {/* Transparent Glass Header */}
@@ -73,10 +79,18 @@ export default function LandingPage() {
                                     className="flex-1 bg-transparent border-none text-white placeholder:text-gray-500 focus:ring-0 text-lg px-4 h-12"
                                 />
                                 <div className="flex gap-2 pr-2">
-                                    <button className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors" title="Upload Image">
+                                    <button
+                                        onClick={() => setShowImageSearch(!showImageSearch)}
+                                        className={`p-2 rounded-lg transition-colors ${showImageSearch ? 'text-primary bg-white/10' : 'text-gray-400 hover:text-white hover:bg-white/10'}`}
+                                        title="Upload Image"
+                                    >
                                         <LucideCamera className="w-5 h-5" />
                                     </button>
-                                    <button className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors" title="Voice Search">
+                                    <button
+                                        onClick={() => setShowVoiceSearch(!showVoiceSearch)}
+                                        className={`p-2 rounded-lg transition-colors ${showVoiceSearch ? 'text-primary bg-white/10' : 'text-gray-400 hover:text-white hover:bg-white/10'}`}
+                                        title="Voice Search"
+                                    >
                                         <LucideMic className="w-5 h-5" />
                                     </button>
                                     <Link href="/dashboard/buyer" className="bg-primary hover:bg-blue-600 text-white p-3 rounded-lg transition-colors">
@@ -85,6 +99,24 @@ export default function LandingPage() {
                                 </div>
                             </div>
                         </div>
+
+                        {/* Expandable Search Panels */}
+                        {(showImageSearch || showVoiceSearch) && (
+                            <div className="w-full max-w-3xl animate-in slide-in-from-top-4 fade-in duration-200">
+                                {showImageSearch && (
+                                    <div className="relative">
+                                        <button onClick={() => setShowImageSearch(false)} className="absolute top-2 right-2 text-gray-400 z-10 hover:text-white">✕</button>
+                                        <ImageUpload />
+                                    </div>
+                                )}
+                                {showVoiceSearch && (
+                                    <div className="relative">
+                                        <button onClick={() => setShowVoiceSearch(false)} className="absolute top-2 right-2 text-gray-400 z-10 hover:text-white">✕</button>
+                                        <VoiceSearch />
+                                    </div>
+                                )}
+                            </div>
+                        )}
 
                         {/* Brand Logos */}
                         <div className="pt-12 flex flex-wrap justify-center gap-8 opacity-50 grayscale hover:grayscale-0 transition-all duration-500">
