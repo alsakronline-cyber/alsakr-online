@@ -23,17 +23,7 @@ def get_scraper(brand: str, db: Session):
         return MurrelektronikScraper(db)
     return None
 
-@router.post("/scrape/{brand}")
-async def trigger_scrape(brand: str, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
-    scraper = get_scraper(brand, db)
-    if not scraper:
-        raise HTTPException(status_code=404, detail="Scraper not found for this brand")
-    
-    # Run in background to not block response
-    background_tasks.add_task(scraper.scrape_catalog)
-    return {"message": f"Scraping started for {brand}", "status": "processing"}
-
-@router.post("/scrape/url")
+@router.post("/url")
 async def scrape_specific_url(brand: str, url: str, db: Session = Depends(get_db)):
     scraper = get_scraper(brand, db)
     if not scraper:
@@ -45,3 +35,13 @@ async def scrape_specific_url(brand: str, url: str, db: Session = Depends(get_db
         return {"message": "Scraped successfully", "data": result}
     
     raise HTTPException(status_code=500, detail="Scraping failed")
+
+@router.post("/{brand}")
+async def trigger_scrape(brand: str, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    scraper = get_scraper(brand, db)
+    if not scraper:
+        raise HTTPException(status_code=404, detail="Scraper not found for this brand")
+    
+    # Run in background to not block response
+    background_tasks.add_task(scraper.scrape_catalog)
+    return {"message": f"Scraping started for {brand}", "status": "processing"}

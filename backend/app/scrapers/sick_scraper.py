@@ -33,37 +33,74 @@ class SICKScraper(BaseScraper):
                 part_number = "Unknown"
                 description = "Unknown"
                 
-                # Try H1
-                h1 = await page.title()
-                if h1:
-                    description = h1
-                    parts = h1.split(" | ")
-                    if parts:
-                        part_number = parts[0]
+                # Strategy A: Meta Tags (Most reliable)
+                og_title = await page.get_attribute('meta[property="og:title"]', 'content')
+                if og_title:
+                    description = og_title
+                    # Attempt to extract part number if it looks like "Part - Description"
+                    if " | " in og_title:
+                        part_number = og_title.split(" | ")[0]
+                    elif " - " in og_title:
+                        part_number = og_title.split(" - ")[0]
+                
+                # Strategy B: H1 Fallback
+                if description == "Unknown":
+                    h1_handle = await page.query_selector('h1')
+                    if h1_handle:
+                        description = await h1_handle.inner_text()
+                        part_number = description.split(" ")[0] # Guess first word is Model
+
+                # Strategy C: URL Analysis
+                if part_number == "Unknown" or len(part_number) > 20: 
+                    # If part number is still likely a full title, try to find a specific product ID
+                    # Typical SICK URL: .../p/p670003 -> Part Number could be 670003 or WTT10L-B2532
+                    import re
+                    match = re.search(r'/([^/]+)/p/p\d+', product_url)
+                    if match:
+                        part_number = match.group(1).upper()
 
                 # 2. Image
                 image_url = None
-                # Updated selector based on "ui-product-detail" hint
-                img_el = await page.query_selector('ui-product-detail img.product-image') or await page.query_selector('img.main-image')
-                if img_el:
-                    image_url = await img_el.get_attribute('src')
-                    if image_url and not image_url.startswith('http'):
-                        image_url = f"https://www.sick.com{image_url}"
+                # Strategy A: Meta Tag
+                og_image = await page.get_attribute('meta[property="og:image"]', 'content')
+                if og_image:
+                     image_url = og_image
+                
+                # Strategy B: Common Image Selectors
+                if not image_url:
+                    selectors = [
+                        'ui-product-detail img.product-image', 
+                        'img.product-image', 
+                        '.gallery-image img',
+                        'img[itemprop="image"]'
+                    ]
+                    for sel in selectors:
+                        img_el = await page.query_selector(sel)
+                        if img_el:
+                            src = await img_el.get_attribute('src')
+                            if src:
+                                image_url = src
+                                break
+                
+                if image_url and not image_url.startswith('http'):
+                    image_url = f"https://www.sick.com{image_url}"
 
                 # 3. Technical Specs
                 specs = {}
-                # Look for tables within the product detail area
-                rows = await page.query_selector_all('ui-product-detail table tr')
-                if not rows:
-                     rows = await page.query_selector_all('.tech-data table tr')
-
-                for row in rows:
-                    cells = await row.query_selector_all('td')
-                    if len(cells) >= 2:
-                        key = await cells[0].inner_text()
-                        val = await cells[1].inner_text()
-                        if key and val:
-                            specs[key.strip()] = val.strip()
+                # Strategy: Look for ANY tables
+                try:
+                    tables = await page.query_selector_all('table')
+                    for table in tables:
+                        rows = await table.query_selector_all('tr')
+                        for row in rows:
+                            cells = await row.query_selector_all('td')
+                            if len(cells) >= 2:
+                                k = await cells[0].inner_text()
+                                v = await cells[1].inner_text()
+                                if k and v and len(k) < 50:
+                                    specs[k.strip()] = v.strip()
+                except Exception as e:
+                    print(f"Spec extraction error: {e}")
 
                 return {
                     "part_number": part_number,
