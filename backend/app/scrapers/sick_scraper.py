@@ -13,6 +13,7 @@ class SICKScraper(BaseScraper):
         
         from playwright.async_api import async_playwright
         
+        async with async_playwright() as p:
             # Launch with specific args to mimic real browser and hide automation
             browser = await p.chromium.launch(
                 headless=True, 
