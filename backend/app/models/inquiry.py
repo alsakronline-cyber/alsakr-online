@@ -22,3 +22,5 @@ class Inquiry(Base):
     # Relationships
     user = relationship("User")
     part = relationship("Part")
+    
+    quotes = relationship("Quote", back_populates="inquiry")

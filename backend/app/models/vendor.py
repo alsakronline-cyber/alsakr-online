@@ -1,4 +1,5 @@
 from sqlalchemy import Column, String, Float, DateTime
+from sqlalchemy.orm import relationship
 from app.database import Base
 import uuid
 import datetime
@@ -17,3 +18,5 @@ class Vendor(Base):
     avg_quote_time = Column(String)  # e.g., "2 hours"
     reliability_score = Column(Float, default=5.0)  # 0 to 10
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+    quotes = relationship("Quote", back_populates="vendor")

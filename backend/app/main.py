@@ -6,6 +6,7 @@ import uvicorn
 from contextlib import asynccontextmanager
 
 # Initialize Database Tables
+from app.models import vendor, inquiry, quote
 Base.metadata.create_all(bind=engine)
 
 @asynccontextmanager
@@ -50,7 +51,8 @@ def health_check():
     return {"status": "healthy", "version": "1.0.0", "database": "connected"}
 
 # Import Routers
-from app.api import search_routes, scraper_routes
+# Import Routers
+from app.api import search_routes, scraper_routes, rfq, quote_routes
 
 # Mock Auth router if it doesn't exist yet, or import if it does.
 # For now, to avoid errors, we'll skip Auth or assume it's there. 
@@ -64,6 +66,8 @@ except ImportError:
 
 app.include_router(search_routes.router, prefix="/api/search", tags=["Search"])
 app.include_router(scraper_routes.router, prefix="/api/scrape", tags=["Scrapers"])
+app.include_router(rfq.router, prefix="/api/rfq", tags=["RFQ"])
+app.include_router(quote_routes.router, prefix="/api/quotes", tags=["Quotes"])
 
 if __name__ == "__main__":
     uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
