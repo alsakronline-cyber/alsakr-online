@@ -5,6 +5,26 @@ from app.scrapers import ScraperManager
 
 router = APIRouter(prefix="/api/admin/scraper", tags=["Scraper"])
 
+from pydantic import BaseModel
+
+class ScrapeRequest(BaseModel):
+    brand: str
+    url: str
+
+@router.post("/scrape-url")
+async def scrape_url(request: ScrapeRequest, db: Session = Depends(get_db)):
+    manager = ScraperManager(db)
+    scraper = manager.get_scraper(request.brand)
+    if not scraper:
+        raise HTTPException(status_code=404, detail=f"Scraper for {request.brand} not found")
+    
+    # In a real app, this should be async/backgrounded
+    try:
+        data = await scraper.extract_part_details(request.url)
+        return {"status": "success", "message": f"Scraped {data.get('part_number', 'unknown part')}", "data": data}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.post("/start/{brand}")
 async def start_scraper(brand: str, db: Session = Depends(get_db)):
     manager = ScraperManager(db)

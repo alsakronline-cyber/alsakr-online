@@ -9,10 +9,14 @@ class SICKScraper(BaseScraper):
         pass
 
     async def extract_part_details(self, product_url: str) -> dict:
+        print(f"[{self.brand_name}] Scraping URL: {product_url}")
+        # Simulation of scraping logic
+        import asyncio
+        await asyncio.sleep(2) # Simulate network delay
+        
         return {
-            "part_number": "1040870", # WT12-3P2431
+            "part_number": "Simulated-12345",
             "manufacturer": "SICK",
-            "category": "Photoelectric Sensors",
-            "description_en": "Small photoelectric sensors W12-3",
-            "status": "active"
+            "source_url": product_url,
+            "status": "scraped_successfully"
         }
