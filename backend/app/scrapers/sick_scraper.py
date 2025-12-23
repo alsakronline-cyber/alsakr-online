@@ -24,40 +24,75 @@ class SICKScraper(BaseScraper):
                 await page.goto(product_url, timeout=90000, wait_until='networkidle')
                 await page.wait_for_timeout(2000) # Safety sleep
                 
+                # Debug: Print Title to confirm access
+                page_title = await page.title()
+                print(f"[{self.brand_name}] Page Title: {page_title}")
+                
+                # Take a screenshot for debugging (saved in backend container)
+                await page.screenshot(path="last_scrape_debug.png", full_page=True)
+
                 # 1. Part Number & Description
                 part_number = "Unknown"
                 description = "Unknown"
                 
-                # Part Number
-                part_num_el = await page.query_selector('ui-product-part-number .font-bold')
-                if part_num_el:
-                    part_number = await part_num_el.inner_text()
-                    part_number = part_number.strip()
-                
-                # Description (Headline)
-                headline_cat = ""
-                headline_title = ""
-                
-                cat_el = await page.query_selector('ui-headline .category')
-                if cat_el:
-                    headline_cat = await cat_el.inner_text()
-                    
-                title_el = await page.query_selector('ui-headline .title')
-                if title_el:
-                    headline_title = await title_el.inner_text()
-                    
-                if headline_title:
-                    description = headline_title
-                    if headline_cat:
-                        description = f"{headline_cat}: {headline_title}"
+                # Strategy A: Precise Selectors (using Locator to wait)
+                try:
+                    # Part Number
+                    # Use locator with timeout to wait for element to appear
+                    part_num_loc = page.locator('ui-product-part-number .font-bold').first
+                    if await part_num_loc.count() > 0:
+                        part_number = await part_num_loc.inner_text(timeout=5000)
+                        part_number = part_number.strip()
+                    else:
+                        print(f"[{self.brand_name}] Part number element not found")
 
-                # Fallback implementation if specific selectors fail
-                if part_number == "Unknown":
-                     og_title_el = await page.query_selector('meta[property="og:title"]')
-                     if og_title_el:
-                         og_txt = await og_title_el.get_attribute('content')
-                         if og_txt and " | " in og_txt:
-                             part_number = og_txt.split(" | ")[0]
+                    # Description from Headline
+                    headline_cat = ""
+                    headline_title = ""
+                    
+                    cat_loc = page.locator('ui-headline .category').first
+                    if await cat_loc.count() > 0:
+                        headline_cat = await cat_loc.inner_text()
+                        
+                    title_loc = page.locator('ui-headline .title').first
+                    if await title_loc.count() > 0:
+                        headline_title = await title_loc.inner_text()
+                        
+                    if headline_title:
+                        description = headline_title
+                        if headline_cat:
+                            description = f"{headline_cat}: {headline_title}"
+                            
+                    # Breadcrumbs Fallback
+                    if description == "Unknown":
+                        breadcrumb_texts = []
+                        # Provide a generous timeout for breadcrumbs as they might load late
+                        breadcrumbs = page.locator('syn-breadcrumb-item .breadcrumb-item__label')
+                        count = await breadcrumbs.count()
+                        for i in range(count):
+                            txt = await breadcrumbs.nth(i).inner_text()
+                            if txt and txt.strip() != "Home":
+                                breadcrumb_texts.append(txt.strip())
+                        
+                        if breadcrumb_texts:
+                            description = " - ".join(breadcrumb_texts)
+
+                except Exception as e:
+                    print(f"[{self.brand_name}] Selector Error (Strategy A): {e}")
+
+                # Strategy B: Meta Tags (Fallback)
+                if part_number == "Unknown" or description == "Unknown":
+                    try:
+                        og_title_el = await page.query_selector('meta[property="og:title"]')
+                        if og_title_el:
+                            og_txt = await og_title_el.get_attribute('content')
+                            if og_txt:
+                                if description == "Unknown":
+                                    description = og_txt
+                                if part_number == "Unknown" and " | " in og_txt:
+                                    part_number = og_txt.split(" | ")[0]
+                    except Exception as meta_e:
+                        print(f"Meta tag extraction error: {meta_e}")
 
                 # 2. Images
                 image_url = None
