@@ -13,27 +13,44 @@ class SICKScraper(BaseScraper):
         
         from playwright.async_api import async_playwright
         
-        async with async_playwright() as p:
-            # Launch with specific args to mimic real browser
-            browser = await p.chromium.launch(headless=True, args=['--no-sandbox', '--disable-setuid-sandbox'])
+            # Launch with specific args to mimic real browser and hide automation
+            browser = await p.chromium.launch(
+                headless=True, 
+                args=[
+                    '--no-sandbox', 
+                    '--disable-setuid-sandbox',
+                    '--disable-blink-features=AutomationControlled' 
+                ]
+            )
             
-            # Use a real user agent
+            # Use a real user agent and configure context
             context = await browser.new_context(
-                user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                viewport={'width': 1920, 'height': 1080},
+                locale='en-US'
             )
             page = await context.new_page()
             
             try:
                 # 1. Navigate and Wait
                 # wait_until='networkidle' ensures the SPA has finished most requests
-                await page.goto(product_url, timeout=60000, wait_until='domcontentloaded') 
+                response = await page.goto(product_url, timeout=90000, wait_until='networkidle') 
                 
-                # Check if we are blocked or on a weird page
+                # Check page title and content for debugging
                 page_title = await page.title()
                 print(f"Page Title: {page_title}")
+                
+                # Check for potential 'Agree' or 'Cookie' overlays if H1 is not found immediately
+                # (Simple check, can be expanded)
 
                 # Wait specifically for the product headline
-                await page.wait_for_selector('h1', timeout=30000)
+                try:
+                    await page.wait_for_selector('h1', timeout=30000)
+                except Exception:
+                    print("Detailed Wait failed. Dumping usage info:")
+                    content = await page.content()
+                    print(f"Page Content Snippet: {content[:1000]}")
+                    raise
                 
                 # 2. Extract Basic Info
                 # Get Part Number (Type Code from H1)
