@@ -1,46 +1,59 @@
-export function InquiryKanban() {
-    return (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-gray-900/50 p-6 rounded-xl">
-            {/* Pending Column */}
-            <div className="space-y-4">
-                <header className="flex items-center justify-between">
-                    <h3 className="font-bold text-gray-400">Pending</h3>
-                    <span className="bg-gray-800 px-2 py-1 rounded text-xs text-white">4</span>
-                </header>
-                <div className="bg-gray-800 p-4 rounded-lg border border-white/5 cursor-pointer hover:border-primary/50 transition">
-                    <div className="flex justify-between mb-2">
-                        <span className="text-xs bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded">Low</span>
-                        <span className="text-xs text-gray-500">2h ago</span>
-                    </div>
-                    <p className="font-medium text-white mb-1">ABB Circuit Breaker</p>
-                    <p className="text-xs text-gray-400">RFQ #28492</p>
-                </div>
-            </div>
+import React from 'react';
 
-            {/* Quoted Column */}
-            <div className="space-y-4">
-                <header className="flex items-center justify-between">
-                    <h3 className="font-bold text-gray-400">Quoted</h3>
-                    <span className="bg-gray-800 px-2 py-1 rounded text-xs text-white">2</span>
-                </header>
-                <div className="bg-gray-800 p-4 rounded-lg border border-white/5 cursor-pointer hover:border-secondary/50 transition">
-                    <div className="flex justify-between mb-2">
-                        <span className="text-xs bg-orange-500/20 text-orange-300 px-2 py-0.5 rounded">High</span>
-                        <span className="text-xs text-gray-500">1d ago</span>
-                    </div>
-                    <p className="font-medium text-white mb-1">Siemens S7-1200</p>
-                    <p className="text-xs text-gray-400">RFQ #28421</p>
-                </div>
-            </div>
-
-            {/* Closed Column */}
-            <div className="space-y-4">
-                <header className="flex items-center justify-between">
-                    <h3 className="font-bold text-gray-400">Closed</h3>
-                    <span className="bg-gray-800 px-2 py-1 rounded text-xs text-white">12</span>
-                </header>
-                {/* Empty for now */}
-            </div>
-        </div>
-    )
+interface Inquiry {
+    id: string;
+    partName: string;
+    customer: string;
+    status: 'pending' | 'quoted' | 'closed';
 }
+
+const KanbanColumn = ({ title, items, color }: { title: string, items: Inquiry[], color: string }) => (
+    <div className="flex-1 bg-slate-50 dark:bg-slate-900 rounded-xl p-4 min-h-[500px]">
+        <div className={`flex items-center justify-between mb-4 pb-2 border-b-2`} style={{ borderColor: color }}>
+            <h3 className="font-semibold text-slate-700 dark:text-slate-200">{title}</h3>
+            <span className="bg-white dark:bg-slate-800 px-2 py-1 rounded text-xs font-bold shadow-sm">{items.length}</span>
+        </div>
+        <div className="space-y-3">
+            {items.map(item => (
+                <div key={item.id} className="bg-white dark:bg-slate-800 p-3 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 hover:shadow-md transition-shadow cursor-pointer">
+                    <div className="flex justify-between items-start">
+                        <span className="text-sm font-medium text-slate-900 dark:text-white truncate w-3/4">{item.partName}</span>
+                        <div className={`w-2 h-2 rounded-full`} style={{ backgroundColor: color }}></div>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-2">{item.customer}</p>
+                </div>
+            ))}
+        </div>
+    </div>
+);
+
+const InquiryKanban: React.FC = () => {
+    // Mock data - replace with API call
+    const inquiries: Inquiry[] = [
+        { id: '1', partName: 'SICK Sensor WL-12', customer: 'Saudi Aramco', status: 'pending' },
+        { id: '2', partName: 'ABB Drive ACS880', customer: 'SABIC', status: 'quoted' },
+        { id: '3', partName: 'Siemens PLC S7-1200', customer: 'Maaden', status: 'closed' },
+    ];
+
+    return (
+        <div className="flex gap-4 overflow-x-auto pb-4">
+            <KanbanColumn
+                title="Pending"
+                items={inquiries.filter(i => i.status === 'pending')}
+                color="#fbbf24"
+            />
+            <KanbanColumn
+                title="Quoted"
+                items={inquiries.filter(i => i.status === 'quoted')}
+                color="#3b82f6"
+            />
+            <KanbanColumn
+                title="Closed"
+                items={inquiries.filter(i => i.status === 'closed')}
+                color="#22c55e"
+            />
+        </div>
+    );
+};
+
+export default InquiryKanban;

@@ -1,39 +1,42 @@
-export function QuoteTable() {
+import React from 'react';
+
+const QuoteTable: React.FC = () => {
+    // Mock data
+    const quotes = [
+        { id: 'Q-1001', vendor: 'Official Dist #1', amount: 5400, currency: 'SAR', delivery: '2 Weeks' },
+        { id: 'Q-1002', vendor: 'Global Parts Ltd', amount: 5150, currency: 'SAR', delivery: '3 Weeks' },
+    ];
+
     return (
-        <div className="bg-gray-800 border border-white/5 rounded-xl overflow-hidden mt-6">
-            <div className="p-6 border-b border-white/10 flex justify-between items-center">
-                <h3 className="font-bold text-lg text-white">Recent Quotes</h3>
-                <button className="text-sm text-primary hover:text-blue-400">View All</button>
-            </div>
-            <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left text-gray-400">
-                    <thead className="bg-white/5 uppercase text-xs text-gray-300">
-                        <tr>
-                            <th className="px-6 py-4">ID</th>
-                            <th className="px-6 py-4">Customer</th>
-                            <th className="px-6 py-4">Total</th>
-                            <th className="px-6 py-4">Status</th>
-                            <th className="px-6 py-4">Date</th>
+        <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
+            <table className="w-full text-left text-sm text-slate-600 dark:text-slate-400">
+                <thead className="bg-slate-50 dark:bg-slate-800 text-xs uppercase font-medium text-slate-500 dark:text-slate-400">
+                    <tr>
+                        <th className="px-6 py-4">Quote ID</th>
+                        <th className="px-6 py-4">Vendor</th>
+                        <th className="px-6 py-4">Amount</th>
+                        <th className="px-6 py-4">Delivery</th>
+                        <th className="px-6 py-4">Status</th>
+                    </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-700 bg-white dark:bg-slate-900">
+                    {quotes.map((quote) => (
+                        <tr key={quote.id} className="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                            <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">{quote.id}</td>
+                            <td className="px-6 py-4">{quote.vendor}</td>
+                            <td className="px-6 py-4 font-semibold">{quote.amount} {quote.currency}</td>
+                            <td className="px-6 py-4 text-slate-500">{quote.delivery}</td>
+                            <td className="px-6 py-4">
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                                    Active
+                                </span>
+                            </td>
                         </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/5">
-                        <tr className="hover:bg-white/5 transition-colors">
-                            <td className="px-6 py-4 font-mono">#Q-1029</td>
-                            <td className="px-6 py-4 font-medium text-white">Saudi Aramco</td>
-                            <td className="px-6 py-4 text-green-400">$2,450.00</td>
-                            <td className="px-6 py-4"><span className="px-2 py-1 rounded-full bg-green-500/10 text-green-400 text-xs">Accepted</span></td>
-                            <td className="px-6 py-4">Dec 20, 2025</td>
-                        </tr>
-                        <tr className="hover:bg-white/5 transition-colors">
-                            <td className="px-6 py-4 font-mono">#Q-1030</td>
-                            <td className="px-6 py-4 font-medium text-white">Emaar Industries</td>
-                            <td className="px-6 py-4 text-white">$1,200.00</td>
-                            <td className="px-6 py-4"><span className="px-2 py-1 rounded-full bg-yellow-500/10 text-yellow-400 text-xs">Pending</span></td>
-                            <td className="px-6 py-4">Dec 21, 2025</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+                    ))}
+                </tbody>
+            </table>
         </div>
-    )
-}
+    );
+};
+
+export default QuoteTable;

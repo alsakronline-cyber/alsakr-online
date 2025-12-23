@@ -1,88 +1,107 @@
-'use client';
-import { useState } from 'react';
-import { Upload } from 'lucide-react';
+"use client";
 
-export function ImageUpload() {
-    const [uploading, setUploading] = useState(false);
+import React, { useState } from 'react';
+import { Upload, X, Search, Loader2 } from 'lucide-react';
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+const ImageUpload = () => {
+    const [preview, setPreview] = useState<string | null>(null);
+    const [loading, setLoading] = useState(false);
     const [results, setResults] = useState<any>(null);
-    const [analysis, setAnalysis] = useState<string>("");
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const url = URL.createObjectURL(file);
+            setPreview(url);
+            handleUpload(file);
+        }
+    };
 
     const handleUpload = async (file: File) => {
-        setUploading(true);
+        setLoading(true);
         const formData = new FormData();
         formData.append('file', file);
 
         try {
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com';
-            const response = await fetch(`${apiUrl}/api/search/image`, {
+            const res = await fetch('http://localhost:8000/api/search/image', {
                 method: 'POST',
                 body: formData,
             });
-
-            if (!response.ok) throw new Error('Upload failed');
-
-            const data = await response.json();
-            setResults(data.results || []);
-            setAnalysis(data.analysis || "");
-        } catch (error) {
-            console.error('Upload failed:', error);
-            // Fallback for demo if API is unreachable
-            setResults([{ id: 1, name: "Sample Part (Offline Mode)", score: 0.95 }]);
+            const data = await res.json();
+            setResults(data);
+        } catch (err) {
+            console.error(err);
         } finally {
-            setUploading(false);
+            setLoading(false);
         }
     };
 
     return (
-        <div className="border-2 border-dashed border-white/20 rounded-xl p-8 text-center bg-white/5 hover:bg-white/10 transition-colors cursor-pointer group">
-            <div className="flex flex-col items-center gap-4">
-                <div className="p-4 bg-gray-800 rounded-full group-hover:bg-primary/20 group-hover:text-primary transition-colors">
-                    <Upload className="w-8 h-8 text-gray-400 group-hover:text-primary" />
-                </div>
-                <div className="space-y-1">
-                    <p className="text-lg font-medium text-white">Upload an image</p>
-                    <p className="text-sm text-gray-400">Drag and drop or click to browse</p>
-                </div>
-                <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0])}
-                    className="hidden"
-                    id="image-upload"
-                />
-                <label htmlFor="image-upload" className="absolute inset-0 cursor-pointer"></label>
+        <div className="w-full max-w-md mx-auto">
+            <div className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-colors ${preview ? 'border-primary/50' : 'border-slate-300 hover:border-primary'} dark:border-slate-700`}>
+
+                {preview ? (
+                    <div className="relative">
+                        <img src={preview} alt="Preview" className="mx-auto max-h-48 rounded-lg shadow-md" />
+                        <button
+                            onClick={() => { setPreview(null); setResults(null); }}
+                            className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full shadow-lg hover:bg-red-600 transition-colors"
+                        >
+                            <X size={16} />
+                        </button>
+                    </div>
+                ) : (
+                    <>
+                        <Upload className="mx-auto h-12 w-12 text-slate-400 mb-4" />
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                            Snap or Upload Photo
+                        </label>
+                        <p className="text-xs text-slate-500 mb-4">Identify parts instantly with AI</p>
+                        <input
+                            type="file"
+                            accept="image/*"
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                            onChange={handleFileChange}
+                        />
+                    </>
+                )}
+
+                {loading && (
+                    <div className="absolute inset-0 bg-white/80 dark:bg-slate-900/80 flex items-center justify-center rounded-xl backdrop-blur-sm">
+                        <div className="text-center">
+                            <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-2" />
+                            <p className="text-sm font-medium text-primary">Analyzing Component...</p>
+                        </div>
+                    </div>
+                )}
             </div>
 
-            {uploading && <p className="mt-4 text-primary animate-pulse">Analyzing image...</p>}
-
-            {results && results.length > 0 ? (
-                <div className="mt-6 text-left bg-gray-900/50 p-4 rounded-lg space-y-4">
-                    <div className="border-b border-white/10 pb-2 mb-2">
-                        <p className="text-blue-400 font-semibold mb-1">🤖 AI Analysis</p>
-                        <p className="text-gray-300 text-sm leading-relaxed">
-                            {analysis || "Analyzing image features..."}
-                        </p>
-                    </div>
-
-                    <div>
-                        <p className="text-green-400 font-medium mb-2">Found Parts:</p>
-                        {results.map((result: any, idx: number) => (
-                            <div key={idx} className="flex gap-2 items-center text-sm text-gray-300 bg-black/20 p-2 rounded">
-                                <span className="font-mono bg-primary/20 text-primary px-2 py-0.5 rounded text-xs">{(result.score * 100).toFixed(0)}% Match</span>
-                                <span className="font-medium text-white">{result.name || result.payload?.name || "Unknown Part"}</span>
+            {results && (
+                <div className="mt-6 animate-in fade-in slide-in-from-bottom-4">
+                    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
+                        <h3 className="font-semibold text-lg mb-2 flex items-center gap-2">
+                            <Search size={18} className="text-primary" />
+                            AI Analysis
+                        </h3>
+                        {results.llm_analysis ? (
+                            <div className="space-y-2 text-sm">
+                                <p><strong>Part:</strong> {results.llm_analysis.part_name || "Unknown"}</p>
+                                <p><strong>Manufacturer:</strong> {results.llm_analysis.manufacturer || "Unknown"}</p>
+                                <details className="mt-2">
+                                    <summary className="cursor-pointer text-primary text-xs font-medium">View Specs</summary>
+                                    <pre className="mt-2 p-2 bg-slate-50 dark:bg-slate-900 rounded text-xs overflow-auto">
+                                        {JSON.stringify(results.llm_analysis.technical_specifications, null, 2)}
+                                    </pre>
+                                </details>
                             </div>
-                        ))}
+                        ) : (
+                            <p className="text-sm text-slate-500">No detailed analysis returned.</p>
+                        )}
                     </div>
                 </div>
-            ) : results && (
-                <p className="mt-4 text-gray-400">No matching parts found.</p>
-            )}
-
-            {results && results.error && (
-                <p className="mt-4 text-red-400">Error: {results.error}</p>
             )}
         </div>
     );
-}
+};
+
+export default ImageUpload;

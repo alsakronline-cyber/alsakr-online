@@ -1,77 +1,77 @@
-from fastapi import APIRouter, UploadFile, File, Depends
-from app.models.search import TextSearchRequest, SearchResponse
+from fastapi import APIRouter, UploadFile, File, Form, Depends, HTTPException
+from sqlalchemy.orm import Session
+from app.database import get_db
 from app.ai.text_search import TextSearchEngine
 from app.ai.vision_agent import VisionAgent
 from app.ai.voice_processor import VoiceProcessor
-import time
+import shutil
+import os
+import uuid
 
-router = APIRouter(prefix="/api/search", tags=["AI Search"])
+router = APIRouter()
 
-@router.post("/text", response_model=SearchResponse)
-async def search_text(request: TextSearchRequest):
-    start_time = time.time()
-    engine = TextSearchEngine()
-    raw_results = await engine.search_by_description(request.query)
-    
-    # Transform Qdrant ScoredPoint objects to SearchResult format
-    from app.models.search import SearchResult
-    formatted_results = [
-        SearchResult(
-            part_id=str(result.id),
-            part_number=result.payload.get("name", "Unknown"),
-            manufacturer=result.payload.get("manufacturer", "Generic"),
-            description=result.payload.get("description", ""),
-            score=result.score,
-            thumbnail_url=result.payload.get("image_url")
-        )
-        for result in raw_results
-    ]
-    
-    return SearchResponse(
-        results=formatted_results,
-        query_time_ms=(time.time() - start_time) * 1000,
-        total_found=len(formatted_results)
-    )
+# Initialize engines lazily or globally
+text_search = TextSearchEngine()
+vision_agent = VisionAgent()
+voice_processor = VoiceProcessor()
+
+@router.get("/text")
+async def search_by_text(q: str):
+    """Semantic search by text query."""
+    if not q:
+        return []
+    results = await text_search.search_by_description(q)
+    return results
 
 @router.post("/image")
-async def search_image(file: UploadFile = File(...)):
-    import os
-    start_time = time.time()
-    os.makedirs("data/images", exist_ok=True)
-    file_path = f"data/images/{file.filename}"
-    with open(file_path, "wb") as buffer:
-        buffer.write(await file.read())
-
-    agent = VisionAgent()
-    analysis = await agent.identify_part_from_image(file_path)
-    
-    return {
-        "results": analysis["similar_parts"],
-        "analysis": analysis["llm_analysis"],
-        "ocr_text": analysis["ocr_text"],
-        "query_time_ms": (time.time() - start_time) * 1000
-    }
+async def search_by_image(file: UploadFile = File(...)):
+    """Search by uploading an image."""
+    try:
+        # Save temp file
+        file_ext = file.filename.split(".")[-1]
+        temp_filename = f"temp_{uuid.uuid4()}.{file_ext}"
+        temp_path = os.path.join("data/images", temp_filename)
+        os.makedirs("data/images", exist_ok=True)
+        
+        with open(temp_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+            
+        # Process
+        analysis = await vision_agent.identify_part_from_image(temp_path)
+        
+        # Cleanup (optional, or keep for debugging)
+        # os.remove(temp_path)
+        
+        return analysis
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/voice")
-async def search_voice(file: UploadFile = File(...)):
-    import os
-    os.makedirs("data/audio", exist_ok=True)
-    file_path = f"data/audio/{file.filename}"
-    with open(file_path, "wb") as buffer:
-        buffer.write(await file.read())
-
-    processor = VoiceProcessor()
-    transcription = await processor.transcribe_audio(file_path)
-    
-    # Chain to text search
-    engine = TextSearchEngine()
-    search_results = await engine.search_by_description(transcription["text"])
-
-    # Mock AI Analysis for now (since we don't have a chat agent yet)
-    ai_analysis = f"I heard you say '{transcription['text']}'. Based on that, I found {len(search_results)} relevant parts in our inventory."
-
-    return {
-        "text": transcription["text"],
-        "results": search_results,
-        "analysis": ai_analysis
-    }
+async def search_by_voice(file: UploadFile = File(...)):
+    """Search by voice command (transcribe + text search)."""
+    try:
+        # Save temp file
+        file_ext = file.filename.split(".")[-1]
+        temp_filename = f"temp_{uuid.uuid4()}.{file_ext}"
+        temp_path = os.path.join("data/audio", temp_filename)
+        os.makedirs("data/audio", exist_ok=True)
+        
+        with open(temp_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+            
+        # Transcribe
+        transcription = await voice_processor.transcribe_audio(temp_path)
+        text_query = transcription.get("text")
+        
+        if not text_query:
+            return {"transcription": "", "results": []}
+            
+        # Search
+        results = await text_search.search_by_description(text_query)
+        
+        return {
+            "transcription": text_query,
+            "results": results
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

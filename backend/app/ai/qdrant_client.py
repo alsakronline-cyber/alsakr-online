@@ -1,13 +1,10 @@
 from qdrant_client import QdrantClient
 from qdrant_client.http import models
+from app.config import settings
 
 class QdrantManager:
     def __init__(self):
-        import os
-        # Use simple host/port configuration to avoid URL parsing issues
-        host = os.getenv("QDRANT_HOST", "localhost").replace("http://", "").replace("https://", "").split(":")[0]
-        port = 6333
-        self.client = QdrantClient(host=host, port=port)
+        self.client = QdrantClient(host=settings.QDRANT_HOST, port=settings.QDRANT_PORT)
         self.text_collection = "parts_text"
         self.image_collection = "parts_images"
 
@@ -15,7 +12,6 @@ class QdrantManager:
         # Create text collection if not exists
         try:
             self.client.get_collection(self.text_collection)
-            print(f"Collection {self.text_collection} already exists")
         except:
             self.client.create_collection(
                 collection_name=self.text_collection,
@@ -26,7 +22,6 @@ class QdrantManager:
         # Create image collection if not exists
         try:
             self.client.get_collection(self.image_collection)
-            print(f"Collection {self.image_collection} already exists")
         except:
             self.client.create_collection(
                 collection_name=self.image_collection,
@@ -40,7 +35,7 @@ class QdrantManager:
             collection_name=collection,
             points=[
                 models.PointStruct(
-                    id=part_id, # UUID should be supported or hashed to int
+                    id=part_id, 
                     vector=vector,
                     payload=metadata
                 )

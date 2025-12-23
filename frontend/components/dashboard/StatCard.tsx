@@ -1,25 +1,35 @@
-import { LucideIcon } from "lucide-react";
+import React from 'react';
 
 interface StatCardProps {
     title: string;
     value: string | number;
-    icon?: LucideIcon;
+    icon: React.ReactNode;
     trend?: string;
+    trendUp?: boolean;
 }
 
-export function StatCard({ title, value, icon: Icon, trend }: StatCardProps) {
+const StatCard: React.FC<StatCardProps> = ({ title, value, icon, trend, trendUp }) => {
     return (
-        <div className="p-6 rounded-xl bg-gray-800 border border-white/5 shadow-sm">
-            <div className="flex justify-between items-start mb-4">
-                {Icon && (
-                    <div className="p-2 bg-primary/10 rounded-lg text-primary">
-                        <Icon className="w-6 h-6" />
-                    </div>
-                )}
-                {trend && <span className="text-xs text-green-400 flex items-center">{trend}</span>}
+        <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700">
+            <div className="flex justify-between items-start">
+                <div>
+                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{title}</p>
+                    <h3 className="text-2xl font-bold text-slate-900 dark:text-white mt-2">{value}</h3>
+                </div>
+                <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-blue-600 dark:text-blue-400">
+                    {icon}
+                </div>
             </div>
-            <h3 className="text-3xl font-bold mb-1 text-white">{value}</h3>
-            <p className="text-sm text-gray-400">{title}</p>
+            {trend && (
+                <div className="mt-4 flex items-center text-sm">
+                    <span className={trendUp ? "text-green-500" : "text-red-500"}>
+                        {trend}
+                    </span>
+                    <span className="ml-2 text-slate-400">vs last month</span>
+                </div>
+            )}
         </div>
     );
-}
+};
+
+export default StatCard;
