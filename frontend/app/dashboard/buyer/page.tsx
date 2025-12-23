@@ -132,7 +132,12 @@ function BuyerDashboardContent() {
                                         <p className="text-sm text-gray-400 mb-3 line-clamp-2">{part.payload.description_en}</p>
                                         <div className="flex justify-between items-center">
                                             <span className="text-xs bg-white/10 px-2 py-1 rounded text-gray-300">{part.payload.manufacturer || "Generic"}</span>
-                                            <button className="text-primary hover:text-blue-400 text-sm font-medium">View Details →</button>
+                                            <button
+                                                onClick={() => alert(JSON.stringify(part.payload, null, 2))}
+                                                className="text-primary hover:text-blue-400 text-sm font-medium"
+                                            >
+                                                View Details →
+                                            </button>
                                         </div>
                                     </div>
                                 ))

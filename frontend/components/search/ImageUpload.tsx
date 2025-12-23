@@ -101,6 +101,23 @@ export const ImageUpload = () => {
                     </div>
                 </div>
             )}
+
+            {results?.similar_parts?.length > 0 && (
+                <div className="mt-4 animate-in fade-in slide-in-from-bottom-5">
+                    <h3 className="font-semibold text-lg mb-2 text-white">Similar Products Found</h3>
+                    <div className="space-y-2">
+                        {results.similar_parts.map((part: any, idx: number) => (
+                            <div key={idx} className="bg-white/5 p-3 rounded-lg border border-white/10 flex items-center justify-between">
+                                <div>
+                                    <p className="font-medium text-sm text-white">{part.payload.part_number}</p>
+                                    <p className="text-xs text-slate-400">{part.payload.manufacturer}</p>
+                                </div>
+                                <span className="text-xs text-green-400 font-mono">{(part.score * 100).toFixed(0)}%</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
