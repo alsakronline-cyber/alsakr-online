@@ -14,13 +14,26 @@ class SICKScraper(BaseScraper):
         from playwright.async_api import async_playwright
         
         async with async_playwright() as p:
-            browser = await p.chromium.launch(headless=True)
-            page = await browser.new_page()
+            # Launch with specific args to mimic real browser
+            browser = await p.chromium.launch(headless=True, args=['--no-sandbox', '--disable-setuid-sandbox'])
+            
+            # Use a real user agent
+            context = await browser.new_context(
+                user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            )
+            page = await context.new_page()
             
             try:
                 # 1. Navigate and Wait
-                await page.goto(product_url, timeout=30000)
-                await page.wait_for_selector('h1', timeout=15000)
+                # wait_until='networkidle' ensures the SPA has finished most requests
+                await page.goto(product_url, timeout=60000, wait_until='domcontentloaded') 
+                
+                # Check if we are blocked or on a weird page
+                page_title = await page.title()
+                print(f"Page Title: {page_title}")
+
+                # Wait specifically for the product headline
+                await page.wait_for_selector('h1', timeout=30000)
                 
                 # 2. Extract Basic Info
                 # Get Part Number (Type Code from H1)
