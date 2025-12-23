@@ -1,4 +1,5 @@
 from fastapi import APIRouter, UploadFile, File, Form, Depends, HTTPException
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.ai.text_search import TextSearchEngine
@@ -15,13 +16,16 @@ text_search = TextSearchEngine()
 vision_agent = VisionAgent()
 voice_processor = VoiceProcessor()
 
-@router.get("/text")
-async def search_by_text(q: str):
+class SearchQuery(BaseModel):
+    query: str
+
+@router.post("/text")
+async def search_by_text(search: SearchQuery):
     """Semantic search by text query."""
-    if not q:
+    if not search.query:
         return []
-    results = await text_search.search_by_description(q)
-    return results
+    results = await text_search.search_by_description(search.query)
+    return {"results": results}
 
 @router.post("/image")
 async def search_by_image(file: UploadFile = File(...)):

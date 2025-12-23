@@ -14,23 +14,25 @@ class QdrantManager:
     def initialize_collections(self):
         # Create text collection if not exists
         try:
-            self.client.get_collection(self.text_collection)
-        except:
-            self.client.create_collection(
-                collection_name=self.text_collection,
-                vectors_config=models.VectorParams(size=512, distance=models.Distance.COSINE),
-            )
-            print(f"Created collection: {self.text_collection}")
+            if not self.client.collection_exists(self.text_collection):
+                self.client.create_collection(
+                    collection_name=self.text_collection,
+                    vectors_config=models.VectorParams(size=512, distance=models.Distance.COSINE),
+                )
+                print(f"Created collection: {self.text_collection}")
+        except Exception as e:
+            print(f"Error initializing text collection: {e}")
         
         # Create image collection if not exists
         try:
-            self.client.get_collection(self.image_collection)
-        except:
-            self.client.create_collection(
-                collection_name=self.image_collection,
-                vectors_config=models.VectorParams(size=512, distance=models.Distance.COSINE),
-            )
-            print(f"Created collection: {self.image_collection}")
+            if not self.client.collection_exists(self.image_collection):
+                self.client.create_collection(
+                    collection_name=self.image_collection,
+                    vectors_config=models.VectorParams(size=512, distance=models.Distance.COSINE),
+                )
+                print(f"Created collection: {self.image_collection}")
+        except Exception as e:
+            print(f"Error initializing image collection: {e}")
 
     def upsert_part_embedding(self, part_id: str, vector: list, metadata: dict, collection_type: str = "text"):
         collection = self.text_collection if collection_type == "text" else self.image_collection
