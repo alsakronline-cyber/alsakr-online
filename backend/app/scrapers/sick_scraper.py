@@ -113,7 +113,10 @@ class SICKScraper(BaseScraper):
                 }
 
             except Exception as e:
-                print(f"[{self.brand_name}] Error: {e}")
+                import traceback
+                print(f"[{self.brand_name}] Scraper Error: {str(e)}")
+                traceback.print_exc()
                 return None
             finally:
-                await browser.close()
+                if 'browser' in locals():
+                    await browser.close()
