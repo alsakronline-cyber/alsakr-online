@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Upload, X, Search, Loader2 } from 'lucide-react';
 
-const ImageUpload = () => {
+export const ImageUpload = () => {
     const [preview, setPreview] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [results, setResults] = useState<any>(null);
@@ -103,5 +103,3 @@ const ImageUpload = () => {
         </div>
     );
 };
-
-export default ImageUpload;
