@@ -11,13 +11,7 @@ class ScrapeRequest(BaseModel):
     brand: str
     url: str
 
-@router.post("/scrape-url")
-async def scrape_url(request: ScrapeRequest, db: Session = Depends(get_db)):
-    manager = ScraperManager(db)
-    scraper = manager.get_scraper(request.brand)
-    if not scraper:
-        raise HTTPException(status_code=404, detail=f"Scraper for {request.brand} not found")
-    
+
 @router.post("/scrape-url")
 async def scrape_url(request: ScrapeRequest, db: Session = Depends(get_db)):
     manager = ScraperManager(db)
