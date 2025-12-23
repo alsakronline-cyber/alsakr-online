@@ -7,6 +7,7 @@ export function ImageUpload() {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [results, setResults] = useState<any>(null);
+    const [analysis, setAnalysis] = useState<string>("");
 
     const handleUpload = async (file: File) => {
         setUploading(true);
@@ -24,6 +25,7 @@ export function ImageUpload() {
 
             const data = await response.json();
             setResults(data.results || []);
+            setAnalysis(data.analysis || "");
         } catch (error) {
             console.error('Upload failed:', error);
             // Fallback for demo if API is unreachable
@@ -56,14 +58,23 @@ export function ImageUpload() {
             {uploading && <p className="mt-4 text-primary animate-pulse">Analyzing image...</p>}
 
             {results && results.length > 0 ? (
-                <div className="mt-6 text-left bg-gray-900/50 p-4 rounded-lg space-y-2">
-                    <p className="text-green-400 font-medium mb-2">Analysis Complete!</p>
-                    {results.map((result: any, idx: number) => (
-                        <div key={idx} className="flex gap-2 items-center text-sm text-gray-300">
-                            <span className="font-mono bg-white/10 px-1 rounded">{(result.score * 100).toFixed(0)}%</span>
-                            <span>{result.name || result.payload?.name || "Unknown Part"}</span>
-                        </div>
-                    ))}
+                <div className="mt-6 text-left bg-gray-900/50 p-4 rounded-lg space-y-4">
+                    <div className="border-b border-white/10 pb-2 mb-2">
+                        <p className="text-blue-400 font-semibold mb-1">🤖 AI Analysis</p>
+                        <p className="text-gray-300 text-sm leading-relaxed">
+                            {analysis || "Analyzing image features..."}
+                        </p>
+                    </div>
+
+                    <div>
+                        <p className="text-green-400 font-medium mb-2">Found Parts:</p>
+                        {results.map((result: any, idx: number) => (
+                            <div key={idx} className="flex gap-2 items-center text-sm text-gray-300 bg-black/20 p-2 rounded">
+                                <span className="font-mono bg-primary/20 text-primary px-2 py-0.5 rounded text-xs">{(result.score * 100).toFixed(0)}% Match</span>
+                                <span className="font-medium text-white">{result.name || result.payload?.name || "Unknown Part"}</span>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             ) : results && (
                 <p className="mt-4 text-gray-400">No matching parts found.</p>

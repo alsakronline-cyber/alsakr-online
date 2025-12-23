@@ -49,8 +49,15 @@ async def search_voice(file: UploadFile = File(...)):
     processor = VoiceProcessor()
     transcription = await processor.transcribe_audio(file_path)
     
-    # Ideally, chain this to text search
-    # engine = TextSearchEngine()
-    # results = await engine.search_by_description(transcription["text"])
-    
-    return transcription
+    # Chain to text search
+    engine = TextSearchEngine()
+    search_results = await engine.search_by_description(transcription["text"])
+
+    # Mock AI Analysis for now (since we don't have a chat agent yet)
+    ai_analysis = f"I heard you say '{transcription['text']}'. Based on that, I found {len(search_results)} relevant parts in our inventory."
+
+    return {
+        "text": transcription["text"],
+        "results": search_results,
+        "analysis": ai_analysis
+    }
