@@ -1,10 +1,10 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { ImageUpload } from '@/components/search/ImageUpload';
 import { VoiceSearch } from '@/components/search/VoiceSearch';
 
-export default function BuyerDashboard() {
+function BuyerDashboardContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
 
@@ -144,5 +144,13 @@ export default function BuyerDashboard() {
                 </div>
             </div>
         </div>
+    )
+}
+
+export default function BuyerDashboard() {
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-slate-950 text-white p-8 flex items-center justify-center">Loading search...</div>}>
+            <BuyerDashboardContent />
+        </Suspense>
     )
 }
