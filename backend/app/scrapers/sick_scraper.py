@@ -207,4 +207,3 @@ class SICKScraper(BaseScraper):
             finally:
                 if 'browser' in locals():
                     await browser.close()
-```
