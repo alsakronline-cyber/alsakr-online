@@ -13,6 +13,7 @@ aiohttp==3.9.3
 sentence-transformers==2.3.1
 torch==2.2.0
 pillow==9.5.0
+pillow-avif-plugin
 openai-whisper
 python-decouple==3.8
 transformers==4.36.2

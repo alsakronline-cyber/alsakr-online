@@ -1,13 +1,22 @@
 'use client';
 import Link from "next/link"
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { LucideCamera, LucideMic, LucideSearch, LucidePackage, LucideZap, LucideDatabase, LucideArrowRight } from "lucide-react"
 import { ImageUpload } from "@/components/search/ImageUpload"
 import { VoiceSearch } from "@/components/search/VoiceSearch"
 
 export default function LandingPage() {
+    const router = useRouter();
+    const [searchQuery, setSearchQuery] = useState("");
     const [showImageSearch, setShowImageSearch] = useState(false);
     const [showVoiceSearch, setShowVoiceSearch] = useState(false);
+
+    const handleSearch = () => {
+        if (searchQuery.trim()) {
+            router.push(`/dashboard/buyer?q=${encodeURIComponent(searchQuery)}`)
+        }
+    }
 
     return (
         <div className="flex flex-col min-h-screen bg-slate-950 font-sans">
@@ -76,6 +85,9 @@ export default function LandingPage() {
                                 </div>
                                 <input
                                     type="text"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                                     placeholder="Search by part number, description, or upload image..."
                                     className="flex-1 bg-transparent border-none text-white placeholder:text-gray-500 focus:ring-0 text-lg px-4 h-12"
                                 />
@@ -94,9 +106,12 @@ export default function LandingPage() {
                                     >
                                         <LucideMic className="w-5 h-5" />
                                     </button>
-                                    <Link href="/dashboard/buyer" className="bg-primary hover:bg-blue-600 text-white p-3 rounded-lg transition-colors">
+                                    <button
+                                        onClick={handleSearch}
+                                        className="bg-primary hover:bg-blue-600 text-white p-3 rounded-lg transition-colors"
+                                    >
                                         <LucideArrowRight className="w-5 h-5" />
-                                    </Link>
+                                    </button>
                                 </div>
                             </div>
                         </div>
