@@ -33,31 +33,62 @@ class SICKScraper(BaseScraper):
                 part_number = "Unknown"
                 description = "Unknown"
                 
-                # Strategy A: Meta Tags (Most reliable)
-                og_title = None
-                og_title_el = await page.query_selector('meta[property="og:title"]')
-                if og_title_el:
-                    og_title = await og_title_el.get_attribute('content')
+                # Strategy A: Precise Selectors (User Provided)
+                try:
+                    # Part Number from ui-product-part-number
+                    part_num_el = await page.query_selector('ui-product-part-number .font-bold')
+                    if part_num_el:
+                        part_number = await part_num_el.inner_text()
+                        part_number = part_number.strip()
+                    
+                    # Description from Headline & Breadcrumbs
+                    headline_cat = ""
+                    headline_title = ""
+                    
+                    cat_el = await page.query_selector('ui-headline .category')
+                    if cat_el:
+                        headline_cat = await cat_el.inner_text()
+                        
+                    title_el = await page.query_selector('ui-headline .title')
+                    if title_el:
+                        headline_title = await title_el.inner_text()
+                        
+                    if headline_title:
+                        description = headline_title
+                        if headline_cat:
+                            description = f"{headline_cat}: {headline_title}" # e.g. "Laser distance sensors: WTT12L-B2532"
+                    
+                    # Breadcrumbs for fallback or extra metadata
+                    if description == "Unknown":
+                        breadcrumb_texts = []
+                        breadcrumbs = await page.query_selector_all('syn-breadcrumb-item .breadcrumb-item__label')
+                        for bc in breadcrumbs:
+                            txt = await bc.inner_text()
+                            if txt and txt.strip() != "Home":
+                                breadcrumb_texts.append(txt.strip())
+                        
+                        if breadcrumb_texts:
+                            description = " - ".join(breadcrumb_texts)
 
-                if og_title:
-                    description = og_title
-                    # Attempt to extract part number if it looks like "Part - Description"
-                    if " | " in og_title:
-                        part_number = og_title.split(" | ")[0]
-                    elif " - " in og_title:
-                        part_number = og_title.split(" - ")[0]
-                
-                # Strategy B: H1 Fallback
-                if description == "Unknown":
-                    h1_handle = await page.query_selector('h1')
-                    if h1_handle:
-                        description = await h1_handle.inner_text()
-                        part_number = description.split(" ")[0] # Guess first word is Model
+                except Exception as e:
+                    print(f"[{self.brand_name}] Selector Error: {e}")
 
-                # Strategy C: URL Analysis
+                # Strategy B: Meta Tags (Fallback)
+                if part_number == "Unknown" or description == "Unknown":
+                    og_title_el = await page.query_selector('meta[property="og:title"]')
+                    if og_title_el:
+                        og_title = await og_title_el.get_attribute('content')
+                        if og_title:
+                            if description == "Unknown":
+                                description = og_title
+                            if part_number == "Unknown":
+                                if " | " in og_title:
+                                    part_number = og_title.split(" | ")[0]
+                                elif " - " in og_title:
+                                    part_number = og_title.split(" - ")[0]
+
+                # Strategy C: URL Analysis (Last Resort)
                 if part_number == "Unknown" or len(part_number) > 20: 
-                    # If part number is still likely a full title, try to find a specific product ID
-                    # Typical SICK URL: .../p/p670003 -> Part Number could be 670003 or WTT10L-B2532
                     import re
                     match = re.search(r'/([^/]+)/p/p\d+', product_url)
                     if match:
