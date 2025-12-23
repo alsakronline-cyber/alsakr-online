@@ -85,14 +85,61 @@ export default function AdminDashboard() {
                     </div>
 
                     {/* Scraped Data Preview */}
-                    <div className="p-6 bg-gray-900 rounded-xl border border-white/10 shadow-xl max-h-[500px] overflow-auto">
+                    <div className="p-6 bg-gray-900 rounded-xl border border-white/10 shadow-xl max-h-[600px] overflow-auto col-span-1 md:col-span-2 lg:col-span-1">
                         <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-                            <span className="text-green-400">📄</span> Scraped Data Preview
+                            <span className="text-green-400">📄</span> Scraped Result
                         </h3>
                         {scrapedData ? (
-                            <pre className="text-xs font-mono text-gray-300 bg-black/40 p-4 rounded-lg overflow-x-auto whitespace-pre-wrap">
-                                {JSON.stringify(scrapedData, null, 2)}
-                            </pre>
+                            <div className="space-y-4">
+                                {/* Basic Info Card */}
+                                <div className="bg-black/40 p-4 rounded-lg border border-white/5">
+                                    <div className="flex gap-4">
+                                        {scrapedData.image_url ? (
+                                            <img
+                                                src={scrapedData.image_url}
+                                                alt="Product"
+                                                className="w-24 h-24 object-contain bg-white rounded-md p-1"
+                                            />
+                                        ) : (
+                                            <div className="w-24 h-24 bg-gray-800 rounded-md flex items-center justify-center text-xs text-gray-500">No Image</div>
+                                        )}
+                                        <div>
+                                            <h4 className="font-bold text-lg text-white">{scrapedData.part_number}</h4>
+                                            <p className="text-sm text-gray-400">{scrapedData.manufacturer}</p>
+                                            <a href={scrapedData.source_url} target="_blank" className="text-xs text-blue-400 hover:underline mt-1 block">View Source</a>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Technical Specs Table */}
+                                {scrapedData.technical_specs && Object.keys(scrapedData.technical_specs).length > 0 && (
+                                    <div className="bg-black/40 rounded-lg border border-white/5 overflow-hidden">
+                                        <div className="px-4 py-2 bg-white/5 border-b border-white/5 font-semibold text-sm">
+                                            Technical Specifications
+                                        </div>
+                                        <div className="max-h-60 overflow-y-auto">
+                                            <table className="w-full text-sm">
+                                                <tbody>
+                                                    {Object.entries(scrapedData.technical_specs).map(([key, value]: [string, any], idx) => (
+                                                        <tr key={idx} className="border-b border-white/5 hover:bg-white/5">
+                                                            <td className="px-4 py-2 text-gray-400 w-1/3">{key}</td>
+                                                            <td className="px-4 py-2 text-white">{String(value)}</td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Raw JSON Toggle (Optional) */}
+                                <details className="text-xs">
+                                    <summary className="cursor-pointer text-gray-500 hover:text-white mb-2">View Raw JSON</summary>
+                                    <pre className="font-mono text-gray-400 bg-black/60 p-2 rounded overflow-x-auto">
+                                        {JSON.stringify(scrapedData, null, 2)}
+                                    </pre>
+                                </details>
+                            </div>
                         ) : (
                             <div className="h-40 flex items-center justify-center text-gray-500 italic">
                                 No data scraped yet...
