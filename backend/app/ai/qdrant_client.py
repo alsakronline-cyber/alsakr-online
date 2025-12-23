@@ -13,7 +13,10 @@ class QdrantManager:
 
     def initialize_collections(self):
         # Create text collection if not exists
-        if not self.client.collection_exists(self.text_collection):
+        try:
+            self.client.get_collection(self.text_collection)
+            print(f"Collection {self.text_collection} already exists")
+        except:
             self.client.create_collection(
                 collection_name=self.text_collection,
                 vectors_config=models.VectorParams(size=512, distance=models.Distance.COSINE),
@@ -21,7 +24,10 @@ class QdrantManager:
             print(f"Created collection: {self.text_collection}")
         
         # Create image collection if not exists
-        if not self.client.collection_exists(self.image_collection):
+        try:
+            self.client.get_collection(self.image_collection)
+            print(f"Collection {self.image_collection} already exists")
+        except:
             self.client.create_collection(
                 collection_name=self.image_collection,
                 vectors_config=models.VectorParams(size=512, distance=models.Distance.COSINE),
