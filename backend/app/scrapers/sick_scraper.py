@@ -34,7 +34,11 @@ class SICKScraper(BaseScraper):
                 description = "Unknown"
                 
                 # Strategy A: Meta Tags (Most reliable)
-                og_title = await page.get_attribute('meta[property="og:title"]', 'content')
+                og_title = None
+                og_title_el = await page.query_selector('meta[property="og:title"]')
+                if og_title_el:
+                    og_title = await og_title_el.get_attribute('content')
+
                 if og_title:
                     description = og_title
                     # Attempt to extract part number if it looks like "Part - Description"
@@ -62,9 +66,9 @@ class SICKScraper(BaseScraper):
                 # 2. Image
                 image_url = None
                 # Strategy A: Meta Tag
-                og_image = await page.get_attribute('meta[property="og:image"]', 'content')
-                if og_image:
-                     image_url = og_image
+                og_image_el = await page.query_selector('meta[property="og:image"]')
+                if og_image_el:
+                    image_url = await og_image_el.get_attribute('content')
                 
                 # Strategy B: Common Image Selectors
                 if not image_url:
