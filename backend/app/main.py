@@ -34,5 +34,15 @@ app.include_router(admin.router)
 def health_check():
     return {"status": "healthy", "version": "1.0.0"}
 
+@app.on_event("startup")
+async def startup_event():
+    from app.ai.qdrant_client import QdrantManager
+    try:
+        qdrant = QdrantManager()
+        qdrant.initialize_collections()
+        print("✅ Qdrant collections initialized.")
+    except Exception as e:
+        print(f"⚠️ Failed to initialize Qdrant: {e}")
+
 if __name__ == "__main__":
     uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
