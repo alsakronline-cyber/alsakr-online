@@ -20,6 +20,7 @@ export default function RegisterPage() {
         companyName: "",
         email: "",
         password: "",
+        role: "buyer" as "buyer" | "vendor" | "both",
     })
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -28,7 +29,7 @@ export default function RegisterPage() {
         setError("")
 
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "https://api.app.alsakronline.com"}/api/auth/register?email=${encodeURIComponent(formData.email)}&password=${encodeURIComponent(formData.password)}&full_name=${encodeURIComponent(formData.fullName)}&company_name=${encodeURIComponent(formData.companyName)}`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "https://api.app.alsakronline.com"}/api/auth/register?email=${encodeURIComponent(formData.email)}&password=${encodeURIComponent(formData.password)}&role=${encodeURIComponent(formData.role)}&full_name=${encodeURIComponent(formData.fullName)}&company_name=${encodeURIComponent(formData.companyName)}`, {
                 method: "POST",
             })
 
@@ -90,6 +91,46 @@ export default function RegisterPage() {
                         </CardHeader>
                         <CardContent>
                             <form onSubmit={handleSubmit} className="space-y-4">
+                                {/* Role Selection */}
+                                <div className="space-y-2">
+                                    <Label>I want to:</Label>
+                                    <div className="grid grid-cols-3 gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => setFormData({ ...formData, role: "buyer" })}
+                                            className={`p-3 rounded-lg border-2 transition-all ${formData.role === "buyer"
+                                                    ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20"
+                                                    : "border-zinc-200 dark:border-zinc-800 hover:border-indigo-300"
+                                                }`}
+                                        >
+                                            <div className="text-sm font-medium">Buy</div>
+                                            <div className="text-xs text-zinc-500">Parts & Equipment</div>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setFormData({ ...formData, role: "vendor" })}
+                                            className={`p-3 rounded-lg border-2 transition-all ${formData.role === "vendor"
+                                                    ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20"
+                                                    : "border-zinc-200 dark:border-zinc-800 hover:border-indigo-300"
+                                                }`}
+                                        >
+                                            <div className="text-sm font-medium">Sell</div>
+                                            <div className="text-xs text-zinc-500">Supply Products</div>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setFormData({ ...formData, role: "both" })}
+                                            className={`p-3 rounded-lg border-2 transition-all ${formData.role === "both"
+                                                    ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20"
+                                                    : "border-zinc-200 dark:border-zinc-800 hover:border-indigo-300"
+                                                }`}
+                                        >
+                                            <div className="text-sm font-medium">Both</div>
+                                            <div className="text-xs text-zinc-500">Buy & Sell</div>
+                                        </button>
+                                    </div>
+                                </div>
+
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
                                         <Label htmlFor="fullName">Full Name</Label>

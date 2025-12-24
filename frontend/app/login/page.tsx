@@ -43,7 +43,14 @@ export default function LoginPage() {
             }
 
             const data = await res.json()
+
+            // Store authentication data
             localStorage.setItem("token", data.access_token)
+            localStorage.setItem("userRole", data.role || "buyer")
+            localStorage.setItem("userId", data.user_id)
+            localStorage.setItem("userEmail", data.email)
+            localStorage.setItem("userName", data.full_name || "")
+
             router.push("/dashboard")
         } catch (err) {
             setError("Invalid email or password. Please try again.")

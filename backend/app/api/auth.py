@@ -32,13 +32,18 @@ async def login(
     )
     return {
         "access_token": access_token,
-        "token_type": "bearer"
+        "token_type": "bearer",
+        "role": user.role,
+        "user_id": user.id,
+        "email": user.email,
+        "full_name": user.full_name
     }
 
 @router.post("/register")
 async def register(
     email: str,
     password: str,
+    role: str = "buyer",  # buyer, vendor, both
     full_name: str = None,
     company_name: str = None,
     db: Session = Depends(get_db)
@@ -53,9 +58,14 @@ async def register(
             detail="The user with this email already exists in the system.",
         )
     
+    # Validate role
+    if role not in ["buyer", "vendor", "both"]:
+        raise HTTPException(status_code=400, detail="Invalid role. Must be buyer, vendor, or both")
+    
     user = User(
         email=email,
         password_hash=get_password_hash(password),
+        role=role,
         full_name=full_name,
         company_name=company_name
     )
