@@ -20,6 +20,7 @@ from app.scraper.scraper_engine import ScraperEngine
 from app.scraper.data_pipeline import validate_and_save_products
 import logging
 from pathlib import Path
+from typing import List
 
 logger = logging.getLogger(__name__)
 
