@@ -1,6 +1,6 @@
 'use client';
 import Link from "next/link"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { LucideCamera, LucideMic, LucideSearch, LucidePackage, LucideZap, LucideDatabase, LucideArrowRight } from "lucide-react"
 import { ImageUpload } from "@/components/search/ImageUpload"
@@ -11,6 +11,17 @@ export default function LandingPage() {
     const [searchQuery, setSearchQuery] = useState("");
     const [showImageSearch, setShowImageSearch] = useState(false);
     const [showVoiceSearch, setShowVoiceSearch] = useState(false);
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [userName, setUserName] = useState("");
+
+    useEffect(() => {
+        const userId = localStorage.getItem('userId');
+        const name = localStorage.getItem('userName');
+        if (userId) {
+            setIsLoggedIn(true);
+            setUserName(name || "User");
+        }
+    }, []);
 
     const handleSearch = () => {
         if (searchQuery.trim()) {
@@ -44,12 +55,26 @@ export default function LandingPage() {
                         </Link>
                     </nav>
                     <div className="flex items-center gap-4">
-                        <Link
-                            className="hidden sm:inline-flex h-9 items-center justify-center rounded-md border border-white/20 bg-white/5 px-4 text-sm font-medium text-white transition-colors hover:bg-white/10"
-                            href="/login"
-                        >
-                            Log In
-                        </Link>
+                        {isLoggedIn ? (
+                            <div className="flex items-center gap-4">
+                                <span className="text-sm font-medium text-gray-300 hidden lg:inline-block">
+                                    Welcome, {userName}
+                                </span>
+                                <Link
+                                    className="h-9 inline-flex items-center justify-center rounded-md border border-white/20 bg-white/5 px-4 text-sm font-medium text-white transition-colors hover:bg-white/10"
+                                    href="/dashboard"
+                                >
+                                    Dashboard
+                                </Link>
+                            </div>
+                        ) : (
+                            <Link
+                                className="hidden sm:inline-flex h-9 items-center justify-center rounded-md border border-white/20 bg-white/5 px-4 text-sm font-medium text-white transition-colors hover:bg-white/10"
+                                href="/login"
+                            >
+                                Log In
+                            </Link>
+                        )}
                         <Link
                             className="inline-flex h-10 items-center justify-center rounded-md bg-gradient-to-r from-secondary to-orange-600 px-6 text-sm font-bold text-white shadow-lg shadow-orange-500/20 transition-all hover:scale-105"
                             href="/dashboard/buyer"
