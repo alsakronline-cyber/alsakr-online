@@ -38,22 +38,7 @@ fi
 echo "✅ docker compose found"
 
 echo ""
-echo "Step 2/4: Running Database Migrations..."
-echo "--------------------------------------------"
-
-# Run migrations inside the backend container
-echo "Checking if backend container is running..."
-if docker ps -q -f name=alsakr-backend &> /dev/null; then
-    echo "Running migrations in backend container..."
-    docker exec -w /app alsakr-backend alembic revision --autogenerate -m "Add scraper tables" 2>/dev/null || echo "Migration already exists or error (continuing...)"
-    docker exec -w /app alsakr-backend alembic upgrade head
-    echo "✅ Migrations complete"
-else
-    echo "⚠️  Backend container not running. Migrations will run after rebuild."
-fi
-
-echo ""
-echo "Step 3/4: Rebuilding Docker Services..."
+echo "Step 2/4: Rebuilding Docker Services..."
 echo "--------------------------------------------"
 
 cd infrastructure
@@ -66,7 +51,7 @@ echo "Rebuilding ARQ worker service..."
 docker compose build arq-worker
 
 echo ""
-echo "Step 4/4: Restarting Services..."
+echo "Step 3/4: Restarting Services..."
 echo "--------------------------------------------"
 
 # Stop old services
@@ -81,9 +66,13 @@ docker compose up -d backend arq-worker
 echo "Waiting for services to start..."
 sleep 5
 
-# Run migrations if we couldn't earlier
-echo "Running post-start migrations..."
-docker exec -w /app alsakr-backend alembic revision --autogenerate -m "Add scraper tables" 2>/dev/null || echo "Migration already exists (continuing...)"
+echo ""
+echo "Step 4/4: Running Database Migrations..."
+echo "--------------------------------------------"
+
+# Run migrations NOW that containers are rebuilt with new code
+echo "Running migrations in updated backend container..."
+docker exec -w /app alsakr-backend alembic revision --autogenerate -m "Add scraper tables" 2>/dev/null || echo "⚠️  Migration may already exist"
 docker exec -w /app alsakr-backend alembic upgrade head
 echo "✅ Migrations applied"
 
