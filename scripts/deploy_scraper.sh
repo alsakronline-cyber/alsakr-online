@@ -27,12 +27,12 @@ if ! docker info > /dev/null 2>&1; then
 fi
 echo "✅ Docker is running"
 
-# Check if docker-compose exists
-if ! command -v docker-compose &> /dev/null; then
-    echo "❌ docker-compose not found. Please install docker-compose."
+# Check if docker compose exists (V2)
+if ! docker compose version &> /dev/null; then
+    echo "❌ docker compose not found. Please install Docker Compose V2."
     exit 1
 fi
-echo "✅ docker-compose found"
+echo "✅ docker compose found"
 
 echo ""
 echo "Step 2/5: Installing Python Dependencies..."
@@ -55,10 +55,10 @@ cd infrastructure
 
 # Rebuild backend and ARQ worker
 echo "Rebuilding backend service..."
-docker-compose build backend
+docker compose build backend
 
 echo "Rebuilding ARQ worker service..."
-docker-compose build arq-worker
+docker compose build arq-worker
 
 echo ""
 echo "Step 5/5: Restarting Services..."
@@ -66,10 +66,10 @@ echo "--------------------------------------------"
 
 # Restart services to pick up changes
 echo "Stopping old services..."
-docker-compose stop backend arq-worker
+docker compose stop backend arq-worker
 
 echo "Starting updated services..."
-docker-compose up -d backend arq-worker
+docker compose up -d backend arq-worker
 
 echo ""
 echo "=============================================="
@@ -77,7 +77,7 @@ echo "   ✅ Scraper Deployment Complete!"
 echo "=============================================="
 echo ""
 echo "Service Status:"
-docker-compose ps | grep -E "backend|arq-worker"
+docker compose ps | grep -E "backend|arq-worker"
 
 echo ""
 echo "Next Steps:"
@@ -89,7 +89,7 @@ echo "2. Check job status:"
 echo "   curl http://localhost:8000/api/scraper/jobs"
 echo ""
 echo "3. View ARQ worker logs:"
-echo "   docker-compose logs -f arq-worker"
+echo "   docker compose logs -f arq-worker"
 echo ""
 echo "4. Monitor scraper statistics:"
 echo "   curl http://localhost:8000/api/scraper/stats"
