@@ -45,8 +45,8 @@ echo "--------------------------------------------"
 echo "Checking if backend container is running..."
 if docker ps -q -f name=alsakr-backend &> /dev/null; then
     echo "Running migrations in backend container..."
-    docker exec -it alsakr-backend alembic revision --autogenerate -m "Add scraper tables" || true
-    docker exec -it alsakr-backend alembic upgrade head
+    docker exec -w /app alsakr-backend alembic revision --autogenerate -m "Add scraper tables" 2>/dev/null || echo "Migration already exists or error (continuing...)"
+    docker exec -w /app alsakr-backend alembic upgrade head
     echo "✅ Migrations complete"
 else
     echo "⚠️  Backend container not running. Migrations will run after rebuild."
@@ -82,11 +82,10 @@ echo "Waiting for services to start..."
 sleep 5
 
 # Run migrations if we couldn't earlier
-if ! docker ps -q -f name=alsakr-backend &> /dev/null; then
-    echo "Running post-start migrations..."
-    docker exec -it alsakr-backend alembic revision --autogenerate -m "Add scraper tables" || true
-    docker exec -it alsakr-backend alembic upgrade head
-fi
+echo "Running post-start migrations..."
+docker exec -w /app alsakr-backend alembic revision --autogenerate -m "Add scraper tables" 2>/dev/null || echo "Migration already exists (continuing...)"
+docker exec -w /app alsakr-backend alembic upgrade head
+echo "✅ Migrations applied"
 
 echo ""
 echo "=============================================="
