@@ -11,10 +11,10 @@ from app.models.user import User
 router = APIRouter()
 
 class RFQCreate(BaseModel):
-    title: str
-    description: str
-    part_description: str
-    quantity: int
+    title: str = "New RFQ"
+    description: Optional[str] = ""
+    part_description: Optional[str] = ""
+    quantity: int = 1
     buyer_id: str
     target_price: Optional[float] = None
     requirements: Optional[str] = None
@@ -25,6 +25,7 @@ async def create_rfq(
     db: Session = Depends(get_db)
 ):
     """Create a new RFQ"""
+    print(f"DEBUG: Received RFQ data: {rfq_data.model_dump()}")
     rfq = RFQ(
         buyer_id=rfq_data.buyer_id,
         title=rfq_data.title,
