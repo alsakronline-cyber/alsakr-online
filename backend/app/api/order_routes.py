@@ -4,7 +4,7 @@ from typing import Optional
 
 from app.database import get_db
 from app.models.order import Order
-from app.models.quote_model import Quote
+from app.models.quote import Quote
 
 router = APIRouter()
 

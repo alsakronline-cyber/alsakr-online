@@ -4,7 +4,7 @@ from typing import Optional
 from datetime import datetime
 
 from app.database import get_db
-from app.models.quote_model import Quote
+from app.models.quote import Quote
 from app.models.rfq import RFQ
 
 router = APIRouter()
