@@ -1,9 +1,7 @@
-"""
-Scraper configuration for vendor websites
-
-File: app/scraper/scraper_config.yaml
-Contains configurations for all vendor scrapers
-"""
+# Scraper configuration for vendor websites
+#
+# File: app/scraper/scraper_config.yaml
+# Contains configurations for all vendor scrapers
 
 scrapers:
   - id: "sick-ag-products"
