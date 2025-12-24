@@ -21,6 +21,7 @@ class Quote(Base):
     shipping_cost = Column(Float, default=0.0)
     
     is_winner = Column(Boolean, default=False)
+    notes = Column(String, nullable=True) # Vendor comments
     raw_email_content = Column(String, nullable=True) # For debug/audit
     
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
