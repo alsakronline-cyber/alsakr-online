@@ -204,7 +204,7 @@ def get_cron_jobs() -> List:
                             run_at_startup=False,
                             unique=True,
                             timeout=3600,
-                            kwargs={'scraper_id': scraper['id']}
+                            args=(scraper['id'],)  # Pass scraper_id as positional arg
                         )
                     )
                     
