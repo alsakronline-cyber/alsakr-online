@@ -1,0 +1,57 @@
+"""
+Scraper configuration for vendor websites
+
+File: app/scraper/scraper_config.yaml
+Contains configurations for all vendor scrapers
+"""
+
+scrapers:
+  - id: "sick-ag-products"
+    vendor_name: "SICK AG"
+    base_url: "https://www.sick.com"
+    start_urls:
+      - "https://www.sick.com/us/en/catalog/products/c/p"
+    scraping_method: "playwright"  # JavaScript-heavy site requires browser automation
+    schedule: "0 2 * * *"  # Daily at 2 AM UTC
+    
+    limits:
+      max_pages: 50
+      page_timeout_ms: 30000
+      job_timeout_ms: 3600000  # 1 hour max
+    
+    selectors:
+      product_card: ".product-card"
+      product_name: "h1.headline .title"
+      part_number: "span.part-no"
+      category: "span.category"
+      image: "img.product-image"
+      specs_table: ".specifications table"
+      pdf_link: "a[href$='.pdf']"
+    
+    pagination:
+      next_button: "a.next-page"
+      max_pages: 50
+    
+    child_pages:
+      enabled: true
+      url_selector: "a.product-link"
+      detail_selectors:
+        technical_specs: ".tech-specs"
+        applications: ".applications"
+
+# Future vendors (Phase 3)
+# Uncomment and configure when ready to add more vendors
+#
+#  - id: "schneider-electric"
+#    vendor_name: "Schneider Electric"
+#    base_url: "https://www.se.com"
+#    schedule: "15 2 * * *"  # Stagger: 2:15 AM
+#    scraping_method: "http"  # If static HTML
+#    # ... selectors ...
+#
+#  - id: "siemens-products"
+#    vendor_name: "Siemens"
+#    base_url: "https://mall.industry.siemens.com"
+#    schedule: "30 2 * * *"  # Stagger: 2:30 AM
+#    scraping_method: "playwright"
+#    # ... selectors ...

@@ -9,7 +9,7 @@ import uvicorn
 from contextlib import asynccontextmanager
 
 # Initialize Database Tables
-from app.models import vendor, inquiry, quote, user, rfq, order, product, part, search, notification
+from app.models import vendor, inquiry, quote, user, rfq, order, product, part, search, notification, scraper
 Base.metadata.create_all(bind=engine)
 
 @asynccontextmanager
@@ -71,12 +71,13 @@ async def add_language_header(request: Request, call_next):
 def health_check():
     return {"status": "healthy", "version": "1.0.0", "database": "connected"}
 
-from app.api import search_routes, scraper_routes, auth, rfq_routes, quote_api, order_routes, catalog_routes, dashboard_routes, contact, notification_routes, upload_routes, user_routes, admin_routes
+from app.api import search_routes, auth, rfq_routes, quote_api, order_routes, catalog_routes, dashboard_routes, contact, notification_routes, upload_routes, user_routes, admin_routes
+from app.api.routes import scraper
 
 # Register Routers
 app.include_router(auth.router, prefix="/api/auth", tags=["Auth"])
 app.include_router(search_routes.router, prefix="/api/search", tags=["Search"])
-app.include_router(scraper_routes.router, prefix="/api/scrape", tags=["Scrapers"])
+app.include_router(scraper.router, tags=["Scraper"])
 app.include_router(rfq_routes.router, prefix="/api", tags=["RFQs"])
 app.include_router(quote_api.router, prefix="/api", tags=["Quotes"])
 app.include_router(order_routes.router, prefix="/api", tags=["Orders"])
