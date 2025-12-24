@@ -20,5 +20,11 @@ class Settings(BaseSettings):
     
     # AI / Ollama
     OLLAMA_HOST: str = config("OLLAMA_HOST", default="http://localhost:11434")
+    
+    # SMTP Email Settings
+    SMTP_HOST: str = config("SMTP_HOST", default="smtp.hostinger.com")
+    SMTP_PORT: int = config("SMTP_PORT", default=465, cast=int)
+    SMTP_USER: str = config("SMTP_USER", default="admin@alsakronline.com")
+    SMTP_PASS: str = config("SMTP_PASS", default="")
 
 settings = Settings()
