@@ -14,8 +14,8 @@ from arq.connections import RedisSettings, ArqRedis
 import yaml
 from datetime import datetime
 from sqlalchemy.orm import Session
-from app.db.database import get_db
-from app.db.models import ScraperJob
+from app.database import get_db
+from app.models.scraper import ScraperJob
 from app.scraper.scraper_engine import ScraperEngine
 from app.scraper.data_pipeline import validate_and_save_products
 import logging

@@ -86,7 +86,7 @@ async def validate_and_save_products(
     Returns:
         Dictionary with counts: {'saved': int, 'rejected': int, 'rejected_records': [...]}
     """
-    from app.db.models import ScrapedProduct
+    from app.models.scraper import ScrapedProduct
     
     saved_count = 0
     updated_count = 0
