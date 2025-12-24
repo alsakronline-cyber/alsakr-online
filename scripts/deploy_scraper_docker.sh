@@ -67,14 +67,14 @@ echo "Waiting for services to start..."
 sleep 5
 
 echo ""
-echo "Step 4/4: Running Database Migrations..."
+echo "Step 4/4: Creating Scraper Database Tables..."
 echo "--------------------------------------------"
 
-# Run migrations NOW that containers are rebuilt with new code
-echo "Running migrations in updated backend container..."
-docker exec -w /app alsakr-backend alembic revision --autogenerate -m "Add scraper tables" 2>/dev/null || echo "⚠️  Migration may already exist"
-docker exec -w /app alsakr-backend alembic upgrade head
-echo "✅ Migrations applied"
+# Run Python script to create tables (simpler than Alembic)
+echo "Creating database tables in backend container..."
+docker exec -w /app alsakr-backend python create_scraper_tables.py
+
+echo "✅ Database tables created"
 
 echo ""
 echo "=============================================="
