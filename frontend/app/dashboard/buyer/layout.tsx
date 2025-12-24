@@ -79,6 +79,25 @@ export default function BuyerDashboardLayout({ children }: { children: React.Rea
         }
     }
 
+    const handleQuoteAction = async (quoteId: string, status: 'accepted' | 'rejected') => {
+        try {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com'}/api/quotes/${quoteId}?status=${status}`, {
+                method: 'PUT'
+            })
+
+            if (res.ok) {
+                alert(`✅ Quote ${status} successfully!`)
+                fetchQuotes()
+                fetchRFQs()
+            } else {
+                const error = await res.json()
+                alert(`❌ Failed to ${status} quote: ${error.detail || 'Unknown error'}`)
+            }
+        } catch (error) {
+            console.error(`Failed to ${status} quote:`, error)
+            alert(`❌ Error connecting to server to ${status} quote.`)
+        }
+    }
     const getStatusColor = (status: string) => {
         const colors: Record<string, string> = {
             open: 'text-blue-500 bg-blue-500/10',
@@ -183,10 +202,20 @@ export default function BuyerDashboardLayout({ children }: { children: React.Rea
                                                 </p>
                                             </div>
                                             <div className="flex gap-1">
-                                                <Button size="sm" variant="outline" className="text-green-600">
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    className="text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-950/20"
+                                                    onClick={() => handleQuoteAction(quote.id, 'accepted')}
+                                                >
                                                     <CheckCircle className="h-4 w-4" />
                                                 </Button>
-                                                <Button size="sm" variant="outline" className="text-red-600">
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20"
+                                                    onClick={() => handleQuoteAction(quote.id, 'rejected')}
+                                                >
                                                     <XCircle className="h-4 w-4" />
                                                 </Button>
                                             </div>
