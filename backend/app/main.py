@@ -69,6 +69,11 @@ app.include_router(scraper_routes.router, prefix="/api/scrape", tags=["Scrapers"
 app.include_router(rfq.router, prefix="/api/rfq", tags=["RFQ"])
 app.include_router(quote_routes.router, prefix="/api/quotes", tags=["Quotes"])
 app.include_router(dashboard_routes.router, prefix="/api/dashboard", tags=["Dashboard"])
+try:
+    from app.api import contact
+    app.include_router(contact.router, prefix="/api/contact", tags=["Contact"])
+except ImportError as e:
+    print(f"⚠️ Could not import contact router: {e}")
 
 if __name__ == "__main__":
     uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
