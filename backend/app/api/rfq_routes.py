@@ -18,6 +18,7 @@ class RFQCreate(BaseModel):
     buyer_id: str
     target_price: Optional[float] = None
     requirements: Optional[str] = None
+    attachments: Optional[str] = None
 
     @classmethod
     def as_form(
@@ -28,7 +29,8 @@ class RFQCreate(BaseModel):
         quantity: int = Form(1),
         buyer_id: str = Form(...),
         target_price: Optional[float] = Form(None),
-        requirements: Optional[str] = Form(None)
+        requirements: Optional[str] = Form(None),
+        attachments: Optional[str] = Form(None)
     ):
         return cls(
             title=title,
@@ -61,7 +63,8 @@ async def create_rfq(
             quantity=int(form_data.get("quantity", 1)),
             buyer_id=form_data.get("buyer_id"),
             target_price=float(form_data.get("target_price")) if form_data.get("target_price") else None,
-            requirements=form_data.get("requirements", "")
+            requirements=form_data.get("requirements", ""),
+            attachments=form_data.get("attachments", "")
         )
 
     print(f"DEBUG: Processed RFQ data: {rfq_data.model_dump()}")
@@ -73,6 +76,7 @@ async def create_rfq(
         quantity=rfq_data.quantity,
         target_price=rfq_data.target_price,
         requirements=rfq_data.requirements,
+        attachments=rfq_data.attachments,
         status="open"
     )
     db.add(rfq)
@@ -105,6 +109,7 @@ async def list_rfqs(
                 "quantity": rfq.quantity,
                 "target_price": rfq.target_price,
                 "status": rfq.status,
+                "attachments": rfq.attachments,
                 "created_at": rfq.created_at.isoformat() if rfq.created_at else None
             }
             for rfq in rfqs
@@ -127,6 +132,7 @@ async def get_rfq(rfq_id: str, db: Session = Depends(get_db)):
         "quantity": rfq.quantity,
         "target_price": rfq.target_price,
         "requirements": rfq.requirements,
+        "attachments": rfq.attachments,
         "status": rfq.status,
         "created_at": rfq.created_at.isoformat() if rfq.created_at else None
     }

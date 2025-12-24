@@ -1,19 +1,30 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { FileText, DollarSign, Package, TrendingUp } from "lucide-react"
+import { FileText, DollarSign, Package, TrendingUp, LayoutDashboard } from "lucide-react"
+import { NotificationBell } from "@/components/NotificationBell"
+import { DashboardSwitcher } from "@/components/DashboardSwitcher"
 
 export default function EnhancedVendorPage() {
+    const router = useRouter()
     const [rfqs, setRfqs] = useState<any[]>([])
     const [quotes, setQuotes] = useState<any[]>([])
     const [products, setProducts] = useState<any[]>([])
     const [showQuoteForm, setShowQuoteForm] = useState(false)
     const [selectedRFQ, setSelectedRFQ] = useState<any>(null)
+    const [stats, setStats] = useState({
+        new_rfqs: 0,
+        active_quotes: 0,
+        acceptance_rate: 0,
+        total_revenue: 0,
+        currency: "USD"
+    })
     const [quoteForm, setQuoteForm] = useState({
         price: "",
         deliveryTime: "",
@@ -27,14 +38,27 @@ export default function EnhancedVendorPage() {
             fetchOpenRFQs()
             fetchMyQuotes()
             fetchProducts()
+            fetchStats()
         }
     }, [userId])
 
+    const fetchStats = async () => {
+        try {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com'}/api/vendor/${userId}/stats`)
+            const data = await res.json()
+            if (!data.error) {
+                setStats(data)
+            }
+        } catch (error) {
+            console.error('Failed to fetch stats:', error)
+        }
+    }
+
     const fetchOpenRFQs = async () => {
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com'}/api/rfqs?status=open`)
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com'}/api/vendor/${userId}/rfqs`)
             const data = await res.json()
-            setRfqs(data.rfqs || [])
+            setRfqs(data || [])
         } catch (error) {
             console.error('Failed to fetch RFQs:', error)
         }
@@ -91,29 +115,51 @@ export default function EnhancedVendorPage() {
     return (
         <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 p-8">
             <div className="max-w-7xl mx-auto">
-                <div className="flex justify-between items-center mb-8">
-                    <h1 className="text-3xl font-bold">Vendor Dashboard</h1>
-                    <Button
-                        variant="outline"
-                        onClick={() => {
-                            if (typeof window !== 'undefined') {
-                                localStorage.clear()
-                                window.location.href = "/login"
-                            }
-                        }}
-                    >
-                        Logout
-                    </Button>
+                <div className="flex justify-between items-center mb-8 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 -mx-8 -mt-8 px-8 py-4">
+                    <div className="flex items-center gap-4">
+                        <h1 className="text-2xl font-bold">Vendor Dashboard</h1>
+                        <Button variant="ghost" size="sm" onClick={() => router.push('/dashboard/vendor')} className="gap-2">
+                            <LayoutDashboard className="h-4 w-4" />
+                            Overview
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => router.push('/dashboard/vendor/orders')} className="gap-2">
+                            <Package className="h-4 w-4" />
+                            Orders
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => router.push('/dashboard/vendor/catalog')} className="gap-2">
+                            <Package className="h-4 w-4" />
+                            Catalog
+                        </Button>
+                        <DashboardSwitcher />
+                    </div>
+                    <div className="flex items-center gap-4">
+                        <NotificationBell />
+                        <span className="text-sm text-zinc-600 dark:text-zinc-400">
+                            {typeof window !== 'undefined' && localStorage.getItem("userName") || "Vendor"}
+                        </span>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                                if (typeof window !== 'undefined') {
+                                    localStorage.clear()
+                                    window.location.href = "/login"
+                                }
+                            }}
+                        >
+                            Logout
+                        </Button>
+                    </div>
                 </div>
 
                 {/* Stats Cards */}
-                <div className="grid md:grid-cols-4 gap-6 mb-8">
+                <div className="grid md:grid-cols-4 lg:grid-cols-5 gap-6 mb-8">
                     <Card>
                         <CardHeader className="pb-2">
                             <CardTitle className="text-sm font-medium text-zinc-600">Open RFQs</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{rfqs.length}</div>
+                            <div className="text-2xl font-bold">{stats.new_rfqs}</div>
                         </CardContent>
                     </Card>
                     <Card>
@@ -121,7 +167,25 @@ export default function EnhancedVendorPage() {
                             <CardTitle className="text-sm font-medium text-zinc-600">My Quotes</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{quotes.length}</div>
+                            <div className="text-2xl font-bold">{stats.active_quotes}</div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-medium text-zinc-600">Win Rate</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{stats.acceptance_rate}%</div>
+                        </CardContent>
+                    </Card>
+                    <Card className="bg-green-50/50 dark:bg-green-900/10">
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-medium text-green-600">Total Revenue</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold text-green-700 dark:text-green-400">
+                                ${stats.total_revenue.toLocaleString()}
+                            </div>
                         </CardContent>
                     </Card>
                     <Card>
@@ -130,16 +194,6 @@ export default function EnhancedVendorPage() {
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">{products.length}</div>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-medium text-zinc-600">Win Rate</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">
-                                {quotes.length > 0 ? Math.round((quotes.filter(q => q.status === 'accepted').length / quotes.length) * 100) : 0}%
-                            </div>
                         </CardContent>
                     </Card>
                 </div>
@@ -200,8 +254,8 @@ export default function EnhancedVendorPage() {
                                                 <p className="text-sm text-zinc-600">Delivery: {quote.delivery_time}</p>
                                             </div>
                                             <span className={`text-xs px-2 py-1 rounded-full ${quote.status === 'accepted' ? 'bg-green-500/10 text-green-500' :
-                                                    quote.status === 'rejected' ? 'bg-red-500/10 text-red-500' :
-                                                        'bg-yellow-500/10 text-yellow-500'
+                                                quote.status === 'rejected' ? 'bg-red-500/10 text-red-500' :
+                                                    'bg-yellow-500/10 text-yellow-500'
                                                 }`}>
                                                 {quote.status}
                                             </span>

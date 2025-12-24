@@ -9,7 +9,7 @@ import uvicorn
 from contextlib import asynccontextmanager
 
 # Initialize Database Tables
-from app.models import vendor, inquiry, quote, user, rfq, order, product, part, search
+from app.models import vendor, inquiry, quote, user, rfq, order, product, part, search, notification
 Base.metadata.create_all(bind=engine)
 
 @asynccontextmanager
@@ -50,7 +50,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Bilingual Middleware
+from fastapi.staticfiles import StaticFiles
+import os
+
+# Create uploads directory if not exists
+if not os.path.exists("uploads"):
+    os.makedirs("uploads")
+
+# Mount Static Files
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+
 @app.middleware("http")
 async def add_language_header(request: Request, call_next):
     lang = request.headers.get("Accept-Language", "en")
@@ -62,8 +71,7 @@ async def add_language_header(request: Request, call_next):
 def health_check():
     return {"status": "healthy", "version": "1.0.0", "database": "connected"}
 
-# Import Routers
-from app.api import search_routes, scraper_routes, auth, rfq_routes, quote_api, order_routes, catalog_routes, dashboard_routes, contact
+from app.api import search_routes, scraper_routes, auth, rfq_routes, quote_api, order_routes, catalog_routes, dashboard_routes, contact, notification_routes, upload_routes
 
 # Register Routers
 app.include_router(auth.router, prefix="/api/auth", tags=["Auth"])
@@ -75,6 +83,8 @@ app.include_router(order_routes.router, prefix="/api", tags=["Orders"])
 app.include_router(catalog_routes.router, prefix="/api", tags=["Catalog"])
 app.include_router(dashboard_routes.router, prefix="/api/dashboard", tags=["Dashboard"])
 app.include_router(contact.router, prefix="/api/contact", tags=["Contact"])
+app.include_router(notification_routes.router, prefix="/api", tags=["Notifications"])
+app.include_router(upload_routes.router, prefix="/api", tags=["Uploads"])
 
 if __name__ == "__main__":
     uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)

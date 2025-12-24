@@ -5,6 +5,7 @@ from typing import Optional
 from app.database import get_db
 from app.models.order import Order
 from app.models.quote import Quote
+from app.api.notification_routes import create_notification
 
 router = APIRouter()
 
@@ -107,10 +108,15 @@ async def update_order(
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
     
-    if status:
-        order.status = status
-    if tracking_number:
-        order.tracking_number = tracking_number
-    
     db.commit()
+
+    # Notify Buyer of update
+    create_notification(
+        db,
+        user_id=order.buyer_id,
+        type="order_update",
+        message=f"Order ORD-{order.id[:8].upper()} has been updated to: {order.status}",
+        related_id=order.id
+    )
+
     return {"message": "Order updated successfully", "status": order.status}

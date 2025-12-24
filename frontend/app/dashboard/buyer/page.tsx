@@ -48,6 +48,32 @@ function BuyerDashboardContent() {
         }
     };
 
+    const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
+
+    const uploadFiles = async () => {
+        if (!selectedFiles || selectedFiles.length === 0) return null;
+
+        const formData = new FormData();
+        for (let i = 0; i < selectedFiles.length; i++) {
+            formData.append('files', selectedFiles[i]);
+        }
+
+        try {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com';
+            const res = await fetch(`${apiUrl}/api/upload-multiple`, {
+                method: 'POST',
+                body: formData
+            });
+            if (res.ok) {
+                const data = await res.json();
+                return data.files.map((f: any) => f.url).join(',');
+            }
+        } catch (error) {
+            console.error("File upload failed:", error);
+        }
+        return null;
+    };
+
     const handleRequestQuote = async (part: any) => {
         const userId = localStorage.getItem("userId");
         if (!userId) {
@@ -57,6 +83,8 @@ function BuyerDashboardContent() {
 
         setLoading(true);
         try {
+            const attachmentUrls = await uploadFiles();
+
             const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com';
             const res = await fetch(`${apiUrl}/api/rfqs`, {
                 method: 'POST',
@@ -67,13 +95,15 @@ function BuyerDashboardContent() {
                     part_description: part.payload.description_en,
                     quantity: 1, // Default quantity
                     buyer_id: userId,
-                    requirements: "Standard shipping and verification required."
+                    requirements: "Standard shipping and verification required.",
+                    attachments: attachmentUrls || ""
                 })
             });
 
             if (res.ok) {
                 alert("✅ Quote request submitted successfully!");
                 setSelectedPart(null);
+                setSelectedFiles(null);
             } else {
                 const error = await res.json();
                 alert(`❌ Failed to submit request: ${error.detail || 'Unknown error'}`);
@@ -128,6 +158,25 @@ function BuyerDashboardContent() {
                         <span className={`w-3 h-3 rounded-full ${part.payload.status === 'active' ? 'bg-green-500' : 'bg-red-500'}`}></span>
                         <span className="capitalize">{part.payload.status || 'Unknown'}</span>
                     </div>
+                </div>
+
+                <div className="space-y-2">
+                    <h3 className="text-lg font-semibold mb-2 border-b border-white/10 pb-2">Attachments (Optional)</h3>
+                    <input
+                        type="file"
+                        multiple
+                        onChange={(e) => setSelectedFiles(e.target.files)}
+                        className="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/20 file:text-primary hover:file:bg-primary/30"
+                    />
+                    {selectedFiles && (
+                        <ul className="mt-2 space-y-1">
+                            {Array.from(selectedFiles).map((file, idx) => (
+                                <li key={idx} className="text-xs text-gray-500 truncate flex items-center gap-2">
+                                    <span>📎</span> {file.name}
+                                </li>
+                            ))}
+                        </ul>
+                    )}
                 </div>
 
                 <button

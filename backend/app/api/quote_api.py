@@ -5,7 +5,8 @@ from datetime import datetime
 
 from app.database import get_db
 from app.models.quote import Quote
-from app.models.rfq import RFQ
+from app.models.notification import Notification
+from app.api.notification_routes import create_notification
 
 from pydantic import BaseModel
 from typing import Optional
@@ -138,11 +139,41 @@ async def update_quote_status(
     
     quote.status = status
     
-    # If accepted, update RFQ status
+    # If accepted, update RFQ status and create Order
     if status == "accepted":
         rfq = db.query(RFQ).filter(RFQ.id == quote.rfq_id).first()
         if rfq:
             rfq.status = "closed"
+        
+        # Create Order automatically
+        from app.models.order import Order
+        order = Order(
+            quote_id=quote.id,
+            buyer_id=rfq.buyer_id if rfq else None,
+            vendor_id=quote.vendor_id,
+            total_amount=quote.price,
+            currency=quote.currency,
+            status="pending"
+        )
+        db.add(order)
+        
+        # Notify Vendor of acceptance
+        create_notification(
+            db,
+            user_id=quote.vendor_id, # Assuming vendor_id maps to user_id for now or we need a mapping
+            type="quote_accepted",
+            message=f"Your quote for {rfq.title if rfq else 'RFQ'} has been accepted!",
+            related_id=quote.id
+        )
+    elif status == "rejected":
+        # Notify Vendor of rejection
+        create_notification(
+            db,
+            user_id=quote.vendor_id,
+            type="quote_rejected",
+            message=f"Your quote for {quote.rfq_id} was declined.",
+            related_id=quote.id
+        )
     
     db.commit()
     return {"message": f"Quote {status}", "status": quote.status}

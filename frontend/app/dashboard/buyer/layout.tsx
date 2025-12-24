@@ -7,7 +7,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { FileText, Package, ShoppingCart, Clock, Plus, Send, CheckCircle, XCircle } from "lucide-react"
+import { FileText, Package, ShoppingCart, Clock, Plus, Send, CheckCircle, XCircle, LayoutDashboard } from "lucide-react"
+import { NotificationBell } from "@/components/NotificationBell"
+import { DashboardSwitcher } from "@/components/DashboardSwitcher"
 
 export default function BuyerDashboardLayout({ children }: { children: React.ReactNode }) {
     const router = useRouter()
@@ -115,11 +117,21 @@ export default function BuyerDashboardLayout({ children }: { children: React.Rea
                 <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">Buyer Dashboard</h1>
+                        <Button variant="ghost" size="sm" onClick={() => router.push('/dashboard/buyer')} className="gap-2">
+                            <LayoutDashboard className="h-4 w-4" />
+                            Overview
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => router.push('/dashboard/buyer/orders')} className="gap-2">
+                            <ShoppingCart className="h-4 w-4" />
+                            Orders
+                        </Button>
                         <Button variant="outline" size="sm" onClick={() => router.push('/dashboard/buyer')}>
                             Search Parts
                         </Button>
+                        <DashboardSwitcher />
                     </div>
                     <div className="flex items-center gap-4">
+                        <NotificationBell />
                         <span className="text-sm text-zinc-600 dark:text-zinc-400">
                             {typeof window !== 'undefined' && localStorage.getItem("userName") || "User"}
                         </span>
