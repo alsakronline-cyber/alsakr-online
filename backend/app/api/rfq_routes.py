@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime
+from pydantic import BaseModel
 
 from app.database import get_db
 from app.models.rfq import RFQ
@@ -9,26 +10,29 @@ from app.models.user import User
 
 router = APIRouter()
 
+class RFQCreate(BaseModel):
+    title: str
+    description: str
+    part_description: str
+    quantity: int
+    buyer_id: str
+    target_price: Optional[float] = None
+    requirements: Optional[str] = None
+
 @router.post("/rfqs")
 async def create_rfq(
-    title: str,
-    description: str,
-    part_description: str,
-    quantity: int,
-    buyer_id: str,
-    target_price: Optional[float] = None,
-    requirements: Optional[str] = None,
+    rfq_data: RFQCreate,
     db: Session = Depends(get_db)
 ):
     """Create a new RFQ"""
     rfq = RFQ(
-        buyer_id=buyer_id,
-        title=title,
-        description=description,
-        part_description=part_description,
-        quantity=quantity,
-        target_price=target_price,
-        requirements=requirements,
+        buyer_id=rfq_data.buyer_id,
+        title=rfq_data.title,
+        description=rfq_data.description,
+        part_description=rfq_data.part_description,
+        quantity=rfq_data.quantity,
+        target_price=rfq_data.target_price,
+        requirements=rfq_data.requirements,
         status="open"
     )
     db.add(rfq)

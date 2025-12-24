@@ -48,6 +48,44 @@ function BuyerDashboardContent() {
         }
     };
 
+    const handleRequestQuote = async (part: any) => {
+        const userId = localStorage.getItem("userId");
+        if (!userId) {
+            router.push("/login");
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com';
+            const res = await fetch(`${apiUrl}/api/rfqs`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    title: `Quote Request for ${part.payload.part_number}`,
+                    description: `Automated request for part number ${part.payload.part_number} from manufacturer ${part.payload.manufacturer}`,
+                    part_description: part.payload.description_en,
+                    quantity: 1, // Default quantity
+                    buyer_id: userId,
+                    requirements: "Standard shipping and verification required."
+                })
+            });
+
+            if (res.ok) {
+                alert("✅ Quote request submitted successfully!");
+                setSelectedPart(null);
+            } else {
+                const error = await res.json();
+                alert(`❌ Failed to submit request: ${error.detail || 'Unknown error'}`);
+            }
+        } catch (error) {
+            console.error("RFQ submission failed:", error);
+            alert("❌ Network error while submitting request.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
 
     // Side Panel Component
     const ProductDetailsPanel = ({ part, onClose }: { part: any, onClose: () => void }) => (
@@ -92,8 +130,12 @@ function BuyerDashboardContent() {
                     </div>
                 </div>
 
-                <button className="w-full bg-primary hover:bg-blue-600 text-white font-bold py-3 rounded-xl transition-colors mt-4">
-                    Request Quote
+                <button
+                    onClick={() => handleRequestQuote(part)}
+                    disabled={loading}
+                    className="w-full bg-primary hover:bg-blue-600 disabled:bg-gray-700 text-white font-bold py-3 rounded-xl transition-colors mt-4"
+                >
+                    {loading ? 'Submitting...' : 'Request Quote'}
                 </button>
             </div>
         </div>
