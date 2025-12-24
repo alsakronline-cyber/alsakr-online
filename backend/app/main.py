@@ -66,14 +66,42 @@ except ImportError:
 
 app.include_router(search_routes.router, prefix="/api/search", tags=["Search"])
 app.include_router(scraper_routes.router, prefix="/api/scrape", tags=["Scrapers"])
-app.include_router(rfq.router, prefix="/api/rfq", tags=["RFQ"])
-app.include_router(quote_routes.router, prefix="/api/quotes", tags=["Quotes"])
-app.include_router(dashboard_routes.router, prefix="/api/dashboard", tags=["Dashboard"])
+# Import routes
 try:
-    from app.api import contact
-    app.include_router(contact.router, prefix="/api/contact", tags=["Contact"])
+    from app.api.auth import router as auth_router
+    app.include_router(auth_router, prefix="/api/auth", tags=["auth"])
+except ImportError as e:
+    print(f"⚠️ Could not import auth router: {e}")
+
+try:
+    from app.api.contact import router as contact_router
+    app.include_router(contact_router, prefix="/api/contact", tags=["contact"])
 except ImportError as e:
     print(f"⚠️ Could not import contact router: {e}")
+
+try:
+    from app.api.rfq_routes import router as rfq_router
+    app.include_router(rfq_router, prefix="/api", tags=["rfqs"])
+except ImportError as e:
+    print(f"⚠️ Could not import RFQ router: {e}")
+
+try:
+    from app.api.quote_api import router as quote_router
+    app.include_router(quote_router, prefix="/api", tags=["quotes"])
+except ImportError as e:
+    print(f"⚠️ Could not import quote router: {e}")
+
+try:
+    from app.api.order_routes import router as order_router
+    app.include_router(order_router, prefix="/api", tags=["orders"])
+except ImportError as e:
+    print(f"⚠️ Could not import order router: {e}")
+
+try:
+    from app.api.catalog_routes import router as catalog_router
+    app.include_router(catalog_router, prefix="/api", tags=["catalog"])
+except ImportError as e:
+    print(f"⚠️ Could not import catalog router: {e}")
 
 if __name__ == "__main__":
     uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
