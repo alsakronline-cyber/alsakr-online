@@ -7,7 +7,6 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuHeader,
     DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
