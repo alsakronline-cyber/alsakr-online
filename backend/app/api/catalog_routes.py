@@ -1,34 +1,43 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from typing import Optional
+from typing import Optional, List
+from pydantic import BaseModel
 
 from app.database import get_db
 from app.models.product import Product
 
 router = APIRouter()
 
+class ProductCreate(BaseModel):
+    vendor_id: str
+    part_number: str
+    name: Optional[str] = None
+    description: str
+    price: Optional[float] = None
+    category: Optional[str] = None
+    manufacturer: Optional[str] = None
+    stock_quantity: int = 0
+    currency: Optional[str] = "USD"
+
 @router.post("/catalog/products")
 async def create_product(
-    vendor_id: str,
-    part_number: str,
-    name: str,
-    description: str,
-    price: Optional[float] = None,
-    category: Optional[str] = None,
-    manufacturer: Optional[str] = None,
-    stock_quantity: int = 0,
+    product_data: ProductCreate,
     db: Session = Depends(get_db)
 ):
     """Add product to vendor catalog"""
+    # Use part_number as name if name is missing
+    product_name = product_data.name if product_data.name else product_data.part_number
+    
     product = Product(
-        vendor_id=vendor_id,
-        part_number=part_number,
-        name=name,
-        description=description,
-        category=category,
-        manufacturer=manufacturer,
-        price=price,
-        stock_quantity=stock_quantity,
+        vendor_id=product_data.vendor_id,
+        part_number=product_data.part_number,
+        name=product_name,
+        description=product_data.description,
+        category=product_data.category,
+        manufacturer=product_data.manufacturer,
+        price=product_data.price,
+        currency=product_data.currency,
+        stock_quantity=product_data.stock_quantity,
         is_available=True
     )
     db.add(product)

@@ -5,6 +5,7 @@ from datetime import datetime
 
 from app.database import get_db
 from app.models.quote import Quote
+from app.models.rfq import RFQ
 from app.models.notification import Notification
 from app.api.notification_routes import create_notification
 
