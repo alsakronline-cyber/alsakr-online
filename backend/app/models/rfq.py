@@ -1,4 +1,5 @@
 from sqlalchemy import Column, String, Integer, Float, DateTime, Text, ForeignKey, JSON
+from sqlalchemy.orm import relationship
 from app.database import Base
 import uuid
 import datetime
@@ -23,3 +24,6 @@ class RFQ(Base):
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
     deadline = Column(DateTime, nullable=True)
+
+    # Relationships
+    quotes = relationship("Quote", back_populates="rfq")

@@ -50,12 +50,13 @@ async def create_quote(
         raise HTTPException(status_code=404, detail="RFQ not found")
     
     quote = Quote(
-        inquiry_id=quote_data.rfq_id, # Using RFQ ID as Inquiry ID for simple mapping
+        rfq_id=quote_data.rfq_id,
         vendor_id=quote_data.vendor_id,
         price=quote_data.price,
         currency=quote_data.currency,
-        lead_time=quote_data.delivery_time, # Model uses lead_time
+        delivery_time=quote_data.delivery_time,
         notes=quote_data.notes,
+        status="pending",
         is_winner=False
     )
     db.add(quote)
@@ -98,6 +99,7 @@ async def list_quotes(
                 "currency": quote.currency,
                 "delivery_time": quote.delivery_time,
                 "status": quote.status,
+                "notes": quote.notes,
                 "created_at": quote.created_at.isoformat() if quote.created_at else None
             }
             for quote in quotes
