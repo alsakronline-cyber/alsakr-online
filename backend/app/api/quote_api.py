@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request, Form
 from sqlalchemy.orm import Session
 from typing import Optional
 from datetime import datetime
@@ -7,43 +7,67 @@ from app.database import get_db
 from app.models.quote import Quote
 from app.models.rfq import RFQ
 
+from pydantic import BaseModel
+from typing import Optional
+
 router = APIRouter()
+
+class QuoteCreate(BaseModel):
+    rfq_id: str
+    vendor_id: str
+    price: float
+    delivery_time: str
+    currency: str = "USD"
+    notes: Optional[str] = None
 
 @router.post("/quotes")
 async def create_quote(
-    rfq_id: str,
-    vendor_id: str,
-    price: float,
-    delivery_time: str,
-    notes: Optional[str] = None,
-    currency: str = "USD",
+    request: Request,
     db: Session = Depends(get_db)
 ):
-    """Create a vendor quote for an RFQ"""
+    """Create a vendor quote supporting both JSON and Form data"""
+    content_type = request.headers.get("Content-Type", "")
+    
+    if "application/json" in content_type:
+        data = await request.json()
+        quote_data = QuoteCreate(**data)
+    else:
+        form_data = await request.form()
+        quote_data = QuoteCreate(
+            rfq_id=form_data.get("rfq_id"),
+            vendor_id=form_data.get("vendor_id"),
+            price=float(form_data.get("price")),
+            delivery_time=form_data.get("delivery_time"),
+            currency=form_data.get("currency", "USD"),
+            notes=form_data.get("notes")
+        )
+
+    print(f"DEBUG: Processed Quote data: {quote_data.model_dump()}")
+
     # Verify RFQ exists
-    rfq = db.query(RFQ).filter(RFQ.id == rfq_id).first()
+    rfq = db.query(RFQ).filter(RFQ.id == quote_data.rfq_id).first()
     if not rfq:
         raise HTTPException(status_code=404, detail="RFQ not found")
     
     quote = Quote(
-        rfq_id=rfq_id,
-        vendor_id=vendor_id,
-        price=price,
-        currency=currency,
-        delivery_time=delivery_time,
-        notes=notes,
-        status="pending"
+        inquiry_id=quote_data.rfq_id, # Using RFQ ID as Inquiry ID for simple mapping
+        vendor_id=quote_data.vendor_id,
+        price=quote_data.price,
+        currency=quote_data.currency,
+        lead_time=quote_data.delivery_time, # Model uses lead_time
+        notes=quote_data.notes,
+        is_winner=False
     )
     db.add(quote)
     
-    # Update RFQ status to "quoted" if it was "open"
+    # Update RFQ status if it was open
     if rfq.status == "open":
         rfq.status = "quoted"
     
     db.commit()
     db.refresh(quote)
     
-    return {"id": quote.id, "status": quote.status, "message": "Quote submitted successfully"}
+    return {"id": quote.id, "message": "Quote submitted successfully"}
 
 @router.get("/quotes")
 async def list_quotes(

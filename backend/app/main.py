@@ -63,57 +63,18 @@ def health_check():
     return {"status": "healthy", "version": "1.0.0", "database": "connected"}
 
 # Import Routers
-# Import Routers
-from app.api import search_routes, scraper_routes, rfq, quote_routes, dashboard_routes
+from app.api import search_routes, scraper_routes, auth, rfq_routes, quote_api, order_routes, catalog_routes, dashboard_routes, contact
 
-# Mock Auth router if it doesn't exist yet, or import if it does.
-# For now, to avoid errors, we'll skip Auth or assume it's there. 
-# The plan didn't explicitly modify auth so we assume it exists or isn't prioritized in this pass.
-# But let's check if we can import it. If not, we skip.
-try:
-    from app.api import auth
-    app.include_router(auth.router, prefix="/api/auth", tags=["Auth"])
-except ImportError:
-    pass
-
+# Register Routers
+app.include_router(auth.router, prefix="/api/auth", tags=["Auth"])
 app.include_router(search_routes.router, prefix="/api/search", tags=["Search"])
 app.include_router(scraper_routes.router, prefix="/api/scrape", tags=["Scrapers"])
-# Import routes
-try:
-    from app.api.auth import router as auth_router
-    app.include_router(auth_router, prefix="/api/auth", tags=["auth"])
-except ImportError as e:
-    print(f"⚠️ Could not import auth router: {e}")
-
-try:
-    from app.api.contact import router as contact_router
-    app.include_router(contact_router, prefix="/api/contact", tags=["contact"])
-except ImportError as e:
-    print(f"⚠️ Could not import contact router: {e}")
-
-try:
-    from app.api.rfq_routes import router as rfq_router
-    app.include_router(rfq_router, prefix="/api", tags=["rfqs"])
-except ImportError as e:
-    print(f"⚠️ Could not import RFQ router: {e}")
-
-try:
-    from app.api.quote_api import router as quote_router
-    app.include_router(quote_router, prefix="/api", tags=["quotes"])
-except ImportError as e:
-    print(f"⚠️ Could not import quote router: {e}")
-
-try:
-    from app.api.order_routes import router as order_router
-    app.include_router(order_router, prefix="/api", tags=["orders"])
-except ImportError as e:
-    print(f"⚠️ Could not import order router: {e}")
-
-try:
-    from app.api.catalog_routes import router as catalog_router
-    app.include_router(catalog_router, prefix="/api", tags=["catalog"])
-except ImportError as e:
-    print(f"⚠️ Could not import catalog router: {e}")
+app.include_router(rfq_routes.router, prefix="/api", tags=["RFQs"])
+app.include_router(quote_api.router, prefix="/api", tags=["Quotes"])
+app.include_router(order_routes.router, prefix="/api", tags=["Orders"])
+app.include_router(catalog_routes.router, prefix="/api", tags=["Catalog"])
+app.include_router(dashboard_routes.router, prefix="/api/dashboard", tags=["Dashboard"])
+app.include_router(contact.router, prefix="/api/contact", tags=["Contact"])
 
 if __name__ == "__main__":
     uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
