@@ -30,6 +30,32 @@ services:
           cpus: '0.50'
           memory: 1G
 
+  # ARQ Worker for Background Scraping
+  arq-worker:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: alsakr-arq-worker
+    restart: unless-stopped
+    command: arq app.scraper.scheduler.WorkerSettings
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - QDRANT_HOST=http://qdrant:6333
+    depends_on:
+      - redis
+      - qdrant
+      - pocketbase
+    volumes:
+      - backend_data:/app/data
+    networks:
+      - alsakr-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1.00'
+          memory: 2G  # For Playwright browser (700MB) + processing
+
+
   # Next.js Frontend
   frontend:
     build:
