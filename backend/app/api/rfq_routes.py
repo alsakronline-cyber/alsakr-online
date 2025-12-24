@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Form
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime
@@ -19,13 +19,52 @@ class RFQCreate(BaseModel):
     target_price: Optional[float] = None
     requirements: Optional[str] = None
 
+    @classmethod
+    def as_form(
+        cls,
+        title: str = Form("New RFQ"),
+        description: Optional[str] = Form(""),
+        part_description: Optional[str] = Form(""),
+        quantity: int = Form(1),
+        buyer_id: str = Form(...),
+        target_price: Optional[float] = Form(None),
+        requirements: Optional[str] = Form(None)
+    ):
+        return cls(
+            title=title,
+            description=description,
+            part_description=part_description,
+            quantity=quantity,
+            buyer_id=buyer_id,
+            target_price=target_price,
+            requirements=requirements
+        )
+
 @router.post("/rfqs")
 async def create_rfq(
-    rfq_data: RFQCreate,
+    request: Request,
     db: Session = Depends(get_db)
 ):
-    """Create a new RFQ"""
-    print(f"DEBUG: Received RFQ data: {rfq_data.model_dump()}")
+    """Create a new RFQ supporting both JSON and Form data"""
+    # Detect content type
+    content_type = request.headers.get("Content-Type", "")
+    
+    if "application/json" in content_type:
+        data = await request.json()
+        rfq_data = RFQCreate(**data)
+    else:
+        form_data = await request.form()
+        rfq_data = RFQCreate(
+            title=form_data.get("title", "New RFQ"),
+            description=form_data.get("description", ""),
+            part_description=form_data.get("part_description", ""),
+            quantity=int(form_data.get("quantity", 1)),
+            buyer_id=form_data.get("buyer_id"),
+            target_price=float(form_data.get("target_price")) if form_data.get("target_price") else None,
+            requirements=form_data.get("requirements", "")
+        )
+
+    print(f"DEBUG: Processed RFQ data: {rfq_data.model_dump()}")
     rfq = RFQ(
         buyer_id=rfq_data.buyer_id,
         title=rfq_data.title,
