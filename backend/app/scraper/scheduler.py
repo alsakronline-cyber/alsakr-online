@@ -169,7 +169,7 @@ class WorkerSettings:
     # These are defined in get_cron_jobs() below
 
 
-async def get_cron_jobs(redis: ArqRedis = None) -> List:
+def get_cron_jobs() -> List:
     """
     Load cron jobs from scraper_config.yaml
     
@@ -218,7 +218,7 @@ async def get_cron_jobs(redis: ArqRedis = None) -> List:
 
 
 # Update WorkerSettings with cron jobs
-WorkerSettings.cron_jobs = get_cron_jobs
+WorkerSettings.cron_jobs = get_cron_jobs()  # Call function to get list
 
 
 async def enqueue_scraper_job(scraper_id: str) -> str:
