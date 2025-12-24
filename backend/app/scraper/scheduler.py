@@ -192,10 +192,20 @@ def get_cron_jobs() -> List:
                 if len(parts) == 5:
                     minute, hour, day, month, weekday = parts
                     
+                    # Create a unique wrapper function for this scraper
+                    # ARQ cron() doesn't support args/kwargs, so we wrap the call
+                    def make_cron_wrapper(sid):
+                        async def _cron_wrapper(ctx):
+                            await run_scraper_job(ctx, sid)
+                        _cron_wrapper.__name__ = f"cron_{sid.replace('-', '_')}"
+                        return _cron_wrapper
+
+                    cron_task = make_cron_wrapper(scraper['id'])
+
                     # Create ARQ cron job
                     cron_jobs.append(
                         cron(
-                            run_scraper_job,
+                            cron_task,
                             minute=int(minute) if minute != '*' else None,
                             hour=int(hour) if hour != '*' else None,
                             day=int(day) if day != '*' else None,
@@ -203,8 +213,7 @@ def get_cron_jobs() -> List:
                             weekday=int(weekday) if weekday != '*' else None,
                             run_at_startup=False,
                             unique=True,
-                            timeout=3600,
-                            args=(scraper['id'],)  # Pass scraper_id as positional arg
+                            timeout=3600
                         )
                     )
                     
