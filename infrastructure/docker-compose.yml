@@ -24,6 +24,11 @@ services:
       - backend_data:/app/data
     networks:
       - alsakr-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 1G
 
   # Next.js Frontend
   frontend:
@@ -38,6 +43,11 @@ services:
       - NEXT_PUBLIC_API_URL=https://api.app.alsakronline.com
     networks:
       - alsakr-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 1G
 
   # Ollama AI Server (CPU Mode for standard ARM instances, GPU if available)
   ollama:
@@ -48,6 +58,11 @@ services:
       - ollama_data:/root/.ollama
     networks:
       - alsakr-network
+    deploy:
+      resources:
+        limits:
+          cpus: '2.00'
+          memory: 8G
 
   # Qdrant Vector Database
   qdrant:
@@ -60,6 +75,11 @@ services:
       - qdrant_data:/qdrant/storage
     networks:
       - alsakr-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1.00'
+          memory: 2G
 
   # PocketBase (Auth & DB)
   pocketbase:

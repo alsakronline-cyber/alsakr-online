@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Inter, Poppins, IBM_Plex_Sans_Arabic } from 'next/font/google'
 import './globals.css'
 import { cn } from '@/lib/utils'
+import { LanguageProvider } from '@/components/providers/LanguageProvider'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 const poppins = Poppins({
@@ -33,7 +34,9 @@ export default function RootLayout({
                 poppins.variable,
                 arabic.variable
             )}>
-                {children}
+                <LanguageProvider>
+                    {children}
+                </LanguageProvider>
             </body>
         </html>
     )
