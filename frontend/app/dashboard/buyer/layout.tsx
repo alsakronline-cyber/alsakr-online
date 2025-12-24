@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { FileText, Package, ShoppingCart, Clock, Plus, Send, CheckCircle, XCircle, LayoutDashboard } from "lucide-react"
+import { FileText, Package, ShoppingCart, Clock, Plus, Send, CheckCircle, XCircle, LayoutDashboard, User, Edit2, ChevronRight, Eye } from "lucide-react"
 import { NotificationBell } from "@/components/NotificationBell"
 import { DashboardSwitcher } from "@/components/DashboardSwitcher"
 
@@ -24,6 +24,10 @@ export default function BuyerDashboardLayout({ children }: { children: React.Rea
         targetPrice: "",
         requirements: ""
     })
+    const [selectedRFQ, setSelectedRFQ] = useState<any>(null)
+    const [selectedQuote, setSelectedQuote] = useState<any>(null)
+    const [isEditingRFQ, setIsEditingRFQ] = useState(false)
+    const [editForm, setEditForm] = useState<any>(null)
 
     const userId = typeof window !== 'undefined' ? localStorage.getItem('userId') : null
 
@@ -52,6 +56,31 @@ export default function BuyerDashboardLayout({ children }: { children: React.Rea
             setQuotes(data.quotes || [])
         } catch (error) {
             console.error('Failed to fetch quotes:', error)
+        }
+    }
+
+    const handleUpdateRFQ = async () => {
+        try {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com'}/api/rfqs/${selectedRFQ.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    title: editForm.title,
+                    description: editForm.description,
+                    part_description: editForm.partDescription,
+                    quantity: editForm.quantity,
+                    target_price: editForm.targetPrice,
+                    requirements: editForm.requirements
+                })
+            })
+
+            if (res.ok) {
+                setIsEditingRFQ(false)
+                setSelectedRFQ(null)
+                fetchRFQs()
+            }
+        } catch (error) {
+            console.error('Failed to update RFQ:', error)
         }
     }
 
@@ -128,6 +157,10 @@ export default function BuyerDashboardLayout({ children }: { children: React.Rea
                         <Button variant="outline" size="sm" onClick={() => router.push('/dashboard/buyer')}>
                             Search Parts
                         </Button>
+                        <Button variant="ghost" size="sm" onClick={() => router.push('/dashboard/profile')} className="gap-2">
+                            <User className="h-4 w-4" />
+                            Profile
+                        </Button>
                         <DashboardSwitcher />
                     </div>
                     <div className="flex items-center gap-4">
@@ -172,7 +205,7 @@ export default function BuyerDashboardLayout({ children }: { children: React.Rea
                         <CardContent>
                             <div className="space-y-3 max-h-[400px] overflow-y-auto">
                                 {rfqs.map((rfq) => (
-                                    <div key={rfq.id} className="p-3 border rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-900">
+                                    <div key={rfq.id} className="p-3 border rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-900 group relative">
                                         <div className="flex justify-between items-start">
                                             <div>
                                                 <h4 className="font-medium">{rfq.title}</h4>
@@ -180,9 +213,30 @@ export default function BuyerDashboardLayout({ children }: { children: React.Rea
                                                     Qty: {rfq.quantity}
                                                 </p>
                                             </div>
-                                            <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(rfq.status)}`}>
-                                                {rfq.status}
-                                            </span>
+                                            <div className="flex items-center gap-2">
+                                                <Button
+                                                    size="icon"
+                                                    variant="ghost"
+                                                    className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                    onClick={() => {
+                                                        setSelectedRFQ(rfq)
+                                                        setEditForm({
+                                                            title: rfq.title,
+                                                            description: rfq.description,
+                                                            partDescription: rfq.part_description,
+                                                            quantity: rfq.quantity,
+                                                            targetPrice: rfq.target_price,
+                                                            requirements: rfq.requirements
+                                                        })
+                                                        setIsEditingRFQ(true)
+                                                    }}
+                                                >
+                                                    <Edit2 className="h-4 w-4" />
+                                                </Button>
+                                                <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(rfq.status)}`}>
+                                                    {rfq.status}
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
                                 ))}
@@ -205,7 +259,7 @@ export default function BuyerDashboardLayout({ children }: { children: React.Rea
                         <CardContent>
                             <div className="space-y-3 max-h-[400px] overflow-y-auto">
                                 {quotes.map((quote) => (
-                                    <div key={quote.id} className="p-3 border rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-900">
+                                    <div key={quote.id} className="p-3 border rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-900 group">
                                         <div className="flex justify-between items-start">
                                             <div>
                                                 <h4 className="font-medium">${quote.price} {quote.currency}</h4>
@@ -213,7 +267,16 @@ export default function BuyerDashboardLayout({ children }: { children: React.Rea
                                                     Delivery: {quote.delivery_time}
                                                 </p>
                                             </div>
-                                            <div className="flex gap-1">
+                                            <div className="flex items-center gap-1">
+                                                <Button
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    className="gap-1 px-2"
+                                                    onClick={() => setSelectedQuote(quote)}
+                                                >
+                                                    <Eye className="h-4 w-4" />
+                                                    View
+                                                </Button>
                                                 <Button
                                                     size="sm"
                                                     variant="outline"
@@ -314,6 +377,101 @@ export default function BuyerDashboardLayout({ children }: { children: React.Rea
                             </div>
                         </CardContent>
                     </Card>
+                )}
+                {/* RFQ Editing Side Panel */}
+                {isEditingRFQ && selectedRFQ && (
+                    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex justify-end">
+                        <div className="w-full md:w-[500px] bg-white dark:bg-zinc-900 h-full p-6 shadow-xl animate-in slide-in-from-right overflow-y-auto">
+                            <div className="flex justify-between items-center mb-6">
+                                <h2 className="text-xl font-bold">Edit RFQ: {selectedRFQ.title}</h2>
+                                <Button variant="ghost" size="icon" onClick={() => setIsEditingRFQ(false)}><XCircle className="h-5 w-5" /></Button>
+                            </div>
+
+                            <div className="space-y-4">
+                                <div>
+                                    <Label>Title</Label>
+                                    <Input value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <Label>Quantity</Label>
+                                        <Input type="number" value={editForm.quantity} onChange={(e) => setEditForm({ ...editForm, quantity: parseInt(e.target.value) })} />
+                                    </div>
+                                    <div>
+                                        <Label>Target Price</Label>
+                                        <Input value={editForm.targetPrice} onChange={(e) => setEditForm({ ...editForm, targetPrice: e.target.value })} />
+                                    </div>
+                                </div>
+                                <div>
+                                    <Label>Part Description</Label>
+                                    <Input value={editForm.partDescription} onChange={(e) => setEditForm({ ...editForm, partDescription: e.target.value })} />
+                                </div>
+                                <div>
+                                    <Label>Detailed Description</Label>
+                                    <Textarea value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} rows={4} />
+                                </div>
+                                <div>
+                                    <Label>Special Requirements</Label>
+                                    <Textarea value={editForm.requirements} onChange={(e) => setEditForm({ ...editForm, requirements: e.target.value })} rows={3} />
+                                </div>
+
+                                <div className="flex gap-4 pt-4">
+                                    <Button onClick={handleUpdateRFQ} className="flex-1 bg-indigo-600 hover:bg-indigo-700">Save Changes</Button>
+                                    <Button variant="outline" onClick={() => setIsEditingRFQ(false)} className="flex-1">Cancel</Button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Quote Details Side Panel */}
+                {selectedQuote && (
+                    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex justify-end">
+                        <div className="w-full md:w-[500px] bg-white dark:bg-zinc-900 h-full p-6 shadow-xl animate-in slide-in-from-right overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex justify-between items-center mb-6">
+                                <h2 className="text-xl font-bold">Quote Details</h2>
+                                <Button variant="ghost" size="icon" onClick={() => setSelectedQuote(null)}><XCircle className="h-5 w-5" /></Button>
+                            </div>
+
+                            <div className="space-y-6">
+                                <div className="p-4 bg-zinc-50 dark:bg-zinc-800 rounded-lg">
+                                    <div className="text-3xl font-bold text-indigo-600 mb-1">${selectedQuote.price} {selectedQuote.currency}</div>
+                                    <div className="text-sm text-zinc-500">Delivery in {selectedQuote.delivery_time}</div>
+                                </div>
+
+                                <div>
+                                    <Label className="text-zinc-500 uppercase text-xs">Vendor Notes</Label>
+                                    <div className="p-3 border rounded-lg mt-1 min-h-[100px] bg-zinc-50 dark:bg-zinc-950/50">
+                                        {selectedQuote.notes || "No additional notes provided."}
+                                    </div>
+                                </div>
+
+                                <div className="flex gap-4 pt-6 border-t">
+                                    <Button
+                                        className="flex-1 bg-green-600 hover:bg-green-700 gap-2"
+                                        onClick={() => {
+                                            handleQuoteAction(selectedQuote.id, 'accepted')
+                                            setSelectedQuote(null)
+                                        }}
+                                    >
+                                        <CheckCircle className="h-4 w-4" />
+                                        Accept Quote
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        className="flex-1 text-red-600 hover:text-red-700 gap-2"
+                                        onClick={() => {
+                                            handleQuoteAction(selectedQuote.id, 'rejected')
+                                            setSelectedQuote(null)
+                                        }}
+                                    >
+                                        <XCircle className="h-4 w-4" />
+                                        Decline
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 )}
 
                 {/* Main Content Area */}

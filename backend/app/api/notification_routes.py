@@ -8,7 +8,7 @@ import uuid
 router = APIRouter()
 
 @router.get("/notifications")
-async def get_notifications(user_id: int, db: Session = Depends(get_db)):
+async def get_notifications(user_id: str, db: Session = Depends(get_db)):
     notifications = db.query(Notification).filter(
         Notification.user_id == user_id
     ).order_by(Notification.created_at.desc()).limit(20).all()
@@ -37,13 +37,13 @@ async def mark_as_read(notification_id: str, db: Session = Depends(get_db)):
     return {"status": "success"}
 
 @router.delete("/notifications/clear")
-async def clear_notifications(user_id: int, db: Session = Depends(get_db)):
+async def clear_notifications(user_id: str, db: Session = Depends(get_db)):
     db.query(Notification).filter(Notification.user_id == user_id).delete()
     db.commit()
     return {"status": "success"}
 
 # Helper function to create notifications (to be called from other routes)
-def create_notification(db: Session, user_id: int, type: str, message: str, related_id: str = None):
+def create_notification(db: Session, user_id: str, type: str, message: str, related_id: str = None):
     new_notif = Notification(
         user_id=user_id,
         type=type,

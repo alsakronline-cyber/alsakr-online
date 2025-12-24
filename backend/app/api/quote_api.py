@@ -129,51 +129,60 @@ async def get_quote(quote_id: str, db: Session = Depends(get_db)):
 @router.put("/quotes/{quote_id}")
 async def update_quote_status(
     quote_id: str,
-    status: str,  # accepted, rejected
+    status: Optional[str] = None,
+    price: Optional[float] = None,
+    delivery_time: Optional[str] = None,
+    notes: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
-    """Update quote status (buyer accepts/rejects)"""
+    """Update quote status or details"""
     quote = db.query(Quote).filter(Quote.id == quote_id).first()
     if not quote:
         raise HTTPException(status_code=404, detail="Quote not found")
     
-    quote.status = status
-    
-    # If accepted, update RFQ status and create Order
-    if status == "accepted":
-        rfq = db.query(RFQ).filter(RFQ.id == quote.rfq_id).first()
-        if rfq:
-            rfq.status = "closed"
+    if status:
+        quote.status = status
         
-        # Create Order automatically
-        from app.models.order import Order
-        order = Order(
-            quote_id=quote.id,
-            buyer_id=rfq.buyer_id if rfq else None,
-            vendor_id=quote.vendor_id,
-            total_amount=quote.price,
-            currency=quote.currency,
-            status="pending"
-        )
-        db.add(order)
-        
-        # Notify Vendor of acceptance
-        create_notification(
-            db,
-            user_id=quote.vendor_id, # Assuming vendor_id maps to user_id for now or we need a mapping
-            type="quote_accepted",
-            message=f"Your quote for {rfq.title if rfq else 'RFQ'} has been accepted!",
-            related_id=quote.id
-        )
-    elif status == "rejected":
-        # Notify Vendor of rejection
-        create_notification(
-            db,
-            user_id=quote.vendor_id,
-            type="quote_rejected",
-            message=f"Your quote for {quote.rfq_id} was declined.",
-            related_id=quote.id
-        )
+        # If accepted, update RFQ status and create Order
+        if status == "accepted":
+            from app.models.rfq import RFQ
+            rfq = db.query(RFQ).filter(RFQ.id == quote.rfq_id).first()
+            if rfq:
+                rfq.status = "closed"
+            
+            # Create Order automatically
+            from app.models.order import Order
+            order = Order(
+                quote_id=quote.id,
+                buyer_id=rfq.buyer_id if rfq else None,
+                vendor_id=quote.vendor_id,
+                total_amount=quote.price,
+                currency=quote.currency,
+                status="pending"
+            )
+            db.add(order)
+            
+            # Notify Vendor of acceptance
+            create_notification(
+                db,
+                user_id=quote.vendor_id,
+                type="quote_accepted",
+                message=f"Your quote for {rfq.title if rfq else 'RFQ'} has been accepted!",
+                related_id=quote.id
+            )
+        elif status == "rejected":
+            # Notify Vendor of rejection
+            create_notification(
+                db,
+                user_id=quote.vendor_id,
+                type="quote_rejected",
+                message=f"Your quote for {quote.rfq_id} was declined.",
+                related_id=quote.id
+            )
+
+    if price is not None: quote.price = price
+    if delivery_time is not None: quote.delivery_time = delivery_time
+    if notes is not None: quote.notes = notes
     
     db.commit()
-    return {"message": f"Quote {status}", "status": quote.status}
+    return {"message": "Quote updated successfully", "status": quote.status}

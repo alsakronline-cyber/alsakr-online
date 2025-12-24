@@ -140,16 +140,27 @@ async def get_rfq(rfq_id: str, db: Session = Depends(get_db)):
 @router.put("/rfqs/{rfq_id}")
 async def update_rfq(
     rfq_id: str,
+    title: Optional[str] = None,
+    description: Optional[str] = None,
+    part_description: Optional[str] = None,
+    quantity: Optional[int] = None,
+    target_price: Optional[float] = None,
+    requirements: Optional[str] = None,
     status: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
-    """Update RFQ status"""
+    """Update RFQ details"""
     rfq = db.query(RFQ).filter(RFQ.id == rfq_id).first()
     if not rfq:
         raise HTTPException(status_code=404, detail="RFQ not found")
     
-    if status:
-        rfq.status = status
+    if title is not None: rfq.title = title
+    if description is not None: rfq.description = description
+    if part_description is not None: rfq.part_description = part_description
+    if quantity is not None: rfq.quantity = quantity
+    if target_price is not None: rfq.target_price = target_price
+    if requirements is not None: rfq.requirements = requirements
+    if status is not None: rfq.status = status
     
     db.commit()
     return {"message": "RFQ updated successfully", "status": rfq.status}

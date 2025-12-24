@@ -71,7 +71,7 @@ async def add_language_header(request: Request, call_next):
 def health_check():
     return {"status": "healthy", "version": "1.0.0", "database": "connected"}
 
-from app.api import search_routes, scraper_routes, auth, rfq_routes, quote_api, order_routes, catalog_routes, dashboard_routes, contact, notification_routes, upload_routes
+from app.api import search_routes, scraper_routes, auth, rfq_routes, quote_api, order_routes, catalog_routes, dashboard_routes, contact, notification_routes, upload_routes, user_routes, admin_routes
 
 # Register Routers
 app.include_router(auth.router, prefix="/api/auth", tags=["Auth"])
@@ -81,10 +81,13 @@ app.include_router(rfq_routes.router, prefix="/api", tags=["RFQs"])
 app.include_router(quote_api.router, prefix="/api", tags=["Quotes"])
 app.include_router(order_routes.router, prefix="/api", tags=["Orders"])
 app.include_router(catalog_routes.router, prefix="/api", tags=["Catalog"])
-app.include_router(dashboard_routes.router, prefix="/api/dashboard", tags=["Dashboard"])
+app.include_router(dashboard_routes.router, prefix="/api", tags=["Dashboard"])
 app.include_router(contact.router, prefix="/api/contact", tags=["Contact"])
 app.include_router(notification_routes.router, prefix="/api", tags=["Notifications"])
 app.include_router(upload_routes.router, prefix="/api", tags=["Uploads"])
+app.include_router(user_routes.router, prefix="/api", tags=["User Profile"])
+app.include_router(admin_routes.router, prefix="/api", tags=["Admin"])
 
 if __name__ == "__main__":
     uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
+鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓鼓

@@ -7,7 +7,7 @@ class Notification(Base):
     __tablename__ = "notifications"
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(String, ForeignKey("users.id"), nullable=False)
     type = Column(String, nullable=False) # 'quote_received', 'order_status', 'rfq_closed'
     message = Column(String, nullable=False)
     is_read = Column(Boolean, default=False)
