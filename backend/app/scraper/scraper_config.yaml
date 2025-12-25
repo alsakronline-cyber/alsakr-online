@@ -18,11 +18,11 @@ scrapers:
       job_timeout_ms: 3600000  # 1 hour max
     
     selectors:
-      product_card: ".product-card"
-      product_name: "h1.headline .title"
-      part_number: "span.part-no"
-      category: "span.category"
-      image: "img.product-image"
+      product_card: "tr.mat-mdc-row"
+      product_name: "a.name"
+      part_number: "ui-product-part-number .font-bold"
+      category: "span.category"  # Might need adjustment if not present in row
+      image: "ui-akamai-image img"
       specs_table: ".specifications table"
       pdf_link: "a[href$='.pdf']"
     
