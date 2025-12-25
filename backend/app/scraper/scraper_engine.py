@@ -160,15 +160,15 @@ class ScraperEngine:
                         
                         # Extract products from current page
                         products = await page.evaluate(f"""() => {{
-                            const containers = document.querySelectorAll('{config.selectors['product_card']}');
+                            const containers = document.querySelectorAll("{config.selectors['product_card']}");
                             return Array.from(containers).map(el => {{
-                                const img = el.querySelector('{config.selectors.get('image', '')}');
+                                const img = el.querySelector("{config.selectors.get('image', '')}");
                                 return {{
-                                    name: el.querySelector('{config.selectors['product_name']}')?.innerText?.trim(),
-                                    part_number: el.querySelector('{config.selectors['part_number']}')?.innerText?.trim(),
-                                    category: el.querySelector('{config.selectors.get('category', '')}')?.innerText?.trim(),
+                                    name: el.querySelector("{config.selectors['product_name']}")?.innerText?.trim(),
+                                    part_number: el.querySelector("{config.selectors['part_number']}")?.innerText?.trim(),
+                                    category: el.querySelector("{config.selectors.get('category', '')}")?.innerText?.trim(),
                                     image_url: img ? (img.getAttribute('data-src') || img.src) : null,
-                                    product_url: el.querySelector('a')?.href
+                                    product_url: el.querySelector("{config.selectors.get('product_name', 'a')}")?.href
                                 }};
                             }});
                         }}""")
