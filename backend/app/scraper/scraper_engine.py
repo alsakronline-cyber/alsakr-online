@@ -140,7 +140,16 @@ class ScraperEngine:
                 page = await context.new_page() # Main listing page, persistent
                 try:
                     logger.info(f"Starting pagination from: {start_url}")
-                    await page.goto(current_url, wait_until='networkidle', timeout=30000)
+                    timeout = config.limits.get('page_timeout_ms', 30000)
+                    
+                    try:
+                        await page.goto(current_url, wait_until='domcontentloaded', timeout=timeout)
+                        # After domcontentloaded, wait for the actual content we need
+                        await page.wait_for_selector(config.selectors['product_card'], timeout=20000)
+                    except Exception as e:
+                        logger.warning(f"Initial page load timed out or selector missing: {e}")
+                        # Final attempt with networkidle if first one failed
+                        await page.goto(current_url, wait_until='networkidle', timeout=timeout)
                     
                     while page_count < max_pages:
                         # Wait for content to load
