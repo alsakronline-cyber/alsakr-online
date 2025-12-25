@@ -7,6 +7,7 @@ from app.database import get_db
 from app.models.quote import Quote
 from app.models.rfq import RFQ
 from app.models.user import User
+from app.models.order import Order
 from app.models.notification import Notification
 from app.api.notification_routes import create_notification
 from app.api import deps
@@ -206,13 +207,12 @@ async def update_quote_status(
         
         # If accepted, update RFQ status and create Order
         if status == "accepted":
-            from app.models.rfq import RFQ
+            # Update RFQ status
             rfq = db.query(RFQ).filter(RFQ.id == quote.rfq_id).first()
             if rfq:
                 rfq.status = "closed"
             
             # Create Order automatically
-            from app.models.order import Order
             order = Order(
                 quote_id=quote.id,
                 buyer_id=rfq.buyer_id if rfq else None,
