@@ -40,7 +40,11 @@ export default function BuyerDashboardLayout({ children }: { children: React.Rea
 
     const fetchRFQs = async () => {
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com'}/api/rfqs?buyer_id=${userId}`)
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com'}/api/rfqs?buyer_id=${userId}`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                }
+            })
             const data = await res.json()
             setRfqs(data.rfqs || [])
         } catch (error) {
@@ -51,7 +55,11 @@ export default function BuyerDashboardLayout({ children }: { children: React.Rea
     const fetchQuotes = async () => {
         try {
             // Fetch quotes for all RFQs
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com'}/api/quotes`)
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com'}/api/quotes`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                }
+            })
             const data = await res.json()
             setQuotes(data.quotes || [])
         } catch (error) {
@@ -63,7 +71,10 @@ export default function BuyerDashboardLayout({ children }: { children: React.Rea
         try {
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com'}/api/rfqs/${selectedRFQ.id}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                },
                 body: JSON.stringify({
                     title: editForm.title,
                     description: editForm.description,
@@ -88,7 +99,10 @@ export default function BuyerDashboardLayout({ children }: { children: React.Rea
         try {
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com'}/api/rfqs`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                },
                 body: new URLSearchParams({
                     title: rfqForm.title,
                     description: rfqForm.description,
@@ -113,7 +127,10 @@ export default function BuyerDashboardLayout({ children }: { children: React.Rea
     const handleQuoteAction = async (quoteId: string, status: 'accepted' | 'rejected') => {
         try {
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com'}/api/quotes/${quoteId}?status=${status}`, {
-                method: 'PUT'
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                }
             })
 
             if (res.ok) {

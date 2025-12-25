@@ -51,6 +51,9 @@ export function VoiceSearch() {
             const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com';
             const response = await fetch(`${apiUrl}/api/search/voice`, {
                 method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                },
                 body: formData,
             });
 

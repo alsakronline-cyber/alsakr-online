@@ -33,7 +33,7 @@ export default function AdminRFQsPage() {
                 }
             })
             const data = await res.json()
-            setRfqs(data || [])
+            setRfqs(data.rfqs || [])
         } catch (error) {
             console.error("Failed to fetch platform RFQs:", error)
         } finally {

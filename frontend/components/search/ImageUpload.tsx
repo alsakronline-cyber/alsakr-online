@@ -26,6 +26,9 @@ export const ImageUpload = () => {
             const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
             const res = await fetch(`${apiUrl}/api/search/image`, {
                 method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                },
                 body: formData,
             });
             const data = await res.json();
