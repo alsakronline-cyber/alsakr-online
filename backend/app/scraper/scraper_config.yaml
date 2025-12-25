@@ -8,8 +8,7 @@ scrapers:
     vendor_name: "SICK AG"
     base_url: "https://www.sick.com"
     start_urls:
-      - "https://www.sick.com/us/en/catalog/products/detection-sensors/photoelectric-sensors/w12/c/g568289"
-      - "https://www.sick.com/de/en/catalog/products/detection-sensors/photoelectric-sensors/w12/c/g568289"
+      - "https://www.sick.com/us/en/catalog/products/detection-sensors/photoelectric-sensors/w16/c/g433452?tab=selection"
     scraping_method: "playwright"  # JavaScript-heavy site requires browser automation
     schedule: "0 2 * * *"  # Daily at 2 AM UTC
     
@@ -21,22 +20,24 @@ scrapers:
     selectors:
       product_card: "tr.mat-mdc-row"
       product_name: "a.name"
-      part_number: "ui-product-part-number .font-bold"
-      category: "span.category"  # Might need adjustment if not present in row
-      image: "ui-akamai-image img"
-      specs_table: ".specifications table"
-      pdf_link: "a[href$='.pdf']"
+      part_number: "span:text('Part no.:') + span" # Dynamically found on detail
+      category: "ol.breadcrumb li:last-child"
+      image: "img[src*='pim']"
+      specs_table: ".technical-details table"
+      pdf_link: "button.action-button:has-text('English') span" # Selector for PDF button
     
     pagination:
-      next_button: "a.next-page"
+      next_button: "a[aria-label='Next page']"
       max_pages: 50
     
     child_pages:
       enabled: true
-      url_selector: "a.product-link"
+      url_selector: "a.name"
       detail_selectors:
-        technical_specs: ".tech-specs"
-        applications: ".applications"
+        technical_specs: ".technical-details"
+        pdf: "button[data-test-id='split-button-main']"
+        cad: "syn-button:has-text('CAD')"
+        image_hires: "img[src*='pim']"
 
 # Future vendors (Phase 3)
 # Uncomment and configure when ready to add more vendors
