@@ -66,6 +66,7 @@ class ScrapedProduct(Base):
     specifications = Column(JSON, nullable=True)  # Key-value pairs of technical specs
     image_urls = Column(JSON, nullable=True)  # Array of image URLs
     pdf_urls = Column(JSON, nullable=True)  # Array of PDF/datasheet URLs
+    accessories = Column(JSON, nullable=True)  # Array of accessory objects
     source_url = Column(String(1000), nullable=True)
     data_hash = Column(String(32), unique=True, nullable=False, index=True)  # MD5 for deduplication
     scraped_at = Column(DateTime, default=datetime.utcnow, nullable=False)

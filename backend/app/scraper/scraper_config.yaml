@@ -25,6 +25,7 @@ scrapers:
       image: "picture img.loaded"
       specs_table: ".tech-table table, .customs-table table"
       pdf_link: "[data-test-id='split-button-main']"
+      accessories_tile: "ui-product-teaser-tile"
     
     pagination:
       next_button: "davinci-button.show-more-button"
@@ -39,6 +40,7 @@ scrapers:
         pdf: "button[data-test-id='split-button-main']"
         cad: "syn-button"
         image_hires: "picture img.loaded"
+        accessories: "ui-recommended-accessories ui-product-teaser-tile"
 
 # Future vendors (Phase 3)
 # Uncomment and configure when ready to add more vendors

@@ -29,6 +29,7 @@ class ProductData(BaseModel):
     specifications: Dict[str, str] = {}
     image_urls: List[str] = []
     pdf_urls: List[str] = []
+    accessories: List[Dict[str, str]] = []
     source_url: str
     
     @field_validator('part_number')

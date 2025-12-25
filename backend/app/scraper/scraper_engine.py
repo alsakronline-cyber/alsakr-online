@@ -260,18 +260,25 @@ class ScraperEngine:
         product_url = product['source_url']
         
         try:
-            await page.goto(product_url, wait_until='networkidle', timeout=30000)
+            # Wait longer for SICK's Angular SPA to fully render
+            await page.goto(product_url, wait_until='networkidle', timeout=45000)
+            await page.wait_for_timeout(3000) # Buffer for lazy-loaded components
             
-            # 1. Extract Category from Breadcrumbs
+            # 1. Extract Category (Robust Breadcrumb & Headline)
             try:
-                category_selector = config.selectors.get('category', 'syn-breadcrumb-item')
-                category = await page.evaluate(f"""() => {{
-                    const items = document.querySelectorAll("{category_selector}");
-                    if (items.length >= 2) {{
-                        return items[items.length - 2].innerText.trim();
-                    }}
-                    return items.length > 0 ? items[0].innerText.trim() : null;
-                }}""")
+                category = await page.evaluate("""() => {
+                    // Try to find breadcrumbs (may be in shadow DOM)
+                    const breadcrumbs = Array.from(document.querySelectorAll('syn-breadcrumb-item, .breadcrumb-item'));
+                    if (breadcrumbs.length >= 2) {
+                        return breadcrumbs[breadcrumbs.length - 2].innerText.trim();
+                    }
+                    
+                    // Fallback: Product Type or Series headline
+                    const subHeadline = document.querySelector('h1.headline .category, span.category');
+                    if (subHeadline) return subHeadline.innerText.trim();
+                    
+                    return null;
+                }""")
                 if category: product['category'] = category
             except Exception as e:
                 logger.debug(f"Category extraction failed: {e}")
@@ -281,15 +288,23 @@ class ScraperEngine:
                 img_selector = config.selectors.get('image', 'picture img.loaded')
                 image_urls = await page.evaluate(f"""() => {{
                     const imgs = document.querySelectorAll("{img_selector}");
-                    return Array.from(imgs).map(img => img.getAttribute('data-src') || img.src);
+                    // Map data-src first, then fall back to src
+                    return Array.from(imgs).map(img => img.getAttribute('data-src') || img.src).filter(url => url && !url.includes('spacer.gif'));
                 }}""")
                 if image_urls: product['image_urls'] = image_urls
             except Exception as e:
                 logger.debug(f"Image extraction failed: {e}")
 
-            # 3. Extract Merged Specifications (Tech + Customs)
+            # 3. Extract Merged Specifications
+            # SICK often hides tables in tabs; we try to find all tech-tables/customs-tables in the DOM
             specs_selector = config.selectors.get('specs_table', '.tech-table table, .customs-table table')
             try:
+                # Wait for at least one table to appear
+                try: 
+                    await page.wait_for_selector('.tech-table', timeout=5000)
+                except:
+                    pass
+
                 specs_html_list = await page.evaluate(f"""() => {{
                     const tables = document.querySelectorAll("{specs_selector}");
                     return Array.from(tables).map(t => t.outerHTML);
@@ -302,25 +317,66 @@ class ScraperEngine:
             except Exception as e:
                 logger.warning(f"Specs extraction failed for {product_url}: {e}")
             
-            # 4. Extract PDF Link Button
+            # 4. Extract PDF Link Button (Wait for split-button)
             pdf_selector = config.selectors.get('pdf_link', '[data-test-id="split-button-main"]')
             try:
                 pdf_data = await page.evaluate(f"""() => {{
                     const buttons = document.querySelectorAll("{pdf_selector}");
                     return Array.from(buttons).map(btn => {{
                         const text = btn.innerText.trim();
-                        return (text.includes("Download") || text.includes("English")) ? "Available: " + text : null;
+                        // Check for common label patterns
+                        if (text.toLowerCase().includes("english") || text.toLowerCase().includes("download")) {{
+                            return "Download Available: " + text;
+                        }}
+                        return null;
                     }}).filter(v => v !== null);
                 }}""")
                 if pdf_data: product['pdf_urls'] = pdf_data
             except Exception as e:
                 logger.debug(f"PDF extraction failed: {e}")
+
+            # 5. Extract Suitable Accessories
+            accessories_selector = config.selectors.get('accessories_tile', 'ui-product-teaser-tile')
+            try:
+                accessories = await page.evaluate(f"""() => {{
+                    const tiles = document.querySelectorAll("{accessories_selector}");
+                    return Array.from(tiles).map(tile => {{
+                        const nameEl = tile.querySelector('h4.format-xs');
+                        const partNoEl = tile.querySelector('.text-semibold');
+                        const imgEl = tile.querySelector('img.loaded');
+                        const linkEl = tile.querySelector('syn-button a');
+                        
+                        // Extract text and clean up
+                        const name = nameEl ? nameEl.innerText.trim() : null;
+                        const partNumber = partNoEl ? partNoEl.innerText.replace('Part no.:', '').trim() : null;
+                        const imageUrl = imgEl ? (imgEl.getAttribute('data-src') || imgEl.src) : null;
+                        let productUrl = linkEl ? linkEl.getAttribute('href') : null;
+                        
+                        if (productUrl && !productUrl.startsWith('http')) {{
+                            productUrl = window.location.origin + productUrl;
+                        }}
+                        
+                        if (name && partNumber) {{
+                            return {{
+                                name: name,
+                                part_number: partNumber,
+                                image_url: imageUrl,
+                                product_url: productUrl
+                            }};
+                        }}
+                        return null;
+                    }}).filter(v => v !== null);
+                }}""")
+                product['accessories'] = accessories
+            except Exception as e:
+                logger.debug(f"Accessories extraction failed: {e}")
                 
         except Exception as e:
             logger.warning(f"Failed to load detail page {product_url}: {e}")
             # Ensure fields exist for validation even on failure
             if 'specifications' not in product: product['specifications'] = {}
             if 'pdf_urls' not in product: product['pdf_urls'] = []
+            if 'accessories' not in product: product['accessories'] = []
     
     async def _scrape_with_http(self, config: ScraperConfig) -> List[Dict]:
         """
@@ -376,23 +432,32 @@ class ScraperEngine:
     @staticmethod
     def _parse_table_html(html: str) -> Dict[str, str]:
         """
-        Parse HTML table into key-value specifications
-        
-        Args:
-            html: HTML string containing a table element
-        
-        Returns:
-            Dictionary of spec_name: spec_value
+        Parse HTML table into key-value specifications, handling nested tables.
         """
         soup = BeautifulSoup(html, 'html.parser')
         specs = {}
         
+        # We look for all TRs that have at least 2 direct child TDs or THs
+        # Or TRs that contain sub-tables
         for row in soup.find_all('tr'):
-            cells = row.find_all(['td', 'th'])
+            # Check for direct children only to avoid double-processing nested tables in same loop
+            cells = row.find_all(['td', 'th'], recursive=False)
+            
             if len(cells) >= 2:
                 key = cells[0].text.strip()
-                value = cells[1].text.strip()
-                if key and value:
-                    specs[key] = value
+                # If the second cell has its own table, BeautifulSoup find_all('tr') will handle it
+                # because it's recursive. We just need to make sure we don't add the parent key if it's 
+                # just a header for a sub-table.
+                
+                # Check if second cell has text or is just a container
+                value_text = cells[1].get_text(strip=True, separator=' ')
+                
+                if key and value_text and not cells[1].find('table'):
+                    specs[key] = value_text
+            
+            # Special case for SICK: rows with a sub-table inside a colspan=2 cell
+            elif len(cells) == 1 and cells[0].get('colspan') == '2' and cells[0].find('table'):
+                 # These rows are just containers; the recursive find_all('tr') will pick up the inner rows.
+                 pass
         
         return specs
