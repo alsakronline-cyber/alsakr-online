@@ -38,7 +38,7 @@ echo ""
 
 # Start ARQ worker
 # The worker will process jobs from Redis queue and run cron jobs
-arq app.scraper.scheduler.WorkerSettings
+python3 -m arq app.scraper.scheduler.WorkerSettings
 
 # If we get here, worker has stopped
 echo ""

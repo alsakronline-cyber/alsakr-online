@@ -20,11 +20,11 @@ fi
 cd "$(dirname "$0")/.."
 
 echo "Generating migration for scraper tables..."
-alembic revision --autogenerate -m "Add scraper tables for job tracking and product storage"
+python3 -m alembic revision --autogenerate -m "Add scraper tables for job tracking and product storage"
 
 echo ""
 echo "Applying migration..."
-alembic upgrade head
+python3 -m alembic upgrade head
 
 echo ""
 echo "✅ Scraper tables created successfully!"
