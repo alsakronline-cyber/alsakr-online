@@ -147,6 +147,17 @@ class ScraperEngine:
                             timeout=config.limits['page_timeout_ms']
                         )
                         
+                        try:
+                            # CRITICAL: SICK.com is an SPA - wait for specific element
+                            logger.info("Waiting for product card selector...")
+                            try:
+                                await page.wait_for_selector(config.selectors['product_card'], timeout=10000)
+                            except PlaywrightTimeout:
+                                logger.warning("Timeout waiting for product cards. Dumping HTML body for debug...")
+                                body_html = await page.content()
+                                logger.warning(f"HTML Content Preview: {body_html[:2000]}")
+                                # continue anyway to return 0 products and trigger the log
+                        
                         # Extract products from current page
                         products = await page.evaluate(f"""() => {{
                             const containers = document.querySelectorAll('{config.selectors['product_card']}');
@@ -158,6 +169,11 @@ class ScraperEngine:
                                 product_url: el.querySelector('a')?.href
                             }}));
                         }}""")
+                        
+                        if len(products) == 0:
+                            logger.warning(f"Found 0 products on {current_url}. Selectors might be wrong.")
+                            body_html = await page.content()
+                            logger.warning(f"Page HTML Dump (First 2000 chars): {body_html[:2000]}")
                         
                         logger.info(f"Extracted {len(products)} products from page {page_count + 1}")
                         
