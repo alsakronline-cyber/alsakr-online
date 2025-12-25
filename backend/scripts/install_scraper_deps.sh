@@ -16,9 +16,19 @@ if [ -d "venv" ]; then
     source venv/bin/activate
 fi
 
+# Check if python3 and pip are available
+if command -v pip3 &> /dev/null; then
+    PIP_CMD="pip3"
+elif command -v pip &> /dev/null; then
+    PIP_CMD="pip"
+else
+    echo "❌ pip not found. Attempting to use python3 -m pip..."
+    PIP_CMD="python3 -m pip"
+fi
+
 # Install core scraper dependencies
-echo "Installing Python packages..."
-pip install --no-cache-dir \
+echo "Installing Python packages using $PIP_CMD..."
+$PIP_CMD install --no-cache-dir \
     arq==0.25.0 \
     httpx==0.27.0 \
     pyyaml==6.0.1

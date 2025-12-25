@@ -13,7 +13,7 @@ echo "======================================"
 # Check if alembic is available
 if ! command -v alembic &> /dev/null; then
     echo "❌ Alembic not found. Installing..."
-    pip install alembic
+    python3 -m pip install alembic
 fi
 
 # Navigate to backend directory

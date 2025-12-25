@@ -75,13 +75,37 @@ async def update_user_status(user_id: str, data: UserUpdateSchema, db: Session =
     db.refresh(user)
     return user
 
-# Scraper Management (Migrated from old admin.py)
+# Scraper Management
 @router.post("/admin/scrapers/{brand}/start")
 async def start_scraper(brand: str):
-    return {"status": "started", "brand": brand}
+    """
+    Trigger a scraper job from the admin dashboard.
+    Map 'brand' to the correct scraper ID.
+    """
+    from app.scraper.scheduler import enqueue_scraper_job
+    
+    # Map friendly names/brands to internal scraper IDs
+    brand_map = {
+        "sick": "sick-ag-products",
+        "sick-ag": "sick-ag-products"
+    }
+    
+    scraper_id = brand_map.get(brand.lower(), brand)
+    
+    try:
+        job_id = await enqueue_scraper_job(scraper_id)
+        return {
+            "status": "started",
+            "brand": brand,
+            "scraper_id": scraper_id,
+            "job_id": job_id
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to start scraper: {str(e)}")
 
 @router.post("/admin/scrapers/stop")
 async def stop_all_scrapers():
-    return {"status": "stopped"}
+    # Placeholder for stopping jobs if we add abort logic to ARQ later
+    return {"status": "feature_not_ready", "detail": "Stopping individual jobs not yet implemented in ARQ worker"}
 
 
