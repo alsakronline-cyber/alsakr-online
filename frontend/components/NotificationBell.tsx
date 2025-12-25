@@ -19,9 +19,14 @@ export function NotificationBell() {
     const userId = typeof window !== 'undefined' ? localStorage.getItem('userId') : null
 
     const fetchNotifications = async () => {
-        if (!userId) return
+        const token = localStorage.getItem('token')
+        if (!userId || !token) return
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com'}/api/notifications?user_id=${userId}`)
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com'}/api/notifications?user_id=${userId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
             const data = await res.json()
             const notifs = data.notifications || []
             setNotifications(notifs)
@@ -38,9 +43,14 @@ export function NotificationBell() {
     }, [userId])
 
     const markAsRead = async (id: string) => {
+        const token = localStorage.getItem('token')
+        if (!token) return
         try {
             await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com'}/api/notifications/${id}/read`, {
-                method: 'PUT'
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
             })
             fetchNotifications()
         } catch (error) {
@@ -49,9 +59,14 @@ export function NotificationBell() {
     }
 
     const clearAll = async () => {
+        const token = localStorage.getItem('token')
+        if (!token) return
         try {
             await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com'}/api/notifications/clear?user_id=${userId}`, {
-                method: 'DELETE'
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
             })
             setNotifications([])
             setUnreadCount(0)
