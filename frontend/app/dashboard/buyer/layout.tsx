@@ -15,6 +15,7 @@ export default function BuyerDashboardLayout({ children }: { children: React.Rea
     const router = useRouter()
     const [rfqs, setRfqs] = useState<any[]>([])
     const [quotes, setQuotes] = useState<any[]>([])
+    const [notifications, setNotifications] = useState<any[]>([])
     const [showRFQForm, setShowRFQForm] = useState(false)
     const [rfqForm, setRfqForm] = useState({
         title: "",
