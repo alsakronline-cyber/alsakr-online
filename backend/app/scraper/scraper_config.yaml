@@ -37,7 +37,7 @@ scrapers:
         technical_specs: ".technical-details"
         applications: ".applications"
         pdf: "button[data-test-id='split-button-main']"
-        cad: "syn-button:has-text('CAD')"
+        cad: "syn-button"
         image_hires: "img[src*='pim']"
 
 # Future vendors (Phase 3)
