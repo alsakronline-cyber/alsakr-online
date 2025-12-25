@@ -27,9 +27,12 @@ export default function AdminRFQsPage() {
     const fetchRFQs = async () => {
         try {
             // Reusing the general RFQ endpoint for now, or we could add an admin specific one
+            const token = localStorage.getItem('token')
+            if (!token) return
+
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com'}/api/rfqs`, {
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                    'Authorization': `Bearer ${token}`
                 }
             })
             const data = await res.json()

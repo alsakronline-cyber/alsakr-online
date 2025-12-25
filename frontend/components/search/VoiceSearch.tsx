@@ -44,26 +44,27 @@ export function VoiceSearch() {
 
     const handleUpload = async (audioBlob: Blob) => {
         setIsProcessing(true);
+        setError(null); // Clear previous errors
         const formData = new FormData();
         formData.append('file', audioBlob, 'recording.wav');
 
         try {
             const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com';
-            const response = await fetch(`${apiUrl}/api/search/voice`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-                },
-                body: formData,
-            });
-
-            if (!response.ok) {
-                const errText = await response.text();
-                throw new Error(`Status ${response.status}: ${errText}`);
+            const token = localStorage.getItem('token')
+            if (!token) {
+                setError("Please login to use voice search")
+                setIsProcessing(false); // Stop processing state if no token
+                return
             }
 
-            const data = await response.json();
-            setTranscript(data.text);
+            const res = await fetch(`${apiUrl}/api/search/voice`, {
+                method: "POST",
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+                body: formData,
+                const data = await response.json();
+                setTranscript(data.text);
         } catch (error: any) {
             console.error('Voice search failed:', error);
             setTranscript(`Error: ${error.message}`);

@@ -55,9 +55,12 @@ export default function EnhancedVendorPage() {
 
     const fetchStats = async () => {
         try {
+            const token = localStorage.getItem('token')
+            if (!token) return
+
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com'}/api/vendor/${userId}/stats`, {
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                    'Authorization': `Bearer ${token}`
                 }
             })
             const data = await res.json()
@@ -71,9 +74,12 @@ export default function EnhancedVendorPage() {
 
     const fetchOpenRFQs = async () => {
         try {
+            const token = localStorage.getItem('token')
+            if (!token) return
+
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com'}/api/vendor/${userId}/rfqs`, {
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                    'Authorization': `Bearer ${token}`
                 }
             })
             const data = await res.json()
@@ -85,9 +91,12 @@ export default function EnhancedVendorPage() {
 
     const fetchMyQuotes = async () => {
         try {
+            const token = localStorage.getItem('token')
+            if (!token) return
+
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com'}/api/quotes?vendor_id=${userId}`, {
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                    'Authorization': `Bearer ${token}`
                 }
             })
             const data = await res.json()
@@ -99,9 +108,12 @@ export default function EnhancedVendorPage() {
 
     const fetchProducts = async () => {
         try {
+            const token = localStorage.getItem('token')
+            if (!token) return
+
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com'}/api/catalog/products?vendor_id=${userId}`, {
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                    'Authorization': `Bearer ${token}`
                 }
             })
             const data = await res.json()
@@ -134,11 +146,14 @@ export default function EnhancedVendorPage() {
                     notes: quoteForm.notes
                 })
 
+            const token = localStorage.getItem('token')
+            if (!token) return
+
             const res = await fetch(url, {
                 method: method,
                 headers: {
                     'Content-Type': isEditingQuote ? 'application/json' : 'application/x-www-form-urlencoded',
-                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                    'Authorization': `Bearer ${token}`
                 },
                 body: body
             })

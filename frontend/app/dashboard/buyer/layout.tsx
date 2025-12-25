@@ -35,14 +35,18 @@ export default function BuyerDashboardLayout({ children }: { children: React.Rea
         if (userId) {
             fetchRFQs()
             fetchQuotes()
+            fetchNotifications() // Added fetchNotifications call
         }
     }, [userId])
 
     const fetchRFQs = async () => {
         try {
+            const token = localStorage.getItem('token')
+            if (!token) return
+
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com'}/api/rfqs?buyer_id=${userId}`, {
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                    'Authorization': `Bearer ${token}`
                 }
             })
             const data = await res.json()
@@ -52,12 +56,32 @@ export default function BuyerDashboardLayout({ children }: { children: React.Rea
         }
     }
 
+    const fetchNotifications = async () => {
+        try {
+            const token = localStorage.getItem('token')
+            if (!token) return
+
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com'}/api/notifications?user_id=${userId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            const data = await res.json()
+            setNotifications(data.notifications || [])
+        } catch (error) {
+            console.error('Failed to fetch notifications:', error)
+        }
+    }
+
     const fetchQuotes = async () => {
         try {
+            const token = localStorage.getItem('token')
+            if (!token) return
+
             // Fetch quotes for all RFQs
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com'}/api/quotes`, {
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                    'Authorization': `Bearer ${token}`
                 }
             })
             const data = await res.json()
@@ -67,22 +91,19 @@ export default function BuyerDashboardLayout({ children }: { children: React.Rea
         }
     }
 
-    const handleUpdateRFQ = async () => {
+    const handleUpdateRFQ = async (e: React.FormEvent) => {
+        e.preventDefault()
+        const token = localStorage.getItem('token')
+        if (!token) return
+
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com'}/api/rfqs/${selectedRFQ.id}`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com'}/api/rfqs/${editForm.id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                    'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({
-                    title: editForm.title,
-                    description: editForm.description,
-                    part_description: editForm.partDescription,
-                    quantity: editForm.quantity,
-                    target_price: editForm.targetPrice,
-                    requirements: editForm.requirements
-                })
+                body: JSON.stringify(editForm)
             })
 
             if (res.ok) {
@@ -96,12 +117,15 @@ export default function BuyerDashboardLayout({ children }: { children: React.Rea
     }
 
     const handleCreateRFQ = async () => {
+        const token = localStorage.getItem('token')
+        if (!token) return
+
         try {
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com'}/api/rfqs`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
-                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                    'Authorization': `Bearer ${token}`
                 },
                 body: new URLSearchParams({
                     title: rfqForm.title,
@@ -125,11 +149,14 @@ export default function BuyerDashboardLayout({ children }: { children: React.Rea
     }
 
     const handleQuoteAction = async (quoteId: string, status: 'accepted' | 'rejected') => {
+        const token = localStorage.getItem('token')
+        if (!token) return
+
         try {
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com'}/api/quotes/${quoteId}?status=${status}`, {
                 method: 'PUT',
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                    'Authorization': `Bearer ${token}`
                 }
             })
 

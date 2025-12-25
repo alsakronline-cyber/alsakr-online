@@ -22,10 +22,13 @@ export default function AdminDashboardPage() {
     }, [router])
 
     const fetchStats = async () => {
+        const token = localStorage.getItem('token')
+        if (!token) return
+
         try {
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com'}/api/admin/stats`, {
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                    'Authorization': `Bearer ${token}`
                 }
             })
             const data = await res.json()

@@ -25,10 +25,13 @@ export default function UserManagementPage() {
     }, [router])
 
     const fetchUsers = async () => {
+        const token = localStorage.getItem('token')
+        if (!token) return
+
         try {
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com'}/api/admin/users`, {
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                    'Authorization': `Bearer ${token}`
                 }
             })
             const data = await res.json()
@@ -41,12 +44,15 @@ export default function UserManagementPage() {
     }
 
     const toggleUserStatus = async (user: any) => {
+        const token = localStorage.getItem('token')
+        if (!token) return
+
         try {
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com'}/api/admin/users/${user.id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                    'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({ is_active: !user.is_active })
             })
@@ -57,12 +63,15 @@ export default function UserManagementPage() {
     }
 
     const updateUserRole = async (user: any, newRole: string) => {
+        const token = localStorage.getItem('token')
+        if (!token) return
+
         try {
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com'}/api/admin/users/${user.id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                    'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({ role: newRole })
             })

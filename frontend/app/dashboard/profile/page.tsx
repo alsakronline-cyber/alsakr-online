@@ -25,9 +25,12 @@ export default function ProfilePage() {
 
     const fetchProfile = async () => {
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com'}/api/users/${userId}`, {
+            const token = localStorage.getItem('token')
+            if (!token) return
+
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com'}/api/users/profile/${userId}`, {
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                    'Authorization': `Bearer ${token}`
                 }
             })
             const data = await res.json()
@@ -39,25 +42,26 @@ export default function ProfilePage() {
         }
     }
 
-    const handleSave = async (e: React.FormEvent) => {
+    const handleUpdateProfile = async (e: React.FormEvent) => {
         e.preventDefault()
         setSaving(true)
-        setMessage(null)
+        setMessage(null) // Assuming setSuccessMessage was meant to clear the existing message state
+
+        const token = localStorage.getItem('token')
+        if (!token) {
+            setSaving(false)
+            setMessage({ type: 'error', text: 'Authentication token not found.' })
+            return
+        }
 
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com'}/api/users/${userId}`, {
-                method: 'PUT',
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com'}/api/users/profile/${userId}`, {
+                method: "PUT",
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                    "Content-Type": "application/json",
+                    'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({
-                    full_name: profile.full_name,
-                    company_name: profile.company_name,
-                    phone_number: profile.phone_number,
-                    industry_type: profile.industry_type,
-                    preferred_language: profile.preferred_language
-                })
+                body: JSON.stringify(profile),
             })
 
             if (res.ok) {

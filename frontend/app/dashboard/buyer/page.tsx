@@ -26,21 +26,33 @@ function BuyerDashboardContent() {
         const query = searchParams.get('q');
         if (query) {
             setSearchQuery(query);
-            performSearch(query);
+            // Call the new handleSearch function for initial search
+            handleSearch(null, query); // Pass null for event, and the query
         }
     }, [searchParams, router]);
 
-    const performSearch = async (query: string) => {
+    const handleSearch = async (e: React.FormEvent | null, queryParam?: string) => {
+        e?.preventDefault(); // Only prevent default if event exists
         setLoading(true);
+
+        const token = localStorage.getItem('token');
+        if (!token) {
+            setLoading(false);
+            router.push("/login"); // Redirect to login if no token
+            return;
+        }
+
+        const queryToUse = queryParam || searchQuery;
+
         try {
             const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com';
             const res = await fetch(`${apiUrl}/api/search/text`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                    'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ query })
+                body: JSON.stringify({ query: queryToUse })
             });
             const data = await res.json();
             setResults(data.results || []);
@@ -54,6 +66,7 @@ function BuyerDashboardContent() {
     const handleSearchSubmit = () => {
         if (searchQuery.trim()) {
             router.push(`/dashboard/buyer?q=${encodeURIComponent(searchQuery)}`);
+            handleSearch(null); // Call handleSearch without event, using current searchQuery
         }
     };
 
@@ -69,10 +82,16 @@ function BuyerDashboardContent() {
 
         try {
             const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com';
+            const token = localStorage.getItem('token');
+            if (!token) {
+                router.push("/login");
+                return null;
+            }
+
             const res = await fetch(`${apiUrl}/api/upload-multiple`, {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                    'Authorization': `Bearer ${token}`
                 },
                 body: formData
             });
@@ -98,11 +117,17 @@ function BuyerDashboardContent() {
             const attachmentUrls = await uploadFiles();
 
             const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com';
+            const token = localStorage.getItem('token');
+            if (!token) {
+                router.push("/login");
+                return;
+            }
+
             const res = await fetch(`${apiUrl}/api/rfqs`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                    'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({
                     title: `Quote Request for ${part.payload.part_number}`,

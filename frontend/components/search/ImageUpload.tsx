@@ -24,13 +24,19 @@ export const ImageUpload = () => {
 
         try {
             const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-            const res = await fetch(`${apiUrl}/api/search/image`, {
-                method: 'POST',
+            const token = localStorage.getItem('token')
+            if (!token) {
+                // handle missing token, maybe fail silently or show error
+                return
+            }
+
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com'}/api/search/image`, {
+                method: "POST",
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                    'Authorization': `Bearer ${token}`
                 },
                 body: formData,
-            });
+            })
             const data = await res.json();
             setResults(data);
         } catch (err) {
