@@ -5,7 +5,7 @@ import { Mic, Square, Loader2 } from 'lucide-react';
 export function VoiceSearch() {
     const [isRecording, setIsRecording] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
-    const [transcript, setTranscript] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(null);
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const chunksRef = useRef<Blob[]>([]);
 
@@ -29,6 +29,7 @@ export function VoiceSearch() {
             mediaRecorder.start();
             setIsRecording(true);
             setTranscript(null);
+            setError(null);
         } catch (error) {
             console.error('Error accessing microphone:', error);
             alert('Could not access microphone. Please allow permissions.');
@@ -63,14 +64,23 @@ export function VoiceSearch() {
                     'Authorization': `Bearer ${token}`
                 },
                 body: formData,
-                const data = await response.json();
-                setTranscript(data.text);
+            })
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                throw new Error(data.detail || 'Voice search failed');
+            }
+
+            setTranscript(data.text);
         } catch (error: any) {
             console.error('Voice search failed:', error);
-            setTranscript(`Error: ${error.message}`);
+            setTranscript(null);
+            setError(error.message || "Voice search failed");
         } finally {
             setIsProcessing(false);
         }
+
     };
 
     return (
