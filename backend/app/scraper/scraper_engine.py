@@ -140,16 +140,22 @@ class ScraperEngine:
                 page = await context.new_page() # Main listing page, persistent
                 try:
                     logger.info(f"Starting pagination from: {start_url}")
-                    timeout = config.limits.get('page_timeout_ms', 30000)
+                    timeout = config.limits.get('page_timeout_ms', 60000)
                     
+                    # Use 'commit' or 'domcontentloaded' - networkidle is too slow on heavy sites
                     try:
                         await page.goto(current_url, wait_until='domcontentloaded', timeout=timeout)
-                        # After domcontentloaded, wait for the actual content we need
-                        await page.wait_for_selector(config.selectors['product_card'], timeout=20000)
                     except Exception as e:
-                        logger.warning(f"Initial page load timed out or selector missing: {e}")
-                        # Final attempt with networkidle if first one failed
-                        await page.goto(current_url, wait_until='networkidle', timeout=timeout)
+                        logger.warning(f"Page goto timed out (domcontentloaded): {e}. Attempting to proceed anyway...")
+                    
+                    # Wait for the actual content to appear, regardless of load state
+                    try:
+                        await page.wait_for_selector(config.selectors['product_card'], timeout=timeout)
+                    except Exception as e:
+                        logger.error(f"Failed to find product cards even after waiting: {e}")
+                        # Take a screenshot for debugging if it fails
+                        await page.screenshot(path="/app/data/error_timeout.png")
+                        raise e
                     
                     while page_count < max_pages:
                         # Wait for content to load
@@ -240,8 +246,11 @@ class ScraperEngine:
                             # Button-based pagination (e.g., SICK 'Show more')
                             logger.info("Clicking 'Show More' button.")
                             await next_el.click()
-                            await page.wait_for_load_state('networkidle')
-                            await asyncio.sleep(2) # Extra buffer for AJAX render
+                            # DONT use networkidle here, it hangs. Just wait for selector or small timeout.
+                            try:
+                                await page.wait_for_load_state('domcontentloaded', timeout=10000)
+                            except: pass
+                            await asyncio.sleep(3) # AJAX buffer
                             
                         page_count += 1
                         

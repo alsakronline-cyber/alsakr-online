@@ -14,7 +14,7 @@ scrapers:
     
     limits:
       max_pages: 50
-      page_timeout_ms: 60000
+      page_timeout_ms: 120000
       job_timeout_ms: 3600000  # 1 hour max
     
     selectors:
