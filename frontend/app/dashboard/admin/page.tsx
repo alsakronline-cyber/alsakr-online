@@ -13,12 +13,21 @@ export default function AdminDashboardPage() {
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
+        const userRole = typeof window !== 'undefined' ? localStorage.getItem('userRole') : null;
+        if (userRole !== "admin") {
+            router.push("/dashboard");
+            return;
+        }
         fetchStats()
-    }, [])
+    }, [router])
 
     const fetchStats = async () => {
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com'}/api/admin/stats`)
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com'}/api/admin/stats`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                }
+            })
             const data = await res.json()
             setStats(data)
         } catch (error) {

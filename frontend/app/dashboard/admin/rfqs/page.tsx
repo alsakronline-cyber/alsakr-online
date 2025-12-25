@@ -15,13 +15,22 @@ export default function AdminRFQsPage() {
     const [searchQuery, setSearchQuery] = useState("")
 
     useEffect(() => {
+        const userRole = typeof window !== 'undefined' ? localStorage.getItem('userRole') : null;
+        if (userRole !== "admin") {
+            router.push("/dashboard");
+            return;
+        }
         fetchRFQs()
-    }, [])
+    }, [router])
 
     const fetchRFQs = async () => {
         try {
             // Reusing the general RFQ endpoint for now, or we could add an admin specific one
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com'}/api/rfqs`)
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com'}/api/rfqs`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                }
+            })
             const data = await res.json()
             setRfqs(data || [])
         } catch (error) {

@@ -3,11 +3,20 @@ from sqlalchemy.orm import Session
 from typing import Optional
 from app.database import get_db
 from app.models.user import User
+from app.api import deps
 
 router = APIRouter()
 
 @router.get("/users/{user_id}")
-async def get_user_profile(user_id: str, db: Session = Depends(get_db)):
+async def get_user_profile(
+    user_id: str, 
+    db: Session = Depends(get_db),
+    current_user: User = Depends(deps.get_current_user)
+):
+    # Authorization: Only own profile or admin
+    if current_user.id != user_id and current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized to view this profile")
+
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -32,8 +41,13 @@ async def update_user_profile(
     phone_number: Optional[str] = None,
     industry_type: Optional[str] = None,
     preferred_language: Optional[str] = None,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(deps.get_current_user)
 ):
+    # Authorization: Only own profile or admin
+    if current_user.id != user_id and current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized to update this profile")
+
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")

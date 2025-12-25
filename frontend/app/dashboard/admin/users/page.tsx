@@ -15,12 +15,21 @@ export default function UserManagementPage() {
     const [searchQuery, setSearchQuery] = useState("")
 
     useEffect(() => {
+        const userRole = typeof window !== 'undefined' ? localStorage.getItem('userRole') : null;
+        if (userRole !== "admin") {
+            router.push("/dashboard");
+            return;
+        }
         fetchUsers()
-    }, [])
+    }, [router])
 
     const fetchUsers = async () => {
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com'}/api/admin/users`)
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com'}/api/admin/users`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                }
+            })
             const data = await res.json()
             setUsers(data)
         } catch (error) {
@@ -34,7 +43,10 @@ export default function UserManagementPage() {
         try {
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com'}/api/admin/users/${user.id}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                },
                 body: JSON.stringify({ is_active: !user.is_active })
             })
             if (res.ok) fetchUsers()
@@ -47,7 +59,10 @@ export default function UserManagementPage() {
         try {
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com'}/api/admin/users/${user.id}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                },
                 body: JSON.stringify({ role: newRole })
             })
             if (res.ok) fetchUsers()

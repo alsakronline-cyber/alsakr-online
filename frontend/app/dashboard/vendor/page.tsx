@@ -39,17 +39,27 @@ export default function EnhancedVendorPage() {
     const userId = typeof window !== 'undefined' ? localStorage.getItem('userId') : null
 
     useEffect(() => {
+        const userRole = typeof window !== 'undefined' ? localStorage.getItem('userRole') : null;
+        if (userRole && !["vendor", "both", "admin"].includes(userRole)) {
+            router.push("/dashboard");
+            return;
+        }
+
         if (userId) {
             fetchOpenRFQs()
             fetchMyQuotes()
             fetchProducts()
             fetchStats()
         }
-    }, [userId])
+    }, [userId, router])
 
     const fetchStats = async () => {
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com'}/api/vendor/${userId}/stats`)
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com'}/api/vendor/${userId}/stats`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                }
+            })
             const data = await res.json()
             if (!data.error) {
                 setStats(data)
@@ -61,7 +71,11 @@ export default function EnhancedVendorPage() {
 
     const fetchOpenRFQs = async () => {
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com'}/api/vendor/${userId}/rfqs`)
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com'}/api/vendor/${userId}/rfqs`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                }
+            })
             const data = await res.json()
             setRfqs(data || [])
         } catch (error) {
@@ -71,7 +85,11 @@ export default function EnhancedVendorPage() {
 
     const fetchMyQuotes = async () => {
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com'}/api/quotes?vendor_id=${userId}`)
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com'}/api/quotes?vendor_id=${userId}`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                }
+            })
             const data = await res.json()
             setQuotes(data.quotes || [])
         } catch (error) {
@@ -81,7 +99,11 @@ export default function EnhancedVendorPage() {
 
     const fetchProducts = async () => {
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com'}/api/catalog/products?vendor_id=${userId}`)
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com'}/api/catalog/products?vendor_id=${userId}`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                }
+            })
             const data = await res.json()
             setProducts(data.products || [])
         } catch (error) {
@@ -115,7 +137,8 @@ export default function EnhancedVendorPage() {
             const res = await fetch(url, {
                 method: method,
                 headers: {
-                    'Content-Type': isEditingQuote ? 'application/json' : 'application/x-www-form-urlencoded'
+                    'Content-Type': isEditingQuote ? 'application/json' : 'application/x-www-form-urlencoded',
+                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
                 },
                 body: body
             })

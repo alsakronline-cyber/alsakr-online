@@ -15,14 +15,20 @@ function BuyerDashboardContent() {
     const [showImageSearch, setShowImageSearch] = useState(false);
     const [showVoiceSearch, setShowVoiceSearch] = useState(false);
 
-    // Initial Search Effect
+    // Initial Search & Role Guard
     useEffect(() => {
+        const userRole = localStorage.getItem("userRole");
+        if (userRole && !["buyer", "both", "admin"].includes(userRole)) {
+            router.push("/dashboard");
+            return;
+        }
+
         const query = searchParams.get('q');
         if (query) {
             setSearchQuery(query);
             performSearch(query);
         }
-    }, [searchParams]);
+    }, [searchParams, router]);
 
     const performSearch = async (query: string) => {
         setLoading(true);
@@ -30,7 +36,10 @@ function BuyerDashboardContent() {
             const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com';
             const res = await fetch(`${apiUrl}/api/search/text`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                },
                 body: JSON.stringify({ query })
             });
             const data = await res.json();
@@ -62,6 +71,9 @@ function BuyerDashboardContent() {
             const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com';
             const res = await fetch(`${apiUrl}/api/upload-multiple`, {
                 method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                },
                 body: formData
             });
             if (res.ok) {
@@ -88,7 +100,10 @@ function BuyerDashboardContent() {
             const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com';
             const res = await fetch(`${apiUrl}/api/rfqs`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                },
                 body: JSON.stringify({
                     title: `Quote Request for ${part.payload.part_number}`,
                     description: `Automated request for part number ${part.payload.part_number} from manufacturer ${part.payload.manufacturer}`,

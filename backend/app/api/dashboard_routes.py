@@ -4,12 +4,23 @@ from sqlalchemy import func
 from app.database import get_db
 from app.models.rfq import RFQ
 from app.models.quote import Quote
+from app.models.user import User
+from app.api import deps
 import datetime
 
 router = APIRouter()
 
 @router.get("/vendor/{vendor_id}/stats")
-def get_vendor_stats(vendor_id: str, db: Session = Depends(get_db)):
+def get_vendor_stats(
+    vendor_id: str, 
+    db: Session = Depends(get_db),
+    current_user: User = Depends(deps.get_current_user)
+):
+    # Enforce ownership: User can only see their own stats
+    # Unless they are an admin
+    if current_user.id != vendor_id and current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized to access these stats")
+
     try:
         # 1. Active RFQs (RFQs open platform-wide)
         new_rfqs_count = db.query(RFQ).filter(RFQ.status == "open").count()
@@ -71,10 +82,17 @@ def get_vendor_stats(vendor_id: str, db: Session = Depends(get_db)):
         }
 
 @router.get("/vendor/{vendor_id}/rfqs")
-def get_vendor_rfqs(vendor_id: str, db: Session = Depends(get_db)):
+def get_vendor_rfqs(
+    vendor_id: str, 
+    db: Session = Depends(get_db),
+    current_user: User = Depends(deps.get_current_user)
+):
     """
     Returns list of RFQs that are relevant to this vendor.
     """
+    if current_user.id != vendor_id and current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized to access these RFQs")
+
     rfqs = db.query(RFQ).filter(RFQ.status != "closed").order_by(RFQ.created_at.desc()).limit(10).all()
     
     result = []

@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from app.database import get_db
 from app.models.rfq import RFQ
 from app.models.user import User
+from app.api import deps
 
 router = APIRouter()
 
@@ -45,7 +46,8 @@ class RFQCreate(BaseModel):
 @router.post("/rfqs")
 async def create_rfq(
     request: Request,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(deps.get_current_user)
 ):
     """Create a new RFQ supporting both JSON and Form data"""
     # Detect content type
@@ -68,8 +70,12 @@ async def create_rfq(
         )
 
     print(f"DEBUG: Processed RFQ data: {rfq_data.model_dump()}")
+    
+    # Override buyer_id with authenticated user's ID
+    final_buyer_id = current_user.id
+    
     rfq = RFQ(
-        buyer_id=rfq_data.buyer_id,
+        buyer_id=final_buyer_id,
         title=rfq_data.title,
         description=rfq_data.description,
         part_description=rfq_data.part_description,
@@ -88,13 +94,30 @@ async def create_rfq(
 async def list_rfqs(
     buyer_id: Optional[str] = None,
     status: Optional[str] = None,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(deps.get_current_user)
 ):
     """List RFQs with optional filtering"""
     query = db.query(RFQ)
     
-    if buyer_id:
-        query =query.filter(RFQ.buyer_id == buyer_id)
+    # Logic for visibility:
+    if current_user.role == "buyer":
+        # Buyers see ONLY their own RFQs
+        query = query.filter(RFQ.buyer_id == current_user.id)
+    elif current_user.role == "vendor":
+        # Vendors see all RFQs that are not closed or cancelled (accepted/rejected/finished)
+        query = query.filter(RFQ.status.in_(["open", "quoted"]))
+    elif current_user.role == "both":
+        # Context dependent: Acting as buyer if buyer_id matches, otherwise acting as vendor
+        if buyer_id == current_user.id:
+            query = query.filter(RFQ.buyer_id == current_user.id)
+        else:
+            # Vendor view: show all active inquiries
+            query = query.filter(RFQ.status.in_(["open", "quoted"]))
+    
+    if buyer_id and current_user.role == "admin":
+        query = query.filter(RFQ.buyer_id == buyer_id)
+    
     if status:
         query = query.filter(RFQ.status == status)
     
@@ -117,11 +140,21 @@ async def list_rfqs(
     }
 
 @router.get("/rfqs/{rfq_id}")
-async def get_rfq(rfq_id: str, db: Session = Depends(get_db)):
+async def get_rfq(
+    rfq_id: str, 
+    db: Session = Depends(get_db),
+    current_user: User = Depends(deps.get_current_user)
+):
     """Get RFQ details"""
     rfq = db.query(RFQ).filter(RFQ.id == rfq_id).first()
     if not rfq:
         raise HTTPException(status_code=404, detail="RFQ not found")
+    
+    # Authorization check:
+    # Buyers can only see their own RFQs.
+    # Vendors can see RFQs if they are open or if they have quoted (implied by open here).
+    if current_user.role == "buyer" and rfq.buyer_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to see this RFQ")
     
     return {
         "id": rfq.id,
@@ -147,12 +180,17 @@ async def update_rfq(
     target_price: Optional[float] = None,
     requirements: Optional[str] = None,
     status: Optional[str] = None,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(deps.get_current_user)
 ):
     """Update RFQ details"""
     rfq = db.query(RFQ).filter(RFQ.id == rfq_id).first()
     if not rfq:
         raise HTTPException(status_code=404, detail="RFQ not found")
+    
+    # Only owner or admin can update
+    if rfq.buyer_id != current_user.id and current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized to update this RFQ")
     
     if title is not None: rfq.title = title
     if description is not None: rfq.description = description
