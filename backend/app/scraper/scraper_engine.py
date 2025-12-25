@@ -195,7 +195,7 @@ class ScraperEngine:
                         # Visit child pages if enabled
                         if config.child_pages.get('enabled'):
                             for idx, product in enumerate(products):
-                                if product.get('product_url'):
+                                if product.get('source_url'):
                                     try:
                                         await self._scrape_product_details(
                                             page,
@@ -212,7 +212,7 @@ class ScraperEngine:
                         next_button = config.pagination.get('next_button')
                         if next_button:
                             current_url = await page.evaluate(
-                                f"() => document.querySelector('{next_button}')?.href"
+                                f"() => document.querySelector(\"{next_button}\")?.href"
                             )
                         else:
                             current_url = None
