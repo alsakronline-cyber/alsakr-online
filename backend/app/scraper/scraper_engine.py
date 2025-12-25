@@ -163,9 +163,21 @@ class ScraperEngine:
                             const containers = document.querySelectorAll("{config.selectors['product_card']}");
                             return Array.from(containers).map(el => {{
                                 const img = el.querySelector("{config.selectors.get('image', '')}");
+                                
+                                let partNo = null;
+                                try {{
+                                    partNo = el.querySelector("{config.selectors['part_number']}")?.innerText?.trim();
+                                }} catch (e) {{}}
+                                
+                                if (!partNo) {{
+                                    // Fallback: Regex for "Part no.: 12345"
+                                    const match = el.innerText.match(/Part no\.?:\s*([0-9]+)/i);
+                                    if (match) partNo = match[1];
+                                }}
+
                                 return {{
                                     name: el.querySelector("{config.selectors['product_name']}")?.innerText?.trim(),
-                                    part_number: el.querySelector("{config.selectors['part_number']}")?.innerText?.trim(),
+                                    part_number: partNo,
                                     category: el.querySelector("{config.selectors.get('category', '')}")?.innerText?.trim(),
                                     image_url: img ? (img.getAttribute('data-src') || img.src) : null,
                                     product_url: el.querySelector("{config.selectors.get('product_name', 'a')}")?.href
