@@ -31,12 +31,13 @@ echo "Installing Python packages using $PIP_CMD..."
 $PIP_CMD install --no-cache-dir \
     arq==0.25.0 \
     httpx==0.27.0 \
-    pyyaml==6.0.1
+    pyyaml==6.0.1 \
+    playwright==1.41.2
 
 echo ""
 echo "Installing Playwright browser..."
-# Install Playwright and Chromium browser
-playwright install chromium --with-deps
+# Use python3 -m playwright to avoid PATH issues
+python3 -m playwright install chromium --with-deps
 
 echo ""
 echo "✅ Scraper dependencies installed successfully!"
