@@ -147,7 +147,6 @@ class ScraperEngine:
                             timeout=config.limits['page_timeout_ms']
                         )
                         
-                        try:
                             # CRITICAL: SICK.com is an SPA - wait for specific element
                             logger.info("Waiting for product card selector...")
                             try:
