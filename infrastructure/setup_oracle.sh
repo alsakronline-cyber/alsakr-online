@@ -22,13 +22,16 @@ sudo apt-get update
 sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
 # 3. Setup Project Directory Structure
-echo "Creating directory structure..."
-mkdir -p alsakr-online/{backend,frontend,infrastructure}
-mkdir -p alsakr-online/infrastructure/{caddy,monitoring}
-# Create data directories (even if using named volumes, having the structure is good practice as per prompt)
-mkdir -p alsakr-online/infrastructure/data/{ollama,qdrant,pocketbase}
-
-cd alsakr-online
+# Detect if we are already inside the repo
+if [ -d "infrastructure" ] && [ -d "backend" ]; then
+    echo "Running from project root."
+    PROJECT_ROOT=$(pwd)
+else
+    echo "Setting up in ~/alsakr-online..."
+    mkdir -p ~/alsakr-online
+    cd ~/alsakr-online
+    PROJECT_ROOT=$(pwd)
+fi
 
 # 4. Configure Firewall (UFW)
 echo "Configuring UFW..."
@@ -44,17 +47,22 @@ sudo ufw allow 22/tcp
 # Allow HTTP/HTTPS
 sudo ufw allow 80/tcp
 sudo ufw allow 443/tcp
+sudo ufw allow 8000/tcp
+
 # Enable without prompting
 echo "y" | sudo ufw enable
 sudo ufw status verbose
 
-# 4. (Manual Step) Copy files from your local machine to this VPS
-# scp -r backend frontend infrastructure user@your-oracle-ip:~/alsakr-online/
+# 5. Environment Setup
+if [ ! -f "$PROJECT_ROOT/infrastructure/.env" ]; then
+    echo "Creating .env from example..."
+    cp "$PROJECT_ROOT/infrastructure/.env.example" "$PROJECT_ROOT/infrastructure/.env"
+fi
 
-# 5. Start Production Stack
-cd infrastructure
+# 6. Start Production Stack
+cd "$PROJECT_ROOT/infrastructure"
 docker compose up -d --build
 
-# 6. Verify Status
+# 7. Verify Status
 docker compose ps
 curl http://localhost:8000/api/health
