@@ -95,7 +95,7 @@ export default function ProfilePage() {
                     <p className="text-zinc-500">Manage your personal and company information</p>
                 </header>
 
-                <form onSubmit={handleSave} className="space-y-6">
+                <form onSubmit={handleUpdateProfile} className="space-y-6">
                     <Card>
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
