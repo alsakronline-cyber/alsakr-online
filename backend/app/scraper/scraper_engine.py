@@ -127,6 +127,7 @@ class ScraperEngine:
             )
             
             all_products = []
+            processed_parts = set()
             
             for start_url in config.start_urls:
                 current_url = start_url
