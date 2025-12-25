@@ -27,7 +27,8 @@ def get_current_user(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Could not validate credentials",
             )
-    except (JWTError, ValidationError):
+    except (JWTError, ValidationError) as e:
+        print(f"AUTH DEBUG: Token validation failed: {e}")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Could not validate credentials",
