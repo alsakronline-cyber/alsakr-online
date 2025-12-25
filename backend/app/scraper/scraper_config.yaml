@@ -8,7 +8,7 @@ scrapers:
     vendor_name: "SICK AG"
     base_url: "https://www.sick.com"
     start_urls:
-      - "https://www.sick.com/us/en/products/c/g568268"
+      - "https://www.sick.com/us/en/catalog/products/detection-sensors/photoelectric-sensors/w12/c/g568289"
     scraping_method: "playwright"  # JavaScript-heavy site requires browser automation
     schedule: "0 2 * * *"  # Daily at 2 AM UTC
     
