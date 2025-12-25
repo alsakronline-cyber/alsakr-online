@@ -176,11 +176,11 @@ class ScraperEngine:
                                 }}
 
                                 return {{
-                                    name: el.querySelector("{config.selectors['product_name']}")?.innerText?.trim(),
+                                    product_name: el.querySelector("{config.selectors['product_name']}")?.innerText?.trim(),
                                     part_number: partNo,
                                     category: el.querySelector("{config.selectors.get('category', '')}")?.innerText?.trim(),
-                                    image_url: img ? (img.getAttribute('data-src') || img.src) : null,
-                                    product_url: el.querySelector("{config.selectors.get('product_name', 'a')}")?.href
+                                    image_urls: img ? [(img.getAttribute('data-src') || img.src)] : [],
+                                    source_url: el.querySelector("{config.selectors.get('product_name', 'a')}")?.href
                                 }};
                             }});
                         }}""")
@@ -242,7 +242,7 @@ class ScraperEngine:
         config: ScraperConfig
     ):
         """Navigate to product detail page and extract specifications"""
-        product_url = product['product_url']
+        product_url = product['source_url']
         
         try:
             await page.goto(product_url, wait_until='networkidle', timeout=30000)
