@@ -261,34 +261,65 @@ class ScraperEngine:
         try:
             await page.goto(product_url, wait_until='networkidle', timeout=30000)
             
-            # Extract specifications table
-            # Extract specifications table
-            specs_selector = config.selectors.get('specs_table', '')
-            if specs_selector:
-                specs_html = await page.evaluate(
-                    f"() => document.querySelector(\"{specs_selector}\")?.outerHTML"
-                )
+            # 1. Extract Category from Breadcrumbs
+            try:
+                category_selector = config.selectors.get('category', 'syn-breadcrumb-item')
+                category = await page.evaluate(f"""() => {{
+                    const items = document.querySelectorAll("{category_selector}");
+                    if (items.length >= 2) {{
+                        return items[items.length - 2].innerText.trim();
+                    }}
+                    return items.length > 0 ? items[0].innerText.trim() : null;
+                }}""")
+                if category: product['category'] = category
+            except Exception as e:
+                logger.debug(f"Category extraction failed: {e}")
+
+            # 2. Extract Images (Detail Level)
+            try:
+                img_selector = config.selectors.get('image', 'picture img.loaded')
+                image_urls = await page.evaluate(f"""() => {{
+                    const imgs = document.querySelectorAll("{img_selector}");
+                    return Array.from(imgs).map(img => img.getAttribute('data-src') || img.src);
+                }}""")
+                if image_urls: product['image_urls'] = image_urls
+            except Exception as e:
+                logger.debug(f"Image extraction failed: {e}")
+
+            # 3. Extract Merged Specifications (Tech + Customs)
+            specs_selector = config.selectors.get('specs_table', '.tech-table table, .customs-table table')
+            try:
+                specs_html_list = await page.evaluate(f"""() => {{
+                    const tables = document.querySelectorAll("{specs_selector}");
+                    return Array.from(tables).map(t => t.outerHTML);
+                }}""")
                 
-                if specs_html:
-                    product['specifications'] = self._parse_table_html(specs_html)
+                merged_specs = product.get('specifications', {})
+                for html in specs_html_list:
+                    merged_specs.update(self._parse_table_html(html))
+                product['specifications'] = merged_specs
+            except Exception as e:
+                logger.warning(f"Specs extraction failed for {product_url}: {e}")
             
-            # Extract PDF links (handle <a> and <button> wrappers)
-            pdf_selector = config.selectors.get('pdf_link', 'a[href$=".pdf"]')
-            pdf_links = await page.evaluate(f"""() => {{
-                return Array.from(document.querySelectorAll("{pdf_selector}")).map(el => {{
-                    // Check if element is link
-                    if (el.href) return el.href;
-                    // Check if parent is button with data-url or similar? 
-                    // For SICK, buttons often trigger download. We capture the button text/existence for now.
-                    return el.closest('button') ? 'Manual Download Required' : el.innerText;
-                }})
-            }}""")
-            product['pdf_urls'] = [p for p in pdf_links if p]
-            
+            # 4. Extract PDF Link Button
+            pdf_selector = config.selectors.get('pdf_link', '[data-test-id="split-button-main"]')
+            try:
+                pdf_data = await page.evaluate(f"""() => {{
+                    const buttons = document.querySelectorAll("{pdf_selector}");
+                    return Array.from(buttons).map(btn => {{
+                        const text = btn.innerText.trim();
+                        return (text.includes("Download") || text.includes("English")) ? "Available: " + text : null;
+                    }}).filter(v => v !== null);
+                }}""")
+                if pdf_data: product['pdf_urls'] = pdf_data
+            except Exception as e:
+                logger.debug(f"PDF extraction failed: {e}")
+                
         except Exception as e:
-            logger.warning(f"Failed to extract details from {product_url}: {e}")
-            product['specifications'] = {}
-            product['pdf_urls'] = []
+            logger.warning(f"Failed to load detail page {product_url}: {e}")
+            # Ensure fields exist for validation even on failure
+            if 'specifications' not in product: product['specifications'] = {}
+            if 'pdf_urls' not in product: product['pdf_urls'] = []
     
     async def _scrape_with_http(self, config: ScraperConfig) -> List[Dict]:
         """

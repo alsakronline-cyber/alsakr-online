@@ -21,10 +21,10 @@ scrapers:
       product_card: "tr.mat-mdc-row"
       product_name: "a.name"
       part_number: "ui-product-part-number .font-bold"
-      category: "td[class*='Functional-principle'] .cell-value"
-      image: "ui-akamai-image img"
-      specs_table: ".technical-details table"
-      pdf_link: "button.action-button span"
+      category: "syn-breadcrumb-item" # Target breadcrumbs for detail page
+      image: "picture img.loaded"
+      specs_table: ".tech-table table, .customs-table table"
+      pdf_link: "[data-test-id='split-button-main']"
     
     pagination:
       next_button: "davinci-button.show-more-button"
@@ -34,11 +34,11 @@ scrapers:
       enabled: true
       url_selector: "a.name"
       detail_selectors:
-        technical_specs: ".technical-details"
+        technical_specs: ".tech-table, .customs-table"
         applications: ".applications"
         pdf: "button[data-test-id='split-button-main']"
         cad: "syn-button"
-        image_hires: "img[src*='pim']"
+        image_hires: "picture img.loaded"
 
 # Future vendors (Phase 3)
 # Uncomment and configure when ready to add more vendors
