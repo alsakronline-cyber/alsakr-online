@@ -9,6 +9,7 @@ scrapers:
     base_url: "https://www.sick.com"
     start_urls:
       - "https://www.sick.com/us/en/catalog/products/detection-sensors/photoelectric-sensors/w12/c/g568289"
+      - "https://www.sick.com/de/en/catalog/products/detection-sensors/photoelectric-sensors/w12/c/g568289"
     scraping_method: "playwright"  # JavaScript-heavy site requires browser automation
     schedule: "0 2 * * *"  # Daily at 2 AM UTC
     
