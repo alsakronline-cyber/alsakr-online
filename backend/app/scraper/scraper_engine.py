@@ -117,6 +117,7 @@ class ScraperEngine:
                     '--disable-extensions',      # Skip extensions
                     '--disable-background-networking',
                     '--disable-background-timer-throttling',
+                    '--disable-blink-features=AutomationControlled', # Stealth: Hide navigator.webdriver
                 ]
             )
             
