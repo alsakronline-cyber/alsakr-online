@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { User, Shield, CheckCircle, XCircle, Search, Edit2 } from "lucide-react"
 
 export default function UserManagementPage() {
+    const router = useRouter()
     const [users, setUsers] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState("")

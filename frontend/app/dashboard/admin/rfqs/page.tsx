@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { FileText, Search, ExternalLink, Filter } from "lucide-react"
 
 export default function AdminRFQsPage() {
+    const router = useRouter()
     const [rfqs, setRfqs] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState("")
