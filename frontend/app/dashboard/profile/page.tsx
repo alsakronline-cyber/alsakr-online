@@ -28,7 +28,7 @@ export default function ProfilePage() {
             const token = localStorage.getItem('token')
             if (!token) return
 
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com'}/api/users/profile/${userId}`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com'}/api/users/${userId}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -55,7 +55,7 @@ export default function ProfilePage() {
         }
 
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com'}/api/users/profile/${userId}`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com'}/api/users/${userId}`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
