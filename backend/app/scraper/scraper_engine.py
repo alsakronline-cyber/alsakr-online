@@ -344,13 +344,13 @@ class ScraperEngine:
                         const nameEl = tile.querySelector('h4.format-xs');
                         const partNoEl = tile.querySelector('.text-semibold');
                         const imgEl = tile.querySelector('img.loaded');
-                        const linkEl = tile.querySelector('syn-button a');
+                        const linkEl = tile.querySelector('syn-button');
                         
                         // Extract text and clean up
                         const name = nameEl ? nameEl.innerText.trim() : null;
                         const partNumber = partNoEl ? partNoEl.innerText.replace('Part no.:', '').trim() : null;
                         const imageUrl = imgEl ? (imgEl.getAttribute('data-src') || imgEl.src) : null;
-                        let productUrl = linkEl ? linkEl.getAttribute('href') : null;
+                        let productUrl = linkEl ? (linkEl.getAttribute('href') || linkEl.querySelector('a')?.getAttribute('href')) : null;
                         
                         if (productUrl && !productUrl.startsWith('http')) {{
                             productUrl = window.location.origin + productUrl;
