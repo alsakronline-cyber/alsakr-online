@@ -248,21 +248,28 @@ class ScraperEngine:
             await page.goto(product_url, wait_until='networkidle', timeout=30000)
             
             # Extract specifications table
+            # Extract specifications table
             specs_selector = config.selectors.get('specs_table', '')
             if specs_selector:
                 specs_html = await page.evaluate(
-                    f"() => document.querySelector('{specs_selector}')?.outerHTML"
+                    f"() => document.querySelector(\"{specs_selector}\")?.outerHTML"
                 )
                 
                 if specs_html:
                     product['specifications'] = self._parse_table_html(specs_html)
             
-            # Extract PDF links
+            # Extract PDF links (handle <a> and <button> wrappers)
             pdf_selector = config.selectors.get('pdf_link', 'a[href$=".pdf"]')
-            pdf_links = await page.evaluate(
-                f"() => Array.from(document.querySelectorAll('{pdf_selector}')).map(a => a.href)"
-            )
-            product['pdf_urls'] = pdf_links if pdf_links else []
+            pdf_links = await page.evaluate(f"""() => {{
+                return Array.from(document.querySelectorAll("{pdf_selector}")).map(el => {{
+                    // Check if element is link
+                    if (el.href) return el.href;
+                    // Check if parent is button with data-url or similar? 
+                    // For SICK, buttons often trigger download. We capture the button text/existence for now.
+                    return el.closest('button') ? 'Manual Download Required' : el.innerText;
+                }})
+            }}""")
+            product['pdf_urls'] = [p for p in pdf_links if p]
             
         except Exception as e:
             logger.warning(f"Failed to extract details from {product_url}: {e}")
