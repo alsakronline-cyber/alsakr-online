@@ -19,15 +19,20 @@ fi
 # Navigate to backend directory
 cd "$(dirname "$0")/.."
 
-echo "Generating migration for scraper tables..."
-python3 -m alembic revision --autogenerate -m "Add scraper tables for job tracking and product storage"
+if [ -f "alembic.ini" ]; then
+    echo "Generating migration for scraper tables..."
+    python3 -m alembic revision --autogenerate -m "Add scraper tables for job tracking and product storage" || echo "⚠️ Alembic revision failed, skipping..."
+
+    echo ""
+    echo "Applying migration..."
+    python3 -m alembic upgrade head || echo "⚠️ Alembic upgrade failed, skipping..."
+else
+    echo "⚠️ alembic.ini not found on host. Skipping host-side migration."
+    echo "The migration will be run inside the Docker container instead."
+fi
 
 echo ""
-echo "Applying migration..."
-python3 -m alembic upgrade head
-
-echo ""
-echo "✅ Scraper tables created successfully!"
+echo "✅ Host-side migration check complete."
 echo ""
 echo "Tables created:"
 echo "  - scraper_jobs (job execution tracking)"

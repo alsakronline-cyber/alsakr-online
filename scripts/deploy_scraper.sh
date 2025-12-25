@@ -72,6 +72,11 @@ echo "Starting updated services..."
 docker compose up -d backend arq-worker
 
 echo ""
+echo "Step 6/5: Initializing Database Tables (Docker)..."
+echo "--------------------------------------------"
+docker compose exec backend python create_scraper_tables.py
+
+echo ""
 echo "=============================================="
 echo "   ✅ Scraper Deployment Complete!"
 echo "=============================================="
