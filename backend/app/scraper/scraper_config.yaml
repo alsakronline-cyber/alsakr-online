@@ -20,21 +20,22 @@ scrapers:
     selectors:
       product_card: "tr.mat-mdc-row"
       product_name: "a.name"
-      part_number: "span:text('Part no.:') + span" # Dynamically found on detail
-      category: "ol.breadcrumb li:last-child"
-      image: "img[src*='pim']"
+      part_number: "ui-product-part-number .font-bold"
+      category: "td[class*='Functional-principle'] .cell-value"
+      image: "ui-akamai-image img"
       specs_table: ".technical-details table"
-      pdf_link: "button.action-button:has-text('English') span" # Selector for PDF button
+      pdf_link: "button.action-button span"
     
     pagination:
-      next_button: "a[aria-label='Next page']"
-      max_pages: 50
+      next_button: "davinci-button.show-more-button"
+      max_pages: 5
     
     child_pages:
       enabled: true
       url_selector: "a.name"
       detail_selectors:
         technical_specs: ".technical-details"
+        applications: ".applications"
         pdf: "button[data-test-id='split-button-main']"
         cad: "syn-button:has-text('CAD')"
         image_hires: "img[src*='pim']"

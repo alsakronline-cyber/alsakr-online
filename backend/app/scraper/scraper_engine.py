@@ -134,31 +134,23 @@ class ScraperEngine:
                 max_pages = config.pagination.get('max_pages', 50)
                 
                 logger.info(f"Starting pagination from: {start_url}")
+                max_pages = config.pagination.get('max_pages', 5) # Default to 5 pages for 'Show More'
                 
-                while current_url and page_count < max_pages:
-                    page = await context.new_page()
+                page = await context.new_page() # Main listing page, persistent
+                try:
+                    logger.info(f"Starting pagination from: {start_url}")
+                    await page.goto(current_url, wait_until='networkidle', timeout=30000)
                     
-                    try:
-                        logger.info(f"Scraping page {page_count + 1}: {current_url}")
-                        
-                        # Navigate to page
-                        await page.goto(
-                            current_url,
-                            wait_until='networkidle',
-                            timeout=config.limits['page_timeout_ms']
-                        )
-                        
-                        # CRITICAL: SICK.com is an SPA - wait for specific element
-                        logger.info("Waiting for product card selector...")
+                    while page_count < max_pages:
+                        # Wait for content to load
+                        logger.info(f"Scraping page {page_count + 1} (interaction {page_count + 1})...")
                         try:
                             await page.wait_for_selector(config.selectors['product_card'], timeout=10000)
                         except PlaywrightTimeout:
-                            logger.warning("Timeout waiting for product cards. Dumping HTML body for debug...")
-                            body_html = await page.content()
-                            logger.warning(f"HTML Content Preview: {body_html[:2000]}")
-                            # continue anyway to return 0 products and trigger the log
+                            logger.warning("Timeout waiting for product cards. No more products or selector issue.")
+                            break # No more products or selector issue, exit loop
                         
-                        # Extract products from current page
+                        # Extract products (entire set currently on page)
                         products = await page.evaluate(f"""() => {{
                             const containers = document.querySelectorAll("{config.selectors['product_card']}");
                             return Array.from(containers).map(el => {{
@@ -171,7 +163,7 @@ class ScraperEngine:
                                 
                                 if (!partNo) {{
                                     // Fallback: Regex for "Part no.: 12345"
-                                    const match = el.innerText.match(/Part no\.?:\s*([0-9]+)/i);
+                                    const match = el.innerText.match(/Part no\.?:\\s*([0-9]+)/i);
                                     if (match) partNo = match[1];
                                 }}
 
@@ -189,45 +181,67 @@ class ScraperEngine:
                             logger.warning(f"Found 0 products on {current_url}. Selectors might be wrong.")
                             body_html = await page.content()
                             logger.warning(f"Page HTML Dump (First 2000 chars): {body_html[:2000]}")
+                            break # No products found, exit loop
                         
-                        logger.info(f"Extracted {len(products)} products from page {page_count + 1}")
+                        # Only process NEW products (avoid re-scraping details)
+                        new_products = [p for p in products if p['part_number'] and p['part_number'] not in processed_parts]
                         
-                        # Visit child pages if enabled
-                        if config.child_pages.get('enabled'):
-                            for idx, product in enumerate(products):
-                                if product.get('source_url'):
-                                    try:
-                                        await self._scrape_product_details(
-                                            page,
-                                            product,
-                                            config
-                                        )
-                                        logger.debug(f"Scraped details for product {idx + 1}/{len(products)}")
-                                    except Exception as e:
-                                        logger.warning(f"Failed to scrape details for {product.get('product_url')}: {e}")
-                        
-                        all_products.extend(products)
-                        
-                        # Find next page
-                        next_button = config.pagination.get('next_button')
-                        if next_button:
-                            current_url = await page.evaluate(
-                                f"() => document.querySelector(\"{next_button}\")?.href"
-                            )
+                        if not new_products:
+                            logger.info("No new products found on this page interaction.")
                         else:
-                            current_url = None
+                            logger.info(f"Found {len(new_products)} new products (Total on page: {len(products)})")
+                            
+                            # Visit child pages if enabled
+                            if config.child_pages.get('enabled'):
+                                for idx, product in enumerate(new_products):
+                                    if product.get('source_url'):
+                                        try:
+                                            # Use a temporary page to avoid losing state of the list page
+                                            detail_page = await context.new_page()
+                                            await self._scrape_product_details(detail_page, product, config)
+                                            await detail_page.close()
+                                            logger.debug(f"Scraped details for product {idx + 1}/{len(new_products)}")
+                                        except Exception as e:
+                                            logger.warning(f"Failed to scrape details for {product.get('source_url')}: {e}")
+                            
+                            all_products.extend(new_products)
+                            for p in new_products:
+                                if p['part_number']:
+                                    processed_parts.add(p['part_number'])
                         
+                        # Check for Next Page / Show More
+                        next_selector = config.pagination.get('next_button')
+                        if not next_selector:
+                            logger.info("No next button selector configured. Ending pagination.")
+                            break # No next button configured, end pagination
+                            
+                        next_el = await page.query_selector(next_selector)
+                        if not next_el:
+                            logger.info("Next button not found on page. Ending pagination.")
+                            break # Next button not found, end pagination
+                            
+                        href = await next_el.get_attribute('href')
+                        if href:
+                            # Link-based pagination
+                            logger.info(f"Navigating to next page via link: {href}")
+                            current_url = page.url.split('?')[0] + href if href.startswith('?') else href
+                            await page.goto(current_url, wait_until='networkidle')
+                        else:
+                            # Button-based pagination (e.g., SICK 'Show more')
+                            logger.info("Clicking 'Show More' button.")
+                            await next_el.click()
+                            await page.wait_for_load_state('networkidle')
+                            await asyncio.sleep(2) # Extra buffer for AJAX render
+                            
                         page_count += 1
                         
-                    except PlaywrightTimeout:
-                        logger.error(f"Timeout loading page: {current_url}")
-                        break
-                    except Exception as e:
-                        logger.error(f"Error scraping page {current_url}: {e}", exc_info=True)
-                        break
-                    finally:
-                        # CRITICAL: Close page immediately to free memory
-                        await page.close()
+                except PlaywrightTimeout:
+                    logger.error(f"Timeout loading page: {current_url}")
+                except Exception as e:
+                    logger.error(f"Error on {current_url}: {e}", exc_info=True)
+                finally:
+                    # CRITICAL: Close page immediately to free memory
+                    await page.close()
             
             await context.close()
             await browser.close()
