@@ -6,7 +6,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str = config("DATABASE_URL", default="sqlite:///./data/nexus.db")
     SECRET_KEY: str = config("JWT_SECRET", default="supersecretkey_change_in_production")
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440 # 24 hours
     
     # Cors Origins
     BACKEND_CORS_ORIGINS: list = ["*"]
