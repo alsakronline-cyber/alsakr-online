@@ -1,0 +1,153 @@
+{
+    "name": "Payment Confirmation Workflow",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "payment-confirmed",
+                "responseMode": "responseNode"
+            },
+            "name": "Webhook - Payment Confirmed",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                250,
+                300
+            ],
+            "webhookId": "payment-confirmation"
+        },
+        {
+            "parameters": {
+                "operation": "extractFromJson",
+                "fieldsToExtract": "payment_id,order_id,amount,currency,buyer_email,buyer_name,payment_method"
+            },
+            "name": "Extract Payment Data",
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 1,
+            "position": [
+                450,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "url": "={{ $env.BACKEND_URL }}/api/orders/{{ $node['Extract Payment Data'].json['order_id'] }}",
+                "authentication": "predefinedCredentialType",
+                "nodeCredentialType": "httpHeaderAuth",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameter": [
+                        {
+                            "name": "Authorization",
+                            "value": "Bearer {{ $env.API_SECRET }}"
+                        }
+                    ]
+                }
+            },
+            "name": "Update Order Status",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 1,
+            "position": [
+                650,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "sendTo": "={{ $node['Extract Payment Data'].json['buyer_email'] }}",
+                "subject": "Payment Receipt - Order #{{ $node['Extract Payment Data'].json['order_id'] }}",
+                "emailType": "html",
+                "html": "={{ $node['Load Receipt Template'].json['template'] }}",
+                "options": {
+                    "senderName": "Alsakr Online - Payments"
+                }
+            },
+            "name": "Send Payment Receipt",
+            "type": "n8n-nodes-base.emailSend",
+            "typeVersion": 1,
+            "position": [
+                850,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "filePath": "/data/templates/payment-receipt.html"
+            },
+            "name": "Load Receipt Template",
+            "type": "n8n-nodes-base.readBinaryFile",
+            "typeVersion": 1,
+            "position": [
+                650,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ { \"success\": true, \"payment_id\": $node['Extract Payment Data'].json['payment_id'] } }}"
+            },
+            "name": "Response",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                1050,
+                300
+            ]
+        }
+    ],
+    "connections": {
+        "Webhook - Payment Confirmed": {
+            "main": [
+                [
+                    {
+                        "node": "Extract Payment Data",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Extract Payment Data": {
+            "main": [
+                [
+                    {
+                        "node": "Update Order Status",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Load Receipt Template",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Load Receipt Template": {
+            "main": [
+                [
+                    {
+                        "node": "Send Payment Receipt",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Send Payment Receipt": {
+            "main": [
+                [
+                    {
+                        "node": "Response",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "settings": {},
+    "staticData": null,
+    "tags": []
+}

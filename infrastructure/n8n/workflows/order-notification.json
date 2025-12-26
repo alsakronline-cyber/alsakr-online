@@ -1,0 +1,183 @@
+{
+    "name": "Order Notification Workflow",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "order-created",
+                "responseMode": "responseNode",
+                "options": {}
+            },
+            "name": "Webhook - Order Created",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                250,
+                300
+            ],
+            "webhookId": "order-notification"
+        },
+        {
+            "parameters": {
+                "operation": "extractFromJson",
+                "fieldsToExtract": "order_id,buyer_email,buyer_name,vendor_email,vendor_name,total_price,items"
+            },
+            "name": "Extract Order Data",
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 1,
+            "position": [
+                450,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "sendTo": "={{ $node['Extract Order Data'].json['buyer_email'] }}",
+                "subject": "Order Confirmation #{{ $node['Extract Order Data'].json['order_id'] }}",
+                "emailType": "html",
+                "html": "{{ $node['Load Buyer Template'].json['template'] }}",
+                "options": {
+                    "senderName": "Alsakr Online"
+                }
+            },
+            "name": "Send Email to Buyer",
+            "type": "n8n-nodes-base.emailSend",
+            "typeVersion": 1,
+            "position": [
+                650,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "sendTo": "={{ $node['Extract Order Data'].json['vendor_email'] }}",
+                "subject": "New Order Received #{{ $node['Extract Order Data'].json['order_id'] }}",
+                "emailType": "html",
+                "html": "={{ $node['Load Vendor Template'].json['template'] }}",
+                "options": {
+                    "senderName": "Alsakr Online"
+                }
+            },
+            "name": "Send Email to Vendor",
+            "type": "n8n-nodes-base.emailSend",
+            "typeVersion": 1,
+            "position": [
+                650,
+                400
+            ]
+        },
+        {
+            "parameters": {
+                "filePath": "/data/templates/order-confirmation.html"
+            },
+            "name": "Load Buyer Template",
+            "type": "n8n-nodes-base.readBinaryFile",
+            "typeVersion": 1,
+            "position": [
+                450,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "filePath": "/data/templates/vendor-order-notification.html"
+            },
+            "name": "Load Vendor Template",
+            "type": "n8n-nodes-base.readBinaryFile",
+            "typeVersion": 1,
+            "position": [
+                450,
+                400
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ { \"success\": true, \"message\": \"Notifications sent\" } }}"
+            },
+            "name": "Response",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                850,
+                300
+            ]
+        }
+    ],
+    "connections": {
+        "Webhook - Order Created": {
+            "main": [
+                [
+                    {
+                        "node": "Extract Order Data",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Extract Order Data": {
+            "main": [
+                [
+                    {
+                        "node": "Load Buyer Template",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Load Vendor Template",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Load Buyer Template": {
+            "main": [
+                [
+                    {
+                        "node": "Send Email to Buyer",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Load Vendor Template": {
+            "main": [
+                [
+                    {
+                        "node": "Send Email to Vendor",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Send Email to Buyer": {
+            "main": [
+                [
+                    {
+                        "node": "Response",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Send Email to Vendor": {
+            "main": [
+                [
+                    {
+                        "node": "Response",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "settings": {},
+    "staticData": null,
+    "tags": []
+}

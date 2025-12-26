@@ -1,0 +1,115 @@
+{
+    "name": "RFQ Response Reminder",
+    "nodes": [
+        {
+            "parameters": {
+                "rule": {
+                    "interval": [
+                        {
+                            "field": "cronExpression",
+                            "expression": "0 9 * * *"
+                        }
+                    ]
+                }
+            },
+            "name": "Schedule - Daily 9 AM",
+            "type": "n8n-nodes-base.scheduleTrigger",
+            "typeVersion": 1,
+            "position": [
+                250,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "url": "={{ $env.BACKEND_URL }}/api/rfqs/pending",
+                "authentication": "predefinedCredentialType",
+                "nodeCredentialType": "http HeaderAuth",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameter": [
+                        {
+                            "name": "Authorization",
+                            "value": "Bearer {{ $env.API_SECRET }}"
+                        }
+                    ]
+                }
+            },
+            "name": "Fetch Pending RFQs",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 1,
+            "position": [
+                450,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "functionCode": "const rfqs = items[0].json.rfqs || [];\nconst oldRfqs = rfqs.filter(rfq => {\n  const createdAt = new Date(rfq.created_at);\n  const daysSinceCreation = (Date.now() - createdAt.getTime()) / (1000 * 60 * 60 * 24);\n  return daysSinceCreation >= 2 && rfq.quote_count === 0;\n});\n\nreturn oldRfqs.map(rfq => ({ json: rfq }));"
+            },
+            "name": "Filter Old Pending RFQs",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 1,
+            "position": [
+                650,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "sendTo": "={{ $json.buyer_email }}",
+                "subject": "Reminder: Your RFQ #{{ $json.id }} needs attention",
+                "emailType": "html",
+                "html": "<html><body><h2>RFQ Reminder</h2><p>Dear {{ $json.buyer_name }},</p><p>Your Request for Quotation titled \"{{ $json.title }}\" has been open for {{ Math.floor((Date.now() - new Date($json.created_at).getTime()) / (1000 * 60 * 60 * 24)) }} days and hasn't received any quotes yet.</p><p>You may want to:</p><ul><li>Review your RFQ details</li><li>Adjust the requirements</li><li>Contact vendors directly</li></ul><p><a href=\"{{ $env.FRONTEND_URL }}/dashboard/buyer/rfqs/{{ $json.id }}\">View RFQ Details</a></p></body></html>",
+                "options": {
+                    "senderName": "Alsakr Online - RFQ System"
+                }
+            },
+            "name": "Send Reminder Email",
+            "type": "n8n-nodes-base.emailSend",
+            "typeVersion": 1,
+            "position": [
+                850,
+                300
+            ]
+        }
+    ],
+    "connections": {
+        "Schedule - Daily 9 AM": {
+            "main": [
+                [
+                    {
+                        "node": "Fetch Pending RFQs",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Fetch Pending RFQs": {
+            "main": [
+                [
+                    {
+                        "node": "Filter Old Pending RFQs",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Filter Old Pending RFQs": {
+            "main": [
+                [
+                    {
+                        "node": "Send Reminder Email",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "settings": {},
+    "staticData": null,
+    "tags": []
+}
