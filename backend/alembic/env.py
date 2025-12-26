@@ -4,19 +4,7 @@ from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
 from alembic import context
-from decouple import config as decouple_config
-
-# Import your Base and models here to support autogenerate
-from app.database import Base
-from app.models.user import User
-from app.models.product import Product
-from app.models.order import Order, OrderItem
-from app.models.cart import Cart, CartItem
-from app.models.payment import Payment
-from app.models.quote import Quote
-from app.models.rfq import RFQ
-from app.models.vendor import Vendor
-from app.models.scraper import ScraperJob, ScrapedProduct
+from app.config import settings
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -28,10 +16,9 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 # Set the SQLAlchemy URL from our configuration
-# config.set_main_option("sqlalchemy.url", decouple_config("DATABASE_URL"))
-# Better: Override the section so we don't mess up the config object for offline mode if needed
+# Use settings.DATABASE_URL which handles defaults (SQLite) if env var is missing
 section = config.config_ini_section
-config.set_section_option(section, "sqlalchemy.url", decouple_config("DATABASE_URL"))
+config.set_section_option(section, "sqlalchemy.url", settings.DATABASE_URL)
 
 # target_metadata is the metadata object associated with your models.
 target_metadata = Base.metadata
