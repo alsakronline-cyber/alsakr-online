@@ -9,7 +9,7 @@ import uvicorn
 from contextlib import asynccontextmanager
 
 # Initialize Database Tables
-from app.models import vendor, inquiry, quote, user, rfq, order, product, part, search, notification, scraper
+from app.models import vendor, inquiry, quote, user, rfq, order, product, part, search, notification, scraper, payment, cart
 Base.metadata.create_all(bind=engine)
 
 @asynccontextmanager
