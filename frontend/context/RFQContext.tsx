@@ -81,7 +81,19 @@ export function RFQProvider({ children }: { children: ReactNode }) {
             if (res.ok) {
                 const data = await res.json();
                 // Handle different response formats (some endpoints return {rfqs: []}, others return array directly)
-                setRfqs(Array.isArray(data) ? data : (data.rfqs || []));
+                const rawRfqs = Array.isArray(data) ? data : (data.rfqs || []);
+
+                // Transform backend status values to match frontend expectations
+                // Backend returns "New"/"Quoted" but frontend expects "open"/"quoted"
+                const transformedRfqs = rawRfqs.map((rfq: any) => ({
+                    ...rfq,
+                    status: rfq.status === "New" ? "open" :
+                        rfq.status === "Quoted" ? "quoted" :
+                            rfq.status.toLowerCase()
+                }));
+
+                console.log(`Fetched ${transformedRfqs.length} RFQs for role: ${role}`);
+                setRfqs(transformedRfqs);
             } else {
                 console.error('Failed to fetch RFQs:', res.status, res.statusText);
             }
