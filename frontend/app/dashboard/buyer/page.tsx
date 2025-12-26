@@ -1,26 +1,56 @@
 'use client';
-import { useState, useEffect, Suspense } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useState, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { ImageUpload } from '@/components/search/ImageUpload';
 import { VoiceSearch } from '@/components/search/VoiceSearch';
 import { useCart } from '@/context/CartContext';
 
 import { RFQList } from '@/components/dashboard/buyer/RFQList';
 import { RFQProvider } from '@/context/RFQContext';
+import { ProductDetailsPanel } from '@/components/dashboard/buyer/ProductDetailsPanel';
 
 function BuyerDashboardContent() {
     const searchParams = useSearchParams();
-    const router = useRouter();
     const { addToCart } = useCart();
 
     // Tabs: 'search' | 'rfqs'
     const [activeTab, setActiveTab] = useState<'search' | 'rfqs'>('search');
 
+    // Search State
+    const initialQuery = searchParams.get('q') || '';
+    const [searchQuery, setSearchQuery] = useState(initialQuery);
+    const [loading, setLoading] = useState(false);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [results, setResults] = useState<any[]>([]);
-    // ... existing state ...
 
-    // ... existing useEffects ...
+    // Toggles
+    const [showImageSearch, setShowImageSearch] = useState(false);
+    const [showVoiceSearch, setShowVoiceSearch] = useState(false);
+
+    // Selection
+    const [selectedPart, setSelectedPart] = useState<any>(null);
+
+    const handleSearchSubmit = async () => {
+        if (!searchQuery.trim()) return;
+        setLoading(true);
+        try {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.app.alsakronline.com';
+            const res = await fetch(`${apiUrl}/api/search/text`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({ query: searchQuery })
+            });
+            const data = await res.json();
+            setResults(data.results || []);
+        } catch (error) {
+            console.error("Search failed:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <RFQProvider>
@@ -45,9 +75,6 @@ function BuyerDashboardContent() {
 
                 {activeTab === 'search' ? (
                     <div className="max-w-4xl mx-auto space-y-6">
-                        {/* Copy existing Search UI here - Input, Buttons, Results */}
-                        {/* Note: In a real refactor, I would extract the Search UI into a separate component 'PartSearch.tsx' */}
-                        {/* For this tool call, I will keep the original structure but nested here */}
                         <div className="flex gap-2">
                             <input
                                 type="text"
@@ -128,21 +155,23 @@ function BuyerDashboardContent() {
                                                 <p className="text-sm text-gray-400 mb-3 line-clamp-2">{part.payload.description_en}</p>
                                                 <div className="flex justify-between items-center">
                                                     <span className="text-xs bg-white/10 px-2 py-1 rounded text-gray-300">{part.payload.manufacturer || "Generic"}</span>
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            addToCart(part.payload.id, 1);
-                                                        }}
-                                                        className="text-secondary hover:text-orange-400 text-sm font-medium mr-4"
-                                                    >
-                                                        Add to Cart
-                                                    </button>
-                                                    <button
-                                                        onClick={() => setSelectedPart(part)}
-                                                        className="text-primary hover:text-blue-400 text-sm font-medium"
-                                                    >
-                                                        View Details →
-                                                    </button>
+                                                    <div className="flex gap-2">
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                addToCart(part.payload.id, 1);
+                                                            }}
+                                                            className="text-secondary hover:text-orange-400 text-sm font-medium"
+                                                        >
+                                                            Cart
+                                                        </button>
+                                                        <button
+                                                            onClick={() => setSelectedPart(part)}
+                                                            className="text-primary hover:text-blue-400 text-sm font-medium"
+                                                        >
+                                                            View
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             </div>
                                         ))
