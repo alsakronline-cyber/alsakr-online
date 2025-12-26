@@ -17,6 +17,9 @@ from app.models.quote import Quote
 from app.models.rfq import RFQ
 from app.models.vendor import Vendor
 from app.models.scraper import ScraperJob, ScrapedProduct
+from app.models.inquiry import Inquiry
+from app.models.part import Part
+from app.models.notification import Notification
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

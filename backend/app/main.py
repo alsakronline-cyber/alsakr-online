@@ -71,7 +71,7 @@ async def add_language_header(request: Request, call_next):
 def health_check():
     return {"status": "healthy", "version": "1.0.0", "database": "connected"}
 
-from app.api import search_routes, auth, rfq_routes, quote_api, order_routes, catalog_routes, dashboard_routes, contact, notification_routes, upload_routes, user_routes, admin_routes
+from app.api import search_routes, auth, rfq_routes, quote_api, order_routes, catalog_routes, dashboard_routes, contact, notification_routes, upload_routes, user_routes, admin_routes, cart_routes
 from app.api.routes import scraper
 
 # Register Routers
@@ -87,6 +87,7 @@ app.include_router(contact.router, prefix="/api/contact", tags=["Contact"])
 app.include_router(notification_routes.router, prefix="/api", tags=["Notifications"])
 app.include_router(upload_routes.router, prefix="/api", tags=["Uploads"])
 app.include_router(user_routes.router, prefix="/api", tags=["User Profile"])
+app.include_router(cart_routes.router, prefix="/api", tags=["Cart"])
 app.include_router(admin_routes.router, prefix="/api", tags=["Admin"])
 
 if __name__ == "__main__":
