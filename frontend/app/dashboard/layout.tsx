@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { useEffect, useState } from "react"
+import CartCount from "@/components/ui/CartCount"
 
 export default function DashboardLayout({
     children,
@@ -39,6 +40,14 @@ export default function DashboardLayout({
                             Admin Panel
                         </Link>
                     )}
+                    <div className="border-t border-gray-700 pt-4 mt-4">
+                        <Link href="/cart" className="flex items-center justify-between hover:text-blue-400">
+                            <span>Shopping Cart</span>
+                            <span className="bg-primary text-white text-xs px-2 py-1 rounded-full">
+                                <CartCount />
+                            </span>
+                        </Link>
+                    </div>
                 </nav>
             </aside>
             <main className="flex-1 bg-gray-50">

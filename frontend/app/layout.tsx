@@ -3,6 +3,8 @@ import { Inter, Poppins, IBM_Plex_Sans_Arabic } from 'next/font/google'
 import './globals.css'
 import { cn } from '@/lib/utils'
 import { LanguageProvider } from '@/components/providers/LanguageProvider'
+import { AuthProvider } from '@/context/AuthContext'
+import { CartProvider } from '@/context/CartContext'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 const poppins = Poppins({
@@ -35,7 +37,11 @@ export default function RootLayout({
                 arabic.variable
             )}>
                 <LanguageProvider>
-                    {children}
+                    <AuthProvider>
+                        <CartProvider>
+                            {children}
+                        </CartProvider>
+                    </AuthProvider>
                 </LanguageProvider>
             </body>
         </html>

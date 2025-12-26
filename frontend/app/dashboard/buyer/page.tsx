@@ -3,10 +3,12 @@ import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { ImageUpload } from '@/components/search/ImageUpload';
 import { VoiceSearch } from '@/components/search/VoiceSearch';
+import { useCart } from '@/context/CartContext';
 
 function BuyerDashboardContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
+    const { addToCart } = useCart();
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [results, setResults] = useState<any[]>([]);
@@ -220,6 +222,15 @@ function BuyerDashboardContent() {
                 </div>
 
                 <button
+                    onClick={() => {
+                        addToCart(part.payload.id, 1);
+                        alert("Added to cart!");
+                    }}
+                    className="w-full bg-secondary hover:bg-orange-600 text-white font-bold py-3 rounded-xl transition-colors mt-4"
+                >
+                    Add to Cart
+                </button>
+                <button
                     onClick={() => handleRequestQuote(part)}
                     disabled={loading}
                     className="w-full bg-primary hover:bg-blue-600 disabled:bg-gray-700 text-white font-bold py-3 rounded-xl transition-colors mt-4"
@@ -325,6 +336,15 @@ function BuyerDashboardContent() {
                                         <p className="text-sm text-gray-400 mb-3 line-clamp-2">{part.payload.description_en}</p>
                                         <div className="flex justify-between items-center">
                                             <span className="text-xs bg-white/10 px-2 py-1 rounded text-gray-300">{part.payload.manufacturer || "Generic"}</span>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    addToCart(part.payload.id, 1);
+                                                }}
+                                                className="text-secondary hover:text-orange-400 text-sm font-medium mr-4"
+                                            >
+                                                Add to Cart
+                                            </button>
                                             <button
                                                 onClick={() => setSelectedPart(part)}
                                                 className="text-primary hover:text-blue-400 text-sm font-medium"
