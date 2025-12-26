@@ -1,6 +1,5 @@
 "use client";
 
-import { useInputState } from "@/hooks/useInputState"; // Assuming this exists or standard useState
 import { useState } from "react";
 import { useRFQ, RFQ } from "@/context/RFQContext";
 import { LucideArrowLeft, LucideLoader } from "lucide-react";
