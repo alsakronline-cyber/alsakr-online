@@ -56,13 +56,34 @@ export function RFQProvider({ children }: { children: ReactNode }) {
         if (!token) return;
         setLoading(true);
         try {
-            // Role logic handled by backend based on token's user
-            const res = await fetch(`${apiUrl}/api/rfqs`, {
+            const userId = typeof window !== 'undefined' ? localStorage.getItem('userId') : null;
+            if (!userId) {
+                console.error('No userId found in localStorage');
+                setLoading(false);
+                return;
+            }
+
+            let url = `${apiUrl}/api/rfqs`;
+
+            // For buyers: fetch their RFQs with buyer_id query param
+            if (role === 'buyer' || role === 'both') {
+                url += `?buyer_id=${userId}`;
+            }
+            // For vendors: use the vendor-specific endpoint to get open RFQs
+            else if (role === 'vendor') {
+                url = `${apiUrl}/api/vendor/${userId}/rfqs`;
+            }
+
+            const res = await fetch(url, {
                 headers: { Authorization: `Bearer ${token}` }
             });
+
             if (res.ok) {
                 const data = await res.json();
-                setRfqs(data.rfqs);
+                // Handle different response formats (some endpoints return {rfqs: []}, others return array directly)
+                setRfqs(Array.isArray(data) ? data : (data.rfqs || []));
+            } else {
+                console.error('Failed to fetch RFQs:', res.status, res.statusText);
             }
         } catch (err) {
             console.error("Failed to fetch RFQs", err);
