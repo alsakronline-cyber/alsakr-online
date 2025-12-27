@@ -1,56 +1,113 @@
-/* Modern Industrial Theme */
-:root {
-  --primary: #3b82f6;
-  --primary-glow: rgba(59, 130, 246, 0.4);
-  --accent: #818cf8;
-  --bg: #020617;
-  --card-bg: rgba(15, 23, 42, 0.6);
-  --border: rgba(51, 65, 85, 0.5);
-}
+/* SPACE-X STYLE INDUSTRIAL THEME */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-* {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
+:root {
+    /* Palette from Prompt */
+    --navy-deep: #0F172A;
+    --navy-light: #1E293B;
+    --slate: #334155;
+    --alert-amber: #F59E0B;
+    --success-emerald: #10B981;
+    --cyber-blue: #3B82F6;
+    --text-primary: #F8FAFC;
+    --text-secondary: #94A3B8;
 }
 
 body {
-  background: var(--bg);
-  background-image: 
-    radial-gradient(circle at 50% 0%, rgba(30, 58, 138, 0.2) 0%, transparent 50%),
-    radial-gradient(circle at 0% 100%, rgba(49, 46, 129, 0.1) 0%, transparent 40%);
-  min-height: 100vh;
+    background-color: var(--navy-deep);
+    color: var(--text-primary);
+    font-family: 'Inter', sans-serif;
+    /* Default sans */
+    overflow: hidden;
+    /* App interaction */
 }
 
-/* Glassmorphism Classes */
-.glass {
-  background: var(--card-bg);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--border);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+/* Custom Scrollbar for Terminal */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
 }
 
-.glass-hover:hover {
-  background: rgba(30, 41, 59, 0.7);
-  border-color: var(--primary);
-  transform: translateY(-4px);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+::-webkit-scrollbar-track {
+    background: var(--navy-deep);
 }
 
-/* Typography Enhancements */
-h1 {
-  letter-spacing: -0.05em;
-  font-weight: 800;
+::-webkit-scrollbar-thumb {
+    background: var(--slate);
+    border-radius: 4px;
 }
 
-.text-gradient {
-  background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+::-webkit-scrollbar-thumb:hover {
+    background: var(--cyber-blue);
 }
 
-/* Custom Utilities (Since we don't have Tailwind yet) */
-.flex-center { display: flex; align-items: center; justify-content: center; }
-.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
-@media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
+/* UTILITIES */
+.font-mono-term {
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+.glass-panel {
+    background: rgba(30, 41, 59, 0.7);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+.bento-grid {
+    display: grid;
+    grid-template-columns: 280px 1fr 380px;
+    /* Sidebar | Log | Action Panel */
+    grid-template-rows: 64px 1fr;
+    /* Header | Content */
+    height: 100vh;
+}
+
+/* ANIMATIONS */
+@keyframes pulse-ring {
+    0% {
+        transform: scale(0.8);
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+    }
+
+    70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+    }
+
+    100% {
+        transform: scale(0.8);
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+    }
+}
+
+.animate-pulse-ring {
+    animation: pulse-ring 2s infinite;
+}
+
+@keyframes scanline {
+    0% {
+        transform: translateY(-100%);
+    }
+
+    100% {
+        transform: translateY(100%);
+    }
+}
+
+.matrix-bg {
+    position: relative;
+    overflow: hidden;
+}
+
+.matrix-bg::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to bottom, transparent 50%, rgba(59, 130, 246, 0.05) 51%, transparent 51%);
+    background-size: 100% 4px;
+    pointer-events: none;
+}
