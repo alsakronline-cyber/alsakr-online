@@ -11,6 +11,7 @@ from app.models.order import Order
 from app.models.notification import Notification
 from app.api.notification_routes import create_notification
 from app.api import deps
+from app.services.n8n_service import N8NService
 
 from pydantic import BaseModel
 from typing import Optional
@@ -77,6 +78,19 @@ async def create_quote(
     db.commit()
     db.refresh(quote)
     
+    # Trigger n8n notification (async/background)
+    try:
+        await N8NService.trigger_quote_notification({
+            "quote_id": quote.id,
+            "rfq_id": quote.rfq_id,
+            "vendor_id": quote.vendor_id,
+            "price": quote.price,
+            "currency": quote.currency,
+            "delivery_time": quote.delivery_time
+        })
+    except Exception as e:
+        print(f"⚠️ Failed to trigger n8n notification: {e}")
+
     return {"id": quote.id, "message": "Quote submitted successfully"}
 
 @router.get("/quotes")

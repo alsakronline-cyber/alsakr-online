@@ -2,16 +2,20 @@
 
 import { useEffect } from "react";
 import { useRFQ } from "@/context/RFQContext";
+import { useAuth } from "@/context/AuthContext";
 import { format } from "date-fns";
 import { LucideLoader } from "lucide-react";
 
 export function MyQuotes() {
+    const { token } = useAuth();
     const { quotes, fetchQuotes, loading } = useRFQ();
 
     useEffect(() => {
-        // Fetch all quotes by this vendor
-        fetchQuotes();
-    }, []);
+        if (token) {
+            // Fetch all quotes by this vendor
+            fetchQuotes();
+        }
+    }, [token]);
 
     return (
         <div className="space-y-4">

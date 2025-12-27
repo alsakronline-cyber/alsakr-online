@@ -8,6 +8,7 @@ from app.database import get_db
 from app.models.rfq import RFQ
 from app.models.user import User
 from app.api import deps
+from app.services.n8n_service import N8NService
 
 router = APIRouter()
 
@@ -88,6 +89,19 @@ async def create_rfq(
     db.add(rfq)
     db.commit()
     db.refresh(rfq)
+    
+    # Trigger n8n notification (async/background)
+    try:
+        await N8NService.trigger_rfq_notification({
+            "rfq_id": rfq.id,
+            "title": rfq.title,
+            "buyer_id": rfq.buyer_id,
+            "quantity": rfq.quantity,
+            "description": rfq.description
+        })
+    except Exception as e:
+        print(f"⚠️ Failed to trigger n8n notification: {e}")
+
     return {"id": rfq.id, "status": rfq.status, "message": "RFQ created successfully"}
 
 @router.get("/rfqs")

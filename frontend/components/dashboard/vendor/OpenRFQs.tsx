@@ -2,18 +2,22 @@
 
 import { useEffect, useState } from "react";
 import { useRFQ, RFQ } from "@/context/RFQContext";
+import { useAuth } from "@/context/AuthContext";
 import { format } from "date-fns";
 import { LucideChevronRight, LucideLoader } from "lucide-react";
 import { QuoteForm } from "./QuoteForm";
 
 export function OpenRFQs() {
+    const { token } = useAuth();
     const { rfqs, fetchRFQs, loading } = useRFQ();
     const [selectedRFQ, setSelectedRFQ] = useState<RFQ | null>(null);
 
     useEffect(() => {
-        // Vendors see open RFQs
-        fetchRFQs("vendor");
-    }, []);
+        if (token) {
+            // Vendors see open RFQs
+            fetchRFQs("vendor");
+        }
+    }, [token]);
 
     if (selectedRFQ) {
         return <QuoteForm rfq={selectedRFQ} onBack={() => setSelectedRFQ(null)} />;
