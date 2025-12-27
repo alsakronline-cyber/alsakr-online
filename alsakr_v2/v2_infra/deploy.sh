@@ -155,10 +155,13 @@ EOF
     
     if $DOCKER_COMPOSE_CMD -f $COMPOSE_FILE ps | grep -q "Up"; then
         print_info "Stopping running containers..."
-        $DOCKER_COMPOSE_CMD -f $COMPOSE_FILE down
+        $DOCKER_COMPOSE_CMD -f $COMPOSE_FILE down --remove-orphans
         print_success "Containers stopped"
     else
-        print_info "No running containers found"
+        print_info "No running containers found. Performing deep cleanup..."
+        # Explicitly remove any orphaned containers with our names to prevent conflicts
+        docker rm -f alsakr-pb alsakr-ollama alsakr-es alsakr-qdrant alsakr-n8n alsakr-frontend alsakr-backend alsakr-proxy 2>/dev/null || true
+        print_success "Cleanup complete"
     fi
     
     # Step 6: Build and Start Services
