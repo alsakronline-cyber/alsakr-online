@@ -1,113 +1,121 @@
-/* SPACE-X STYLE INDUSTRIAL THEME */
+/* Clean Modern Theme - Inspired by Perplexity/Gemini */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-    /* Palette from Prompt */
-    --navy-deep: #0F172A;
-    --navy-light: #1E293B;
-    --slate: #334155;
-    --alert-amber: #F59E0B;
-    --success-emerald: #10B981;
-    --cyber-blue: #3B82F6;
-    --text-primary: #F8FAFC;
-    --text-secondary: #94A3B8;
+    /* Light Blue Palette */
+    --primary-blue: #3B9EFF;
+    --light-blue: #E3F2FD;
+    --bg-primary: #FFFFFF;
+    --bg-secondary: #F8FAFB;
+    --text-primary: #1A1A1A;
+    --text-secondary: #6B7280;
+    --border: #E5E7EB;
+    --accent-hover: #EBF5FF;
+}
+
+* {
+    box-sizing: border-box;
+    padding: 0;
+    margin: 0;
 }
 
 body {
-    background-color: var(--navy-deep);
+    background-color: var(--bg-primary);
     color: var(--text-primary);
-    font-family: 'Inter', sans-serif;
-    /* Default sans */
-    overflow: hidden;
-    /* App interaction */
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
-/* Custom Scrollbar for Terminal */
+/* Custom Scrollbar */
 ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-    background: var(--navy-deep);
+    background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-    background: var(--slate);
-    border-radius: 4px;
+    background: #D1D5DB;
+    border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: var(--cyber-blue);
+    background: #9CA3AF;
 }
 
-/* UTILITIES */
-.font-mono-term {
-    font-family: 'JetBrains Mono', 'Fira Code', monospace;
-}
-
-.glass-panel {
-    background: rgba(30, 41, 59, 0.7);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(148, 163, 184, 0.1);
-}
-
-.bento-grid {
-    display: grid;
-    grid-template-columns: 280px 1fr 380px;
-    /* Sidebar | Log | Action Panel */
-    grid-template-rows: 64px 1fr;
-    /* Header | Content */
-    height: 100vh;
-}
-
-/* ANIMATIONS */
-@keyframes pulse-ring {
-    0% {
-        transform: scale(0.8);
-        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
     }
 
-    70% {
-        transform: scale(1);
-        box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
+}
 
+@keyframes pulse-blue {
+
+    0%,
     100% {
-        transform: scale(0.8);
-        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
     }
 }
 
-.animate-pulse-ring {
-    animation: pulse-ring 2s infinite;
+.animate-fadeIn {
+    animation: fadeIn 0.3s ease-out;
 }
 
-@keyframes scanline {
-    0% {
-        transform: translateY(-100%);
-    }
-
-    100% {
-        transform: translateY(100%);
-    }
+.animate-pulse-blue {
+    animation: pulse-blue 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-.matrix-bg {
-    position: relative;
-    overflow: hidden;
+/* Card Styles */
+.card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    transition: all 0.2s ease;
 }
 
-.matrix-bg::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(to bottom, transparent 50%, rgba(59, 130, 246, 0.05) 51%, transparent 51%);
-    background-size: 100% 4px;
-    pointer-events: none;
+.card:hover {
+    border-color: var(--primary-blue);
+    box-shadow: 0 4px 12px rgba(59, 158, 255, 0.1);
+}
+
+/* Button Styles */
+.btn-primary {
+    background: var(--primary-blue);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+    background: #2A8EEF;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 158, 255, 0.3);
+}
+
+/* Focus Styles */
+input:focus,
+textarea:focus {
+    outline: none;
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 3px rgba(59, 158, 255, 0.1);
 }
