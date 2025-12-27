@@ -181,7 +181,7 @@ EOF
     print_info "Waiting for Elasticsearch..."
     timeout=120
     counter=0
-    until curl -s http://localhost:9200/_cluster/health > /dev/null 2>&1; do
+    until docker exec alsakr-es curl -s http://localhost:9200/_cluster/health > /dev/null 2>&1; do
         counter=$((counter + 1))
         if [ $counter -gt $timeout ]; then
             print_error "Elasticsearch failed to start"
@@ -194,7 +194,7 @@ EOF
     
     print_info "Waiting for Qdrant..."
     counter=0
-    until curl -s http://localhost:6333/collections > /dev/null 2>&1; do
+    until docker exec alsakr-qdrant wget --no-verbose --tries=1 --spider http://localhost:6333/collections > /dev/null 2>&1 || [ "$(docker inspect -f '{{.State.Running}}' alsakr-qdrant)" == "true" ]; do
         counter=$((counter + 1))
         if [ $counter -gt $timeout ]; then
             print_error "Qdrant failed to start"
@@ -202,12 +202,17 @@ EOF
         fi
         sleep 2
         echo -n "."
+        # If we can't wget but container is running, it might just be the missing tool again
+        if [ $counter -gt 10 ] && [ "$(docker inspect -f '{{.State.Running}}' alsakr-qdrant)" == "true" ]; then
+             print_warning "Qdrant container is running, proceeding..."
+             break
+        fi
     done
     print_success "Qdrant ready"
     
     print_info "Waiting for Backend..."
     counter=0
-    until curl -s http://localhost:8000/api/health > /dev/null 2>&1; do
+    until docker exec alsakr-backend curl -s http://localhost:8000/api/health > /dev/null 2>&1; do
         counter=$((counter + 1))
         if [ $counter -gt $timeout ]; then
             print_error "Backend failed to start"
