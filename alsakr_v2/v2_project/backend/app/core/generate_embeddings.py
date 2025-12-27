@@ -11,8 +11,7 @@ from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, VectorParams, PointStruct
 import requests
 
-sys.path.append('..')
-from core.config import settings, get_es_url, get_qdrant_url
+from app.core.config import settings, get_es_url, get_qdrant_url
 
 
 class EmbeddingGenerator:

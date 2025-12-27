@@ -13,8 +13,7 @@ from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, VectorParams, PointStruct
 import hashlib
 
-sys.path.append('..')
-from core.config import settings, get_es_url, get_qdrant_url, get_pdf_dir_path
+from app.core.config import settings, get_es_url, get_qdrant_url, get_pdf_dir_path
 
 
 class PDFProcessor:

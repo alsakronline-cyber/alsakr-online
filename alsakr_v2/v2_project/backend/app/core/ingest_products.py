@@ -9,8 +9,7 @@ from typing import Dict, List, Optional
 from elasticsearch import Elasticsearch, helpers
 from datetime import datetime
 
-sys.path.append('..')
-from core.config import settings, get_es_url, get_products_csv_path
+from app.core.config import settings, get_es_url, get_products_csv_path
 
 
 class ProductIngester:
