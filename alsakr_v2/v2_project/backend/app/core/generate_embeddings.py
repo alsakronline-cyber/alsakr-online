@@ -5,6 +5,7 @@ Generate and store vector embeddings for SICK products using Ollama
 import sys
 import json
 import time
+import uuid
 from typing import List, Dict, Optional
 from elasticsearch import Elasticsearch
 from qdrant_client import QdrantClient
@@ -172,9 +173,13 @@ class EmbeddingGenerator:
                 vector = self.generate_embedding(text)
                 
                 if vector:
+                    # Generate a consistent UUID from the part_number
+                    # Qdrant requires IDs to be UUIDs or unsigned 64-bit integers
+                    point_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, f"alsakr.product.{product['part_number']}"))
+                    
                     # Create point
                     point = PointStruct(
-                        id=product['part_number'],
+                        id=point_id,
                         vector=vector,
                         payload={
                             "part_number": product.get('part_number'),
@@ -204,6 +209,9 @@ class EmbeddingGenerator:
                     )
                 except Exception as e:
                     print(f"  ✗ Batch upload error: {e}")
+                    # If it's a 400 error, print more info
+                    if hasattr(e, 'response') and e.response is not None:
+                        print(f"  Response: {e.response.text}")
                     errors += len(points)
             
             # Small delay to avoid overwhelming Ollama

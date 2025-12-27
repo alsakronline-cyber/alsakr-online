@@ -153,6 +153,9 @@ class ProductIngester:
                         # Bulk index in batches
                         if len(actions) >= 100:
                             success, failed = helpers.bulk(self.es, actions, raise_on_error=False)
+                            if failed:
+                                for item in failed:
+                                    print(f"  ✗ Index error for {item['index']['_id']}: {item['index']['error']['reason']}")
                             errors += len(failed)
                             actions = []
                             print(f"  ✓ Indexed {processed} products...")
@@ -164,6 +167,9 @@ class ProductIngester:
                 # Index remaining
                 if actions:
                     success, failed = helpers.bulk(self.es, actions, raise_on_error=False)
+                    if failed:
+                        for item in failed:
+                            print(f"  ✗ Index error for {item['index']['_id']}: {item['index']['error']['reason']}")
                     errors += len(failed)
         
         except FileNotFoundError:
