@@ -3,232 +3,204 @@
 import React, { useState, useEffect } from 'react';
 import {
   Camera, ShoppingCart, Scale, Shield, FileText, Mic,
-  Package, Wrench, Activity, Users, Zap, AlertTriangle,
-  DollarSign, TrendingUp, MapPin, Send
+  MapPin, Activity, Wrench, Users, Bell, Settings, HelpCircle,
+  MoreVertical, ChevronRight, Zap
 } from 'lucide-react';
 
 const AGENTS = [
-  { id: 1, name: 'VisualMatch', icon: Camera, status: 'idle', label: 'Image Recognition' },
-  { id: 2, name: 'MultiVendor', icon: ShoppingCart, status: 'active', label: 'Supplier Search' },
-  { id: 3, name: 'QuoteCompare', icon: Scale, status: 'negotiating', label: 'Price Comparison' },
-  { id: 4, name: 'SafeGuard', icon: Shield, status: 'idle', label: 'Compliance Check' },
-  { id: 5, name: 'TechAssistant', icon: FileText, status: 'idle', label: 'Documentation' },
-  { id: 6, name: 'InventoryVoice', icon: Mic, status: 'idle', label: 'Voice Control' },
-  { id: 7, name: 'LocalSourcer', icon: MapPin, status: 'idle', label: 'Local Services' },
-  { id: 8, name: 'AutoReplenish', icon: Activity, status: 'monitoring', label: 'IoT Watchdog' },
-  { id: 9, name: 'Troubleshoot', icon: Wrench, status: 'idle', label: 'Diagnostics' },
-  { id: 10, name: 'SupplierHub', icon: Users, status: 'idle', label: 'CRM Manager' },
+  { id: 1, name: 'VisualMatch', icon: Camera, status: 'active', color: 'cyan' },
+  { id: 2, name: 'MultiVendor', icon: ShoppingCart, status: 'active', color: 'cyan' },
+  { id: 3, name: 'QuoteCompare', icon: Scale, status: 'negotiating', color: 'amber' },
+  { id: 4, name: 'InventoryVoice', icon: Mic, status: 'idle', color: 'gray' },
+  { id: 5, name: 'TechDoc + Asset', icon: FileText, status: 'idle', color: 'gray' },
+  { id: 6, name: 'ComplianceGuide', icon: Shield, status: 'idle', color: 'gray' },
+  { id: 7, name: 'Service & DeadStock', icon: Wrench, status: 'negotiating', color: 'amber' },
+  { id: 8, name: 'AutoReplenish', icon: Activity, status: 'active', color: 'cyan' },
+  { id: 9, name: 'Troubleshooter', icon: Wrench, status: 'negotiating', color: 'amber' },
+  { id: 10, name: 'SupplierHub', icon: Users, status: 'idle', color: 'gray' },
 ];
 
-const NEURAL_LOGS = [
-  { time: '10:45:22', agent: 'VISUAL_MATCH', message: 'Image analyzed. 98% match for SKF 6205 Bearing', type: 'success' },
-  { time: '10:45:25', agent: 'MULTI_VENDOR', message: 'Querying 45 local suppliers via WhatsApp API...', type: 'info' },
-  { time: '10:45:40', agent: 'QUOTE_COMPARE', message: 'Received 3 quotes. Lowest landed cost: Supplier B ($24.50)', type: 'success' },
-  { time: '10:45:55', agent: 'SAFEGUARD', message: 'HS Code verified: 8482.10.50 | Compliance: OK', type: 'success' },
-  { time: '10:46:10', agent: 'HAGGLE_AGENT', message: 'Negotiating with Vendor X - Requesting 8% discount', type: 'warn' },
-  { time: '10:46:25', agent: 'AUTO_REPLENISH', message: 'IoT Alert: Pump #4 Vibration High - Flagging for replacement', type: 'warn' },
+const PROJECTS = [
+  { name: 'Project Riyadh', team: '500 Valves - Negotiating with 3 Vendors', status: 'Sindear' },
+  { name: 'Project Riyadh', team: '500 Valves - Negotiating', status: 'Safety' },
+  { name: 'Project Riyadh', team: '500 Valves - Negotiating', status: 'Supplier' },
+  { name: 'Project Riyadh', team: '500 Valves - Receiving 3 quotes', status: 'Safety' },
+  { name: 'Project Riyadh', team: '500 Valves - Supplier', status: 'Sales' },
 ];
 
 export default function CommandCenter() {
-  const [command, setCommand] = useState('');
-  const [logs, setLogs] = useState(NEURAL_LOGS);
-
-  useEffect(() => {
-    // Simulate new logs
-    const interval = setInterval(() => {
-      const newLog = {
-        time: new Date().toLocaleTimeString('en-US', { hour12: false }).slice(0, 8),
-        agent: AGENTS[Math.floor(Math.random() * AGENTS.length)].name.toUpperCase(),
-        message: 'Processing query...',
-        type: 'info' as const
-      };
-      setLogs(prev => [newLog, ...prev].slice(0, 20));
-    }, 5000);
-    return () => clearInterval(interval);
-  }, []);
+  const [logs, setLogs] = useState([
+    '> [14:02:11] VISUAL_MATCH: Image analyzed. 98% match for SKF 6205 Bearing.',
+    '> [14:02:15] MULTI_VENDOR: Querying 45 local suppliers via WhatsApp API...',
+    '> [14:02:30] QUOTE_COMPARE: Received 3 quotes. Lowest landed cost: Supplier B.',
+  ]);
 
   return (
-    <div className="h-screen flex flex-col bg-zinc-950 text-zinc-100">
-      {/* Top Command Bar */}
-      <div className="h-16 bg-zinc-900 border-b border-zinc-800 px-6 flex items-center gap-4">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg flex items-center justify-center">
-            <Zap className="w-4 h-4 text-white" />
-          </div>
-          <span className="font-bold text-lg">AL SAKR</span>
+    <div className="h-screen bg-slate-900 text-slate-100 flex">
+      {/* Left Navbar */}
+      <div className="w-12 bg-slate-950 flex flex-col items-center py-4 gap-4 border-r border-slate-800">
+        <div className="w-8 h-8 bg-slate-700 rounded flex items-center justify-center">
+          <Zap className="w-4 h-4 text-slate-300" />
         </div>
-
-        <div className="flex-1 max-w-3xl">
-          <div className="relative command-input">
-            <input
-              type="text"
-              value={command}
-              onChange={(e) => setCommand(e.target.value)}
-              placeholder="Command your agents... (e.g., 'Find 50 DN50 Valves' or 'Upload broken gear photo')"
-              className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-2.5 pr-20 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-cyan-400 transition-all"
-            />
-            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
-              <button className="w-8 h-8 bg-zinc-800 hover:bg-zinc-700 rounded-lg flex items-center justify-center transition-colors">
-                <Mic className="w-4 h-4 text-cyan-400 animate-pulse-cyan" />
-              </button>
-              <button className="w-8 h-8 bg-cyan-600 hover:bg-cyan-700 rounded-lg flex items-center justify-center transition-colors">
-                <Send className="w-4 h-4 text-white" />
-              </button>
+        <div className="flex-1 flex flex-col gap-3">
+          <button className="w-8 h-8 text-amber-500 hover:bg-slate-800 rounded flex items-center justify-center">
+            <div className="grid grid-cols-2 gap-0.5">
+              <div className="w-1.5 h-1.5 bg-current rounded-sm" />
+              <div className="w-1.5 h-1.5 bg-current rounded-sm" />
+              <div className="w-1.5 h-1.5 bg-current rounded-sm" />
+              <div className="w-1.5 h-1.5 bg-current rounded-sm" />
             </div>
-          </div>
+          </button>
+          <button className="w-8 h-8 text-slate-500 hover:bg-slate-800 hover:text-slate-300 rounded flex items-center justify-center">
+            <FileText className="w-4 h-4" />
+          </button>
+          <button className="w-8 h-8 text-slate-500 hover:bg-slate-800 hover:text-slate-300 rounded flex items-center justify-center">
+            <Shield className="w-4 h-4" />
+          </button>
+          <button className="w-8 h-8 text-slate-500 hover:bg-slate-800 hover:text-slate-300 rounded flex items-center justify-center">
+            <Users className="w-4 h-4" />
+          </button>
         </div>
-
-        <div className="w-8 h-8 bg-zinc-800 rounded-full flex items-center justify-center">
-          <Users className="w-4 h-4 text-zinc-400" />
+        <div className="flex flex-col gap-2">
+          <button className="w-8 h-8 text-slate-500 hover:bg-slate-800 hover:text-slate-300 rounded flex items-center justify-center">
+            <HelpCircle className="w-4 h-4" />
+          </button>
+          <button className="w-8 h-8 text-slate-500 hover:bg-slate-800 hover:text-slate-300 rounded flex items-center justify-center">
+            <Settings className="w-4 h-4" />
+          </button>
         </div>
       </div>
 
-      {/* 3-Panel Layout */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* LEFT: Agent Dock (15%) */}
-        <div className="w-[15%] bg-zinc-900 border-r border-zinc-800 overflow-y-auto">
-          <div className="p-4">
-            <div className="text-[10px] text-zinc-600 uppercase tracking-widest font-mono mb-4">AGENT STATUS</div>
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col">
+        {/* Top Bar */}
+        <div className="h-14 bg-slate-900 border-b border-slate-800 px-6 flex items-center justify-between">
+          <h1 className="text-sm font-medium text-slate-300">Al Sakr Online: Industrial AI Command Center</h1>
+          <div className="flex items-center gap-3">
+            <button className="w-8 h-8 text-slate-400 hover:text-slate-300 rounded flex items-center justify-center">
+              <HelpCircle className="w-4 h-4" />
+            </button>
+            <button className="w-8 h-8 text-slate-400 hover:text-slate-300 rounded flex items-center justify-center relative">
+              <Bell className="w-4 h-4" />
+              <div className="absolute top-1 right-1 w-2 h-2 bg-amber-500 rounded-full" />
+            </button>
+            <div className="w-8 h-8 bg-slate-700 rounded-full" />
+          </div>
+        </div>
+
+        {/* Command Input */}
+        <div className="px-6 py-4 border-b border-slate-800">
+          <div className="flex items-center gap-3 bg-slate-800/50 border border-amber-500/30 rounded-lg px-4 py-2.5">
+            <Zap className="w-4 h-4 text-amber-500" />
+            <input
+              type="text"
+              placeholder="Command your agents... (e.g., 'Find 50 DN50 Valves' or 'Upload broken gear photo')"
+              className="flex-1 bg-transparent text-sm text-slate-300 placeholder-slate-500 outline-none"
+            />
+            <button className="px-3 py-1 bg-slate-700 hover:bg-slate-600 rounded text-xs text-slate-300">⌘K</button>
+          </div>
+        </div>
+
+        {/* 3-Panel Layout */}
+        <div className="flex-1 flex overflow-hidden">
+          {/* Agent Dock */}
+          <div className="w-64 bg-slate-900 border-r border-slate-800 p-4">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xs font-medium text-slate-400">Agent Dock</h2>
+              <MoreVertical className="w-4 h-4 text-slate-500" />
+            </div>
             <div className="space-y-2">
               {AGENTS.map(agent => (
-                <div key={agent.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-zinc-800 transition-colors cursor-pointer group">
-                  <div className="relative">
-                    <div className={`w-6 h-6 rounded flex items-center justify-center ${agent.status === 'active' ? 'bg-cyan-900/50' :
-                        agent.status === 'negotiating' ? 'bg-amber-900/50' :
-                          agent.status === 'monitoring' ? 'bg-cyan-900/50' :
-                            'bg-zinc-800'
-                      }`}>
-                      <agent.icon className={`w-3.5 h-3.5 ${agent.status === 'active' || agent.status === 'monitoring' ? 'text-cyan-400' :
-                          agent.status === 'negotiating' ? 'text-amber-500' :
-                            'text-zinc-500'
-                        }`} />
-                    </div>
-                    {agent.status !== 'idle' && (
-                      <div className={`absolute -top-1 -right-1 w-2 h-2 rounded-full ${agent.status === 'negotiating' ? 'bg-amber-500 animate-pulse-amber' :
-                          'bg-cyan-400 animate-pulse-cyan'
-                        }`} />
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs font-medium text-zinc-200 group-hover:text-white transition-colors truncate">
-                      {agent.name}
-                    </div>
-                    <div className="text-[9px] text-zinc-600 font-mono truncate">{agent.label}</div>
-                  </div>
+                <div
+                  key={agent.id}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${agent.color === 'cyan' ? 'bg-cyan-500/20 text-cyan-300' :
+                      agent.color === 'amber' ? 'bg-amber-500/20 text-amber-300' :
+                        'bg-slate-800/50 text-slate-400 hover:bg-slate-800'
+                    }`}
+                >
+                  <agent.icon className="w-3.5 h-3.5" />
+                  <span className="text-xs font-medium flex-1">{agent.name}</span>
+                  {agent.color !== 'gray' && (
+                    <div className={`w-1.5 h-1.5 rounded-full ${agent.color === 'cyan' ? 'bg-cyan-400' : 'bg-amber-400'
+                      }`} />
+                  )}
                 </div>
               ))}
             </div>
           </div>
-        </div>
 
-        {/* CENTER: Operational Workspace (55%) */}
-        <div className="w-[55%] overflow-y-auto p-6">
-          <div className="bento-grid">
-            {/* Card 1: MTD Savings */}
-            <div className="glass-card rounded-xl p-6 transition-all">
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <div className="text-xs text-zinc-500 uppercase tracking-wider font-mono mb-1">MTD Savings</div>
-                  <div className="text-4xl font-bold text-cyan-400">$14,500</div>
-                </div>
-                <div className="w-12 h-12 bg-cyan-900/30 rounded-lg flex items-center justify-center">
-                  <TrendingUp className="w-6 h-6 text-cyan-400" />
-                </div>
+          {/* Bento Box */}
+          <div className="flex-1 p-6 overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-medium text-slate-300">Bento Box</h2>
+              <MoreVertical className="w-4 h-4 text-slate-500" />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              {/* MTD Savings */}
+              <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
+                <div className="text-xs text-slate-400 mb-2">MTD Savings:</div>
+                <div className="text-4xl font-bold text-cyan-400">$14,500</div>
               </div>
-              <div className="text-xs text-zinc-400">
-                Auto-Haggle Agent saved 18% on 47 transactions
+
+              {/* Critical Alert */}
+              <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-6">
+                <div className="text-xs text-amber-400 font-medium mb-1">CRITICAL ALERT:</div>
+                <div className="text-sm text-amber-300 mb-3">Pump #4 Vibration - Order Replacement</div>
+                {/* Waveform Graph */}
+                <svg className="w-full h-16" viewBox="0 0 200 40">
+                  <path
+                    d="M0,20 L10,20 L15,10 L20,30 L25,5 L30,35 L35,15 L40,25 L50,20 L60,15 L65,25 L70,10 L75,30 L80,20 L90,18 L100,22 L110,15 L115,25 L120,10 L125,30 L130,20 L140,25 L150,15 L160,20 L170,18 L180,22 L190,20 L200,20"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    className="text-amber-400"
+                  />
+                </svg>
               </div>
             </div>
 
-            {/* Card 2: Critical Alerts */}
-            <div className="glass-card rounded-xl p-6 border-amber-900/50 transition-all">
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <div className="text-xs text-zinc-500 uppercase tracking-wider font-mono mb-1">Critical Alerts</div>
-                  <div className="text-xl font-bold text-amber-500 flex items-center gap-2">
-                    <AlertTriangle className="w-5 h-5" />
-                    Pump #4
-                  </div>
-                </div>
-                <div className="w-12 h-12 bg-amber-900/30 rounded-lg flex items-center justify-center">
-                  <Activity className="w-6 h-6 text-amber-500 animate-pulse" />
-                </div>
+            {/* Active Sourcing Projects */}
+            <div className="bg-slate-800/30 border border-slate-700 rounded-xl overflow-hidden">
+              <div className="flex items-center justify-between px-6 py-3 border-b border-slate-700">
+                <h3 className="text-sm font-medium text-slate-300">Active Sourcing Projects</h3>
+                <MoreVertical className="w-4 h-4 text-slate-500" />
               </div>
-              <div className="text-xs text-zinc-400">
-                High vibration detected - Replacement bearing needed
-              </div>
-            </div>
-
-            {/* Card 3: Active Sourcing (Full Width) */}
-            <div className="col-span-2 glass-card rounded-xl p-6 transition-all">
-              <div className="text-xs text-zinc-500 uppercase tracking-wider font-mono mb-4">Active Sourcing Projects</div>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 bg-zinc-900/50 rounded-lg border border-zinc-800">
-                  <div className="flex items-center gap-3">
-                    <Package className="w-4 h-4 text-cyan-400" />
-                    <div>
-                      <div className="text-sm font-medium text-white">Project Riyadh</div>
-                      <div className="text-xs text-zinc-500 font-mono">500 DN50 Valves</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-6">
-                    <div className="text-right">
-                      <div className="text-xs text-zinc-500">Status</div>
-                      <div className="text-xs text-amber-500 font-mono">Negotiating with 3 vendors</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-xs text-zinc-500">Best Quote</div>
-                      <div className="text-sm font-bold text-cyan-400">$24,500</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between p-3 bg-zinc-900/50 rounded-lg border border-zinc-800">
-                  <div className="flex items-center gap-3">
-                    <Package className="w-4 h-4 text-zinc-500" />
-                    <div>
-                      <div className="text-sm font-medium text-white">Emergency Stock</div>
-                      <div className="text-xs text-zinc-500 font-mono">SKF 6205 Bearings x50</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-6">
-                    <div className="text-right">
-                      <div className="text-xs text-zinc-500">Status</div>
-                      <div className="text-xs text-emerald-500 font-mono">Ready to order</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-xs text-zinc-500">Best Quote</div>
-                      <div className="text-sm font-bold text-cyan-400">$1,225</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <table className="w-full">
+                <thead>
+                  <tr className="text-xs text-slate-500 border-b border-slate-700">
+                    <th className="text-left px-6 py-2 font-medium">Project</th>
+                    <th className="text-left px-6 py-2 font-medium">Team</th>
+                    <th className="text-left px-6 py-2 font-medium">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {PROJECTS.map((project, i) => (
+                    <tr key={i} className={`text-xs ${i === 0 ? 'bg-amber-500/5' : ''} hover:bg-slate-800/30 transition-colors`}>
+                      <td className="px-6 py-3 text-slate-400">
+                        <span className={`inline-block w-12 text-center py-0.5 rounded text-[10px] ${i === 0 ? 'bg-amber-500/20 text-amber-300' : 'bg-slate-700 text-slate-400'
+                          }`}>Project</span>
+                      </td>
+                      <td className="px-6 py-3 text-slate-300">{project.team}</td>
+                      <td className="px-6 py-3 text-slate-400">{project.status}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
-        </div>
 
-        {/* RIGHT: Neural Log (30%) */}
-        <div className="w-[30%] bg-zinc-900 border-l border-zinc-800 flex flex-col">
-          <div className="px-4 py-3 border-b border-zinc-800">
-            <div className="text-xs text-zinc-500 uppercase tracking-widest font-mono flex items-center justify-between">
-              <span>System Neural Log</span>
-              <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse-cyan" />
+          {/* Neural Log */}
+          <div className="w-80 bg-slate-900 border-l border-slate-800 flex flex-col">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800">
+              <h2 className="text-xs font-medium text-slate-400">Neural Log</h2>
+              <ChevronRight className="w-4 h-4 text-slate-500" />
             </div>
-          </div>
-          <div className="flex-1 overflow-y-auto p-4 font-mono text-xs space-y-2">
-            {logs.map((log, i) => (
-              <div key={i} className={`flex gap-2 ${i === 0 ? 'animate-glow' : 'opacity-80'}`}>
-                <span className="text-zinc-600">[{log.time}]</span>
-                <span className={
-                  log.type === 'success' ? 'text-cyan-400' :
-                    log.type === 'warn' ? 'text-amber-500' :
-                      'text-zinc-400'
-                }>
-                  {log.agent}:
-                </span>
-                <span className="text-zinc-300 flex-1">{log.message}</span>
-              </div>
-            ))}
+            <div className="flex-1 p-4 overflow-y-auto font-mono text-xs text-emerald-400 space-y-1">
+              {logs.map((log, i) => (
+                <div key={i} className="leading-relaxed">{log}</div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
