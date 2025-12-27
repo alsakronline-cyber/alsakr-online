@@ -1,7 +1,6 @@
-from typing import Dict, Any, List
-from .base import BaseAgent, AgentState
 from langgraph.graph import StateGraph, END
-from langchain_core.messages import HumanMessage
+from langchain_ollama import ChatOllama
+from langchain_core.messages import HumanMessage, SystemMessage
 
 class Orchestrator:
     def __init__(self):
@@ -38,10 +37,21 @@ class AgentManager:
         # Initialize all agents
         from .vision_agent import VisualMatchAgent
         from .multi_vendor import MultiVendorAgent
+        from .quote_compare import QuoteCompareAgent
+        from .knowledge_layer import InventoryVoiceAgent, TechDocAssistantAgent
+        from .industry_logic_layer import ComplianceGuideAgent, LocalSourcerAgent, AutoReplenishAgent, TroubleshootAgent
+        from .management_layer import SupplierHubAgent
+
         self.agents = {
             "VisualMatch": VisualMatchAgent(),
             "MultiVendor": MultiVendorAgent(),
-            # ... initialize others
+            "QuoteCompare": QuoteCompareAgent(),
+            "InventoryVoice": InventoryVoiceAgent(),
+            "TechDoc": TechDocAssistantAgent(),
+            "Compliance": ComplianceGuideAgent(),
+            "Service": LocalSourcerAgent(),  # Agent 7: Local Services
+            "Troubleshoot": TroubleshootAgent(), # Agent 9: Troubleshooter
+            "Profile": SupplierHubAgent(),       # Agent 10: Profile Manager
         }
 
     async def handle_request(self, user_input: str, context: Dict = {}):
