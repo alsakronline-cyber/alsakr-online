@@ -73,7 +73,7 @@ services:
     networks:
       - industry-net
     healthcheck:
-      test: [ "CMD-SHELL", "curl -f http://localhost:6333/collections || exit 1" ]
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:6333/collections || exit 1" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -185,7 +185,7 @@ services:
           memory: 1G
     volumes:
       - ../v2_project/backend:/app
-      - ../../Data:/data
+      - ../Data:/data
     networks:
       - industry-net
     healthcheck:
