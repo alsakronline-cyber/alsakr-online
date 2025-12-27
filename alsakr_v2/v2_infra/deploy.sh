@@ -140,9 +140,22 @@ EOF
     # Step 5: Stop Existing Services
     print_header "[5/8] Stopping Existing Services"
     
-    if docker-compose ps | grep -q "Up"; then
+    # Check if docker-compose.prod.yml exists
+    COMPOSE_FILE="docker-compose.yml"
+    if [ -f "docker-compose.prod.yml" ]; then
+        COMPOSE_FILE="docker-compose.prod.yml"
+        print_info "Using production compose file: $COMPOSE_FILE"
+    fi
+
+    # Check for 'docker compose' vs 'docker-compose'
+    DOCKER_COMPOSE_CMD="docker-compose"
+    if docker compose version >/dev/null 2>&1; then
+        DOCKER_COMPOSE_CMD="docker compose"
+    fi
+    
+    if $DOCKER_COMPOSE_CMD -f $COMPOSE_FILE ps | grep -q "Up"; then
         print_info "Stopping running containers..."
-        docker-compose down
+        $DOCKER_COMPOSE_CMD -f $COMPOSE_FILE down
         print_success "Containers stopped"
     else
         print_info "No running containers found"
@@ -152,10 +165,10 @@ EOF
     print_header "[6/8] Building and Starting Services"
     
     print_info "Building containers..."
-    docker-compose build --no-cache
+    $DOCKER_COMPOSE_CMD -f $COMPOSE_FILE build --no-cache
     
     print_info "Starting services..."
-    docker-compose up -d
+    $DOCKER_COMPOSE_CMD -f $COMPOSE_FILE up -d
     
     print_success "All services started"
     

@@ -86,7 +86,7 @@ services:
   # 6. The Command Center (Frontend)
   frontend:
     build:
-      context: ./frontend
+      context: ../v2_project/frontend
       dockerfile: Dockerfile
     container_name: alsakr-frontend
     ports:
@@ -101,7 +101,7 @@ services:
   # 7. The Agent Swarm (Backend)
   backend:
     build:
-      context: ./backend
+      context: ../v2_project/backend
       dockerfile: Dockerfile
     container_name: alsakr-backend
     environment:
@@ -120,7 +120,8 @@ services:
         limits:
           memory: 2G
     volumes:
-      - ./backend:/app
+      - ../v2_project/backend:/app
+      - ../Data:/data
     networks:
       - industry-net
 
