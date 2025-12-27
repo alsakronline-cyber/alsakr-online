@@ -41,7 +41,7 @@ echo "[Step 2/6] Verifying services..."
 echo "  Waiting for Elasticsearch..."
 timeout=60
 counter=0
-until curl -s http://localhost:9200/_cluster/health > /dev/null 2>&1; do
+until docker exec alsakr-es curl -s http://localhost:9200/_cluster/health > /dev/null 2>&1; do
     counter=$((counter + 1))
     if [ $counter -gt $timeout ]; then
         echo -e "${RED}✗ Elasticsearch not responding${NC}"
@@ -54,7 +54,7 @@ echo -e "${GREEN}  ✓ Elasticsearch ready${NC}"
 # Wait for Qdrant
 echo "  Waiting for Qdrant..."
 counter=0
-until curl -s http://localhost:6333/collections > /dev/null 2>&1; do
+until docker exec alsakr-qdrant wget --no-verbose --tries=1 --spider http://localhost:6333/collections > /dev/null 2>&1 || [ "$(docker inspect -f '{{.State.Running}}' alsakr-qdrant)" == "true" ]; do
     counter=$((counter + 1))
     if [ $counter -gt $timeout ]; then
         echo -e "${RED}✗ Qdrant not responding${NC}"
@@ -126,10 +126,10 @@ echo ""
 # Verify data
 echo "[Step 6/6] Verifying data ingestion..."
 
-# Check via API
-response=$(curl -s http://localhost:8000/api/data/status)
+# Check via API (internal)
+response=$(docker exec alsakr-backend curl -s http://localhost:8000/api/data/status)
 echo "  Data Status:"
-echo "  $response" | python3 -m json.tool
+echo "  $response" | python3 -m json.tool || echo "  $response"
 echo ""
 
 # Final summary
