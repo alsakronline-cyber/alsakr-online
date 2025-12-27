@@ -1,122 +1,220 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Send, Sparkles, Clock, Package } from 'lucide-react';
+import { Send, Sparkles, Terminal, Package, DollarSign, FileText } from 'lucide-react';
+
+const AGENTS = [
+  { id: 1, name: 'VisualMatch', status: 'idle', color: 'zinc' },
+  { id: 2, name: 'MultiVendor', status: 'thinking', color: 'blue' },
+  { id: 3, name: 'QuoteCompare', status: 'idle', color: 'zinc' },
+  { id: 4, name: 'SafeGuard', status: 'idle', color: 'zinc' },
+  { id: 5, name: 'TechAssistant', status: 'idle', color: 'zinc' },
+  { id: 6, name: 'InventoryVoice', status: 'idle', color: 'zinc' },
+  { id: 7, name: 'LocalSourcer', status: 'active', color: 'emerald' },
+  { id: 8, name: 'Troubleshoot', status: 'idle', color: 'zinc' },
+  { id: 9, name: 'AutoReplenish', status: 'idle', color: 'zinc' },
+  { id: 10, name: 'SupplierHub', status: 'idle', color: 'zinc' },
+];
+
+const ACTIVITY_LOG = [
+  '[MultiVendor] Querying 8 verified suppliers for SKF-6205-2RS1',
+  '[LocalSourcer] Found service provider 12km away - Certified SKF installer',
+  '[QuoteCompare] Best price: $24.50 USD | Lead time: 3 days',
+  '[SafeGuard] HS Code verified: 8482.10.50 | Compliance: OK',
+];
 
 export default function CommandCenter() {
   const [message, setMessage] = useState('');
-  const [messages, setMessages] = useState([
-    {
-      role: 'assistant',
-      content: "Hello! I'm your industrial procurement assistant. I can help you find parts, compare prices, and manage your supply chain. What can I help you with today?"
-    }
-  ]);
-
-  const handleSend = () => {
-    if (!message.trim()) return;
-
-    setMessages(prev => [...prev,
-    { role: 'user', content: message },
-    { role: 'assistant', content: 'Let me search our network of verified suppliers for you...' }
-    ]);
-    setMessage('');
-  };
+  const [activePanel, setActivePanel] = useState<'chat' | 'log' | 'data'>('chat');
 
   return (
-    <div className="min-h-screen bg-[#F8FAFB] flex flex-col">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+    <div className="h-screen bg-zinc-950 flex">
+      {/* Sidebar */}
+      <div className="w-64 bg-zinc-900 border-r border-zinc-800 flex flex-col">
+        <div className="p-4 border-b border-zinc-800">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
               <Sparkles className="w-4 h-4 text-white" />
             </div>
-            <h1 className="text-lg font-semibold text-gray-900">Al Sakr AI</h1>
-          </div>
-          <div className="flex items-center gap-2 text-sm text-gray-500">
-            <Clock className="w-4 h-4" />
-            <span>10 Agents Active</span>
+            <div>
+              <div className="text-sm font-semibold text-white">Al Sakr AI</div>
+              <div className="text-[10px] text-zinc-500 font-mono">COMMAND CENTER</div>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="max-w-3xl mx-auto px-6 py-8 space-y-6">
-          {messages.map((msg, i) => (
-            <div key={i} className={`flex gap-4 animate-fadeIn ${msg.role === 'user' ? 'justify-end' : ''}`}>
-              {msg.role === 'assistant' && (
-                <div className="w-8 h-8 bg-blue-50 rounded-full flex items-center justify-center flex-shrink-0">
-                  <Sparkles className="w-4 h-4 text-blue-500" />
-                </div>
-              )}
-              <div className={`max-w-2xl ${msg.role === 'user' ? 'bg-blue-500 text-white' : 'bg-white border border-gray-200'} rounded-2xl px-5 py-3 shadow-sm`}>
-                <p className={`text-[15px] leading-relaxed ${msg.role === 'user' ? 'text-white' : 'text-gray-800'}`}>
-                  {msg.content}
-                </p>
+        <div className="flex-1 overflow-y-auto p-3">
+          <div className="text-[10px] text-zinc-600 font-mono uppercase tracking-wider mb-3 px-2">Active Agents</div>
+          <div className="space-y-1">
+            {AGENTS.map(agent => (
+              <div key={agent.id} className="flex items-center gap-2 px-2 py-2 rounded hover:bg-zinc-800 transition-colors cursor-pointer group">
+                <div className={`w-1.5 h-1.5 rounded-full ${agent.status === 'active' ? 'bg-emerald-500 animate-pulse-dot' :
+                    agent.status === 'thinking' ? 'bg-blue-500 animate-pulse-dot' :
+                      'bg-zinc-700'
+                  }`} />
+                <span className="text-xs text-zinc-400 group-hover:text-white transition-colors font-mono">
+                  {agent.name}
+                </span>
               </div>
-              {msg.role === 'user' && (
-                <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
-                  <Package className="w-4 h-4 text-gray-600" />
-                </div>
-              )}
-            </div>
-          ))}
+            ))}
+          </div>
+        </div>
 
-          {/* Suggestions */}
-          {messages.length === 1 && (
-            <div className="grid grid-cols-2 gap-3 mt-8">
-              <button className="card p-4 text-left hover:bg-blue-50 transition-colors">
-                <div className="text-sm font-medium text-gray-900">Find SKF Bearings</div>
-                <div className="text-xs text-gray-500 mt-1">Search our verified suppliers</div>
-              </button>
-              <button className="card p-4 text-left hover:bg-blue-50 transition-colors">
-                <div className="text-sm font-medium text-gray-900">Compare Quotes</div>
-                <div className="text-xs text-gray-500 mt-1">Get best prices instantly</div>
-              </button>
-              <button className="card p-4 text-left hover:bg-blue-50 transition-colors">
-                <div className="text-sm font-medium text-gray-900">Check Inventory</div>
-                <div className="text-xs text-gray-500 mt-1">Real-time stock levels</div>
-              </button>
-              <button className="card p-4 text-left hover:bg-blue-50 transition-colors">
-                <div className="text-sm font-medium text-gray-900">Technical Specs</div>
-                <div className="text-xs text-gray-500 mt-1">Browse datasheets</div>
-              </button>
-            </div>
-          )}
+        <div className="p-3 border-t border-zinc-800">
+          <div className="text-[9px] text-zinc-600 font-mono text-center">
+            LATENCY: <span className="text-emerald-500">47ms</span>
+          </div>
         </div>
       </div>
 
-      {/* Input */}
-      <div className="bg-white border-t border-gray-200 sticky bottom-0">
-        <div className="max-w-3xl mx-auto px-6 py-4">
-          <div className="flex gap-3 items-end">
-            <div className="flex-1 bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 focus-within:border-blue-500 focus-within:bg-white transition-all">
-              <textarea
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSend();
-                  }
-                }}
-                placeholder="Ask about parts, pricing, or inventory..."
-                className="w-full bg-transparent resize-none outline-none text-gray-900 placeholder-gray-400 text-[15px]"
-                rows={1}
-                style={{ minHeight: '24px', maxHeight: '120px' }}
-              />
-            </div>
+      {/* Main Area */}
+      <div className="flex-1 flex flex-col">
+        {/* Top Bar */}
+        <div className="h-14 bg-zinc-900 border-b border-zinc-800 px-6 flex items-center justify-between">
+          <div className="flex gap-2">
             <button
-              onClick={handleSend}
-              disabled={!message.trim()}
-              className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white w-10 h-10 rounded-xl flex items-center justify-center transition-all"
+              onClick={() => setActivePanel('chat')}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${activePanel === 'chat' ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:text-white'
+                }`}
             >
-              <Send className="w-4 h-4" />
+              Chat
+            </button>
+            <button
+              onClick={() => setActivePanel('log')}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center gap-1.5 ${activePanel === 'log' ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:text-white'
+                }`}
+            >
+              <Terminal className="w-3 h-3" />
+              Activity Log
+            </button>
+            <button
+              onClick={() => setActivePanel('data')}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${activePanel === 'data' ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:text-white'
+                }`}
+            >
+              Data View
             </button>
           </div>
-          <div className="mt-2 text-xs text-gray-400 text-center">
-            AI can make mistakes. Verify critical information.
+          <div className="flex items-center gap-3 text-xs text-zinc-500 font-mono">
+            <span>All systems operational</span>
+            <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse-dot" />
+          </div>
+        </div>
+
+        {/* Content Area */}
+        <div className="flex-1 overflow-hidden">
+          {activePanel === 'chat' && <ChatView message={message} setMessage={setMessage} />}
+          {activePanel === 'log' && <LogView />}
+          {activePanel === 'data' && <DataView />}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ChatView({ message, setMessage }: { message: string; setMessage: (m: string) => void }) {
+  return (
+    <div className="h-full flex flex-col bg-zinc-950">
+      <div className="flex-1 overflow-y-auto p-6">
+        <div className="max-w-3xl mx-auto space-y-4">
+          <div className="flex gap-3 animate-slide-in">
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
+              <Sparkles className="w-4 h-4 text-white" />
+            </div>
+            <div className="flex-1 bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+              <p className="text-sm text-zinc-300 leading-relaxed">
+                Hello! I can help you source industrial parts, compare prices, and manage your supply chain. What are you looking for?
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="border-t border-zinc-800 p-4 bg-zinc-900">
+        <div className="max-w-3xl mx-auto flex gap-3">
+          <input
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder="Ask about parts, pricing, or inventory..."
+            className="flex-1 bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-white placeholder-zinc-600 focus:border-blue-600 transition-colors"
+          />
+          <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 rounded-lg transition-colors flex items-center gap-2">
+            <Send className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="text-[10px] text-zinc-600 text-center mt-2 font-mono">
+          Press Cmd+K for quick actions
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LogView() {
+  return (
+    <div className="h-full bg-zinc-950 p-6 overflow-y-auto font-mono">
+      <div className="max-w-4xl mx-auto space-y-1 text-xs">
+        {ACTIVITY_LOG.map((log, i) => (
+          <div key={i} className="text-zinc-400 hover:text-emerald-400 transition-colors animate-slide-in flex gap-3">
+            <span className="text-zinc-700">{String(i + 1).padStart(3, '0')}</span>
+            <span>{log}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function DataView() {
+  return (
+    <div className="h-full bg-zinc-950 p-6 overflow-y-auto">
+      <div className="max-w-5xl mx-auto grid grid-cols-3 gap-4">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Package className="w-4 h-4 text-blue-500" />
+            <h3 className="text-sm font-semibold text-white">SKF-6205-2RS1</h3>
+          </div>
+          <div className="space-y-2 text-xs">
+            <div className="flex justify-between">
+              <span className="text-zinc-500">Material</span>
+              <span className="text-white font-mono">Chrome Steel</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-zinc-500">HS Code</span>
+              <span className="text-white font-mono">8482.10.50</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <DollarSign className="w-4 h-4 text-emerald-500" />
+            <h3 className="text-sm font-semibold text-white">Best Quote</h3>
+          </div>
+          <div className="space-y-2 text-xs">
+            <div className="flex justify-between">
+              <span className="text-zinc-500">Price</span>
+              <span className="text-emerald-500 font-mono font-bold">$24.50</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-zinc-500">Lead Time</span>
+              <span className="text-white font-mono">3 days</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <FileText className="w-4 h-4 text-zinc-500" />
+            <h3 className="text-sm font-semibold text-white">Documents</h3>
+          </div>
+          <div className="space-y-2 text-xs">
+            <div className="text-zinc-400 hover:text-blue-500 cursor-pointer transition-colors">
+              SKF_Manual.pdf
+            </div>
+            <div className="text-zinc-400 hover:text-blue-500 cursor-pointer transition-colors">
+              Technical_Specs.dwg
+            </div>
           </div>
         </div>
       </div>
