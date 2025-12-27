@@ -1,132 +1,25 @@
-/* Professional Industrial Command Center - Bloomberg meets SpaceX */
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700;800&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-:root {
-    --zinc-950: #09090b;
-    --zinc-900: #18181b;
-    --zinc-800: #27272a;
-    --zinc-700: #3f3f46;
-    --amber-500: #f59e0b;
-    --cyan-400: #22d3ee;
-}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-* {
-    box-sizing: border-box;
-    padding: 0;
-    margin: 0;
+:root {
+    --foreground-rgb: 255, 255, 255;
+    --background-start-rgb: 15, 23, 42;
+    --background-end-rgb: 2, 6, 23;
 }
 
 body {
-    background-color: var(--zinc-950);
-    color: #fafafa;
+    color: rgb(var(--foreground-rgb));
+    background: linear-gradient(to bottom,
+            transparent,
+            rgb(var(--background-end-rgb))) rgb(var(--background-start-rgb));
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    -webkit-font-smoothing: antialiased;
-    overflow: hidden;
 }
 
-.font-mono {
-    font-family: 'JetBrains Mono', monospace !important;
-}
-
-/* Custom Scrollbar */
-::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-}
-
-::-webkit-scrollbar-track {
-    background: var(--zinc-900);
-}
-
-::-webkit-scrollbar-thumb {
-    background: var(--zinc-700);
-    border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: var(--zinc-800);
-}
-
-/* Pulse Animations */
-@keyframes pulse-amber {
-
-    0%,
-    100% {
-        opacity: 1;
-        box-shadow: 0 0 8px var(--amber-500);
+@layer utilities {
+    .text-balance {
+        text-wrap: balance;
     }
-
-    50% {
-        opacity: 0.6;
-        box-shadow: 0 0 4px var(--amber-500);
-    }
-}
-
-@keyframes pulse-cyan {
-
-    0%,
-    100% {
-        opacity: 1;
-        box-shadow: 0 0 8px var(--cyan-400);
-    }
-
-    50% {
-        opacity: 0.6;
-        box-shadow: 0 0 4px var(--cyan-400);
-    }
-}
-
-@keyframes glow-text {
-    0% {
-        opacity: 1;
-    }
-
-    100% {
-        opacity: 0.7;
-    }
-}
-
-.animate-pulse-amber {
-    animation: pulse-amber 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-.animate-pulse-cyan {
-    animation: pulse-cyan 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-.animate-glow {
-    animation: glow-text 3s ease-in-out infinite;
-}
-
-/* Glass effect for cards */
-.glass-card {
-    background: rgba(24, 24, 27, 0.5);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(63, 63, 70, 0.5);
-}
-
-.glass-card:hover {
-    border-color: rgba(63, 63, 70, 0.8);
-    background: rgba(24, 24, 27, 0.7);
-}
-
-/* Bento Grid */
-.bento-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    grid-template-rows: auto auto;
-    gap: 1rem;
-}
-
-/* Command Input Glow */
-.command-input {
-    box-shadow: 0 0 20px rgba(34, 211, 238, 0.1);
-}
-
-.command-input:focus-within {
-    box-shadow: 0 0 30px rgba(34, 211, 238, 0.3);
 }
