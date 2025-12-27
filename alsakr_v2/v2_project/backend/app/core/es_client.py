@@ -6,7 +6,11 @@ ES_URL = f"http://{ES_HOST}:9200"
 
 class ElasticsearchClient:
     def __init__(self):
-        self.client = AsyncElasticsearch(hosts=[ES_URL])
+        # Force API version 8 compatibility for ES 8.11
+        self.client = AsyncElasticsearch(
+            hosts=[ES_URL],
+            headers={"accept": "application/json", "content-type": "application/json"}
+        )
 
     async def check_health(self):
         """Verifies connection to Elasticsearch."""
