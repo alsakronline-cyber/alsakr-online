@@ -124,12 +124,29 @@ services:
     networks:
       - industry-net
 
+  # 8. Reverse Proxy & SSL (Caddy)
+  caddy:
+    image: caddy:latest
+    container_name: alsakr-proxy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - industry-net
+
 volumes:
   ollama_data:
   es_data:
   qdrant_data:
   pb_data:
   n8n_data:
+  caddy_data:
+  caddy_config:
 
 
 networks:
