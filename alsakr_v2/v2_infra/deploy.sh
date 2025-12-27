@@ -15,8 +15,17 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configuration
-APP_DIR="$HOME/alsakr_v2"
-REPO_URL="https://github.com/YOUR_USERNAME/alsakr-online.git"
+# Attempt to auto-detect the repository root relative to this script
+# This script is located in alsakr_v2/v2_infra/deploy.sh
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+APP_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
+# Verify if it's a git repo, otherwise fall back to home directory
+if ! git -C "$APP_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    APP_DIR="$HOME/alsakr-online"
+fi
+
+REPO_URL="https://github.com/alsakronline-cyber/alsakr-online.git"
 BRANCH="v2-industrial-ai"
 
 ################################################################################
