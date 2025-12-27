@@ -59,7 +59,7 @@ class AutoReplenishAgent(BaseAgent):
         super().__init__(name="AutoReplenish", system_prompt=system_prompt)
 
 # AGENT 9: SmartSubstitute (Troubleshooter)
-class TroubleshooterAgent(BaseAgent):
+class TroubleshootAgent(BaseAgent):
     def __init__(self):
         system_prompt = """
         You are the 'SmartSubstitute & Troubleshooter'.

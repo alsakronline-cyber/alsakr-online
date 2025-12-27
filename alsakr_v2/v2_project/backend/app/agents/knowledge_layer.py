@@ -37,8 +37,8 @@ class InventoryVoiceAgent(BaseAgent):
         except:
             return {"raw_response": response_text}
 
-# AGENT 5: Assembly Completer
-class AssemblyCompleterAgent(BaseAgent):
+# AGENT 5: Tech Doc Assistant
+class TechDocAssistantAgent(BaseAgent):
     def __init__(self):
         system_prompt = """
         You are the 'Assembly Completer' (The Engineeer's Assistant).
