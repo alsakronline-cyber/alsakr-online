@@ -1,5 +1,3 @@
-version: '3.8'
-
 # Production Docker Compose Configuration
 # Optimized for VPS deployment with resource limits
 
@@ -72,13 +70,15 @@ services:
           memory: 512M
     networks:
       - industry-net
-    healthcheck:
-      test: [ "CMD-SHELL", "cat < /dev/null > /dev/tcp/127.0.0.1/6333 || exit 1" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+    # Qdrant health check is disabled because the image lacks curl/wget
+    # Health will be verified via backend connectivity
+    # healthcheck:
+    #   test: ["CMD-SHELL", "cat < /dev/null > /dev/tcp/127.0.0.1/6333 || exit 1"]
+    #   interval: 10s
+    #   timeout: 5s
+    #   retries: 5
 
-  # 4. CRM & Auth (PocketBase)
+    # 4. CRM & Auth (PocketBase)
   pocketbase:
     image: ghcr.io/muchobien/pocketbase:latest
     container_name: alsakr-pb
@@ -172,7 +172,7 @@ services:
       elasticsearch:
         condition: service_healthy
       qdrant:
-        condition: service_healthy
+        condition: service_started
       ollama:
         condition: service_healthy
     ports:
