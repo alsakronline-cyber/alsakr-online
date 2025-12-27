@@ -1,0 +1,56 @@
+/* Modern Industrial Theme */
+:root {
+  --primary: #3b82f6;
+  --primary-glow: rgba(59, 130, 246, 0.4);
+  --accent: #818cf8;
+  --bg: #020617;
+  --card-bg: rgba(15, 23, 42, 0.6);
+  --border: rgba(51, 65, 85, 0.5);
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+body {
+  background: var(--bg);
+  background-image: 
+    radial-gradient(circle at 50% 0%, rgba(30, 58, 138, 0.2) 0%, transparent 50%),
+    radial-gradient(circle at 0% 100%, rgba(49, 46, 129, 0.1) 0%, transparent 40%);
+  min-height: 100vh;
+}
+
+/* Glassmorphism Classes */
+.glass {
+  background: var(--card-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.glass-hover:hover {
+  background: rgba(30, 41, 59, 0.7);
+  border-color: var(--primary);
+  transform: translateY(-4px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Typography Enhancements */
+h1 {
+  letter-spacing: -0.05em;
+  font-weight: 800;
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Custom Utilities (Since we don't have Tailwind yet) */
+.flex-center { display: flex; align-items: center; justify-content: center; }
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
+@media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
