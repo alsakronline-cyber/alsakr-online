@@ -41,7 +41,7 @@ class Settings(BaseSettings):
     REDIS_PORT: int = 6379
     
     # Data Settings
-    DATA_DIR: str = os.path.join(os.path.dirname(__file__), "..", "..", "..", "Data")
+    DATA_DIR: str = os.getenv("DATA_DIR", "/data")
     PRODUCTS_CSV: str = "products.csv"
     IMAGES_DIR: str = "scraped_data/images"
     PDF_DOWNLOAD_DIR: str = "pdfs"
