@@ -234,7 +234,8 @@ class EmbeddingGenerator:
         if count > 0:
             result = self.qdrant.scroll(
                 collection_name=self.collection_name,
-                limit=1
+                limit=1,
+                with_vectors=True
             )[0]
             
             if result:
@@ -242,7 +243,10 @@ class EmbeddingGenerator:
                 print(f"\n📦 Sample vector:")
                 print(f"  ID: {sample.id}")
                 print(f"  Payload: {json.dumps(sample.payload, indent=2)}")
-                print(f"  Vector dimension: {len(sample.vector)}")
+                if hasattr(sample, 'vector') and sample.vector:
+                    print(f"  Vector dimension: {len(sample.vector)}")
+                else:
+                    print("  Vector dimension: [Hidden/Not Loaded]")
 
 
 def main():

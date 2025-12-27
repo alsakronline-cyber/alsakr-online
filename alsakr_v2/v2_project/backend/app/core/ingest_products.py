@@ -26,6 +26,7 @@ class ProductIngester:
             "settings": {
                 "number_of_shards": 1,
                 "number_of_replicas": 0,
+                "index.mapping.total_fields.limit": 5000,
                 "analysis": {
                     "analyzer": {
                         "product_analyzer": {
@@ -62,7 +63,7 @@ class ProductIngester:
                     "phased_out": {"type": "boolean"},
                     "successor_product": {"type": "text"},
                     "certificates": {"type": "keyword"},
-                    "specifications": {"type": "object", "enabled": True},
+                    "specifications": {"type": "flattened"},
                     "suitable_accessories": {"type": "text"},
                     "image_urls": {"type": "keyword"},
                     "local_image_paths": {"type": "keyword"},
