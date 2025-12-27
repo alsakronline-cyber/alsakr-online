@@ -6,6 +6,16 @@ from .agents.orchestrator import AgentManager
 app = FastAPI(title="Al Sakr Online V2 - Agentic API")
 agent_manager = AgentManager()
 
+@app.get("/")
+async def root():
+    return {
+        "name": "Al Sakr Online V2 API",
+        "version": "2.0.0",
+        "agents": 10,
+        "status": "online",
+        "docs": "/docs"
+    }
+
 @app.on_event("startup")
 async def startup_event():
     # Initialize Elasticsearch Indices
