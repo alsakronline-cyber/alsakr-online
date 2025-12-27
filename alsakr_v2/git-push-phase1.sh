@@ -34,37 +34,32 @@ git pull origin v2-industrial-ai
 echo -e "\n${BLUE}📊 Current status:${NC}"
 git status --short
 
-# Stage all Phase 1 files
+# Stage all Phase 1 files (selective to avoid large data)
 echo -e "\n${BLUE}➕ Adding Phase 1 files...${NC}"
 
 # Backend core modules
-git add alsakr_v2/v2_project/backend/app/core/config.py
-git add alsakr_v2/v2_project/backend/app/core/ingest_products.py
-git add alsakr_v2/v2_project/backend/app/core/generate_embeddings.py
-git add alsakr_v2/v2_project/backend/app/core/process_pdfs.py
-git add alsakr_v2/v2_project/backend/app/core/search_service.py
-git add alsakr_v2/v2_project/backend/app/core/__init__.py
-
-# Backend main API
+git add alsakr_v2/v2_project/backend/app/core/*.py
 git add alsakr_v2/v2_project/backend/app/main.py
 
 # Documentation
-git add alsakr_v2/GIT_WORKFLOW_GUIDE.md
-git add alsakr_v2/VPS_DEPLOYMENT_GUIDE.md
-git add alsakr_v2/PHASE1_QUICKSTART.md
+git add alsakr_v2/*.md
 
 # Infrastructure
 git add alsakr_v2/v2_infra/deploy.sh
 git add alsakr_v2/v2_infra/quick-deploy.sh
 git add alsakr_v2/v2_infra/docker-compose.prod.yml
+git add alsakr_v2/v2_infra/docker-compose.yml
 git add alsakr_v2/v2_infra/.env.example
 git add alsakr_v2/v2_infra/DEPLOYMENT_README.md
 
 # Operations scripts
-git add alsakr_v2/v2_infra/ops/run_phase1_ingestion.sh
-git add alsakr_v2/v2_infra/ops/backup.sh
+git add alsakr_v2/v2_infra/ops/*.sh
 
-echo -e "${GREEN}✓ Files staged${NC}"
+# Git ignore itself
+git add .gitignore
+git add alsakr_v2/*.sh
+
+echo -e "${GREEN}✓ Files staged (Data excluded via .gitignore)${NC}"
 
 # Show what will be committed
 echo -e "\n${BLUE}📝 Files to be committed:${NC}"
