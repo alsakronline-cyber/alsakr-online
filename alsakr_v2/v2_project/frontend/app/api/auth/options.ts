@@ -2,7 +2,8 @@ import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import PocketBase from "pocketbase";
 
-const pb = new PocketBase(process.env.NEXT_PUBLIC_PB_URL || "http://127.0.0.1:8090");
+// Use internal Docker network URL for server-side operations
+const pb = new PocketBase(process.env.PB_INTERNAL_URL || "http://pocketbase:8090");
 
 export const authOptions: NextAuthOptions = {
     providers: [

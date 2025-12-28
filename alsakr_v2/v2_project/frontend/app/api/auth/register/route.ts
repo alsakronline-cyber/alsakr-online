@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import PocketBase from "pocketbase";
 
-const pb = new PocketBase(process.env.NEXT_PUBLIC_PB_URL || "http://127.0.0.1:8090");
+// Use internal Docker network URL for server-side API routes
+// NEXT_PUBLIC_PB_URL is for client-side, PB_INTERNAL_URL is for server-side
+const pb = new PocketBase(process.env.PB_INTERNAL_URL || "http://pocketbase:8090");
 
 export async function POST(request: NextRequest) {
     try {
