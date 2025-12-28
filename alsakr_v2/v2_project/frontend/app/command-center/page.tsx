@@ -6,9 +6,10 @@ import {
   Camera, ShoppingCart, Scale, Shield, FileText, Mic,
   MapPin, Activity, Wrench, Users, Bell, Settings, HelpCircle,
   MoreVertical, ChevronRight, Zap, Send, TrendingUp, DollarSign,
-  Package, AlertTriangle, Terminal, LayoutGrid
+  Package, AlertTriangle, Terminal, LayoutGrid, X, CheckCircle
 } from 'lucide-react';
 
+// ... (AGENTS array remains the same) ...
 const INITIAL_AGENTS = [
   { id: 1, name: 'VisualMatch', icon: Camera, status: 'active', theme: 'sky' },
   { id: 2, name: 'MultiVendor', icon: ShoppingCart, status: 'active', theme: 'sky' },
@@ -26,8 +27,109 @@ interface Product {
   part_number: string;
   name: string;
   category: string;
+  combined_score?: number;
+  description?: string;
+  specifications?: Record<string, any>;
+  image_url?: string;
+  stock?: number;
   [key: string]: any;
 }
+
+// Minimal Product Modal
+const ProductDetailsModal = ({ product, onClose }: { product: Product, onClose: () => void }) => {
+  if (!product) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[85vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-200 border border-slate-200">
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+          <div>
+            <span className="text-xs font-bold text-blue-600 uppercase tracking-wider bg-blue-50 px-2 py-1 rounded-md">
+              {product.category || 'Component'}
+            </span>
+            <h2 className="text-xl font-bold text-slate-800 mt-1">{product.name}</h2>
+            <span className="font-mono text-sm text-slate-500">{product.part_number}</span>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 bg-slate-100 hover:bg-slate-200 rounded-full text-slate-500 transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto p-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* Image & Key Stats */}
+            <div className="space-y-6">
+              <div className="aspect-square bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-center p-4">
+                {product.image_url ? (
+                  <img src={product.image_url} alt={product.name} className="max-w-full max-h-full object-contain mix-blend-multiply" />
+                ) : (
+                  <div className="text-center">
+                    <Zap className="w-12 h-12 text-slate-300 mx-auto mb-2 opacity-50" />
+                    <span className="text-xs text-slate-400">No Preview</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-3">
+                <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-100">
+                  <div className="flex items-center gap-2 mb-1">
+                    <CheckCircle className="w-4 h-4 text-emerald-600" />
+                    <span className="text-sm font-bold text-emerald-800">Available</span>
+                  </div>
+                  <p className="text-xs text-emerald-700/80">Stock: {product.stock || 'In Stock'} units</p>
+                </div>
+                <button className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2">
+                  <ShoppingCart className="w-4 h-4" /> Add to Quote
+                </button>
+              </div>
+            </div>
+
+            {/* Specs & Description */}
+            <div className="md:col-span-2 space-y-6">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide mb-3 flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-blue-500" /> Description
+                </h3>
+                <p className="text-slate-600 text-sm leading-relaxed">
+                  {product.description || "Industrial automation component. Please refer to datasheet for full operational parameters."}
+                </p>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide mb-3 flex items-center gap-2">
+                  <Activity className="w-4 h-4 text-blue-500" /> Technical Data
+                </h3>
+                <div className="bg-slate-50 rounded-xl border border-slate-100 overflow-hidden">
+                  <table className="w-full text-sm">
+                    <tbody className="divide-y divide-slate-100">
+                      {product.specifications && Object.entries(product.specifications).length > 0 ? (
+                        Object.entries(product.specifications).slice(0, 8).map(([k, v], i) => (
+                          <tr key={i} className="hover:bg-slate-100/50">
+                            <td className="px-4 py-3 text-slate-500 font-medium w-1/3">{k}</td>
+                            <td className="px-4 py-3 text-slate-800">{String(v)}</td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={2} className="px-4 py-3 text-slate-400 italic">No specific data available.</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default function CommandCenter() {
   const router = useRouter();
@@ -39,13 +141,16 @@ export default function CommandCenter() {
   const [matches, setMatches] = useState<Product[]>([]);
   const [alternatives, setAlternatives] = useState<Product[]>([]);
   const [clarification, setClarification] = useState<string | null>(null);
-  const [history, setHistory] = useState<string[]>([]); // Context History
+  const [history, setHistory] = useState<string[]>([]);
+
+  // Modal State
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   // Neural Log State
   const [logs, setLogs] = useState<string[]>([]);
   const logEndRef = useRef<HTMLDivElement>(null);
 
-  // Sort Agents: Active/Negotiating first, Idle last
+  // ... (Sort Agents useEffect remains same) ...
   useEffect(() => {
     const sorted = [...INITIAL_AGENTS].sort((a, b) => {
       const score = (status: string) => {
@@ -74,7 +179,7 @@ export default function CommandCenter() {
     setClarification(null);
     setMatches([]);
     setAlternatives([]);
-    setLogs([]); // Clear logs on new search
+    setLogs([]);
 
     // Update context
     const newHistory = [...history, command];
@@ -105,6 +210,13 @@ export default function CommandCenter() {
         addLog("DECISION: Ambiguous query detected.");
         addLog(`ACTION: Requesting clarification: "${data.question}"`);
         setClarification(data.question);
+
+        // HYBRID MODE: Show matches even if clarification is needed
+        if (data.matches && data.matches.length > 0) {
+          addLog(`DISPLAY: Showing ${data.matches.length} preliminary matches.`);
+          setMatches(data.matches);
+        }
+
       } else if (data.type === 'results') {
         const matchCount = data.matches?.length || 0;
         addLog(`DECISION: Search successful. Found ${matchCount} direct matches.`);
@@ -128,12 +240,21 @@ export default function CommandCenter() {
     if (e.key === 'Enter') handleSearch();
   };
 
-  const navigateToProduct = (partNumber: string) => {
-    router.push(`/product/${partNumber}`);
+  const handleProductClick = (product: Product) => {
+    setSelectedProduct(product);
   };
 
   return (
     <div className="h-screen bg-slate-50 text-slate-900 flex overflow-hidden font-sans selection:bg-blue-100">
+
+      {/* Product Modal */}
+      {selectedProduct && (
+        <ProductDetailsModal
+          product={selectedProduct}
+          onClose={() => setSelectedProduct(null)}
+        />
+      )}
+
       {/* Left Sidebar - Icon Nav */}
       <div className="w-16 bg-white border-r border-slate-200 flex flex-col items-center py-6 gap-4 shadow-sm z-20">
         <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
@@ -144,14 +265,14 @@ export default function CommandCenter() {
           <button className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 hover:bg-blue-100 transition-colors">
             <Zap className="w-5 h-5" />
           </button>
-
+          {/* ... Other icons ... */}
           {[FileText, Shield, Users].map((Icon, i) => (
             <button key={i} className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors">
               <Icon className="w-5 h-5" />
             </button>
           ))}
         </div>
-
+        {/* ... Settings icons ... */}
         <div className="flex flex-col gap-3">
           <button className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors">
             <Settings className="w-5 h-5" />
@@ -164,7 +285,7 @@ export default function CommandCenter() {
         {/* Top Header */}
         <div className="h-16 bg-white border-b border-slate-200 px-8 flex items-center justify-between flex-shrink-0 shadow-sm z-10">
           <h1 className="text-sm font-bold text-slate-700 uppercase tracking-wide">Al Sakr Command Center <span className="text-blue-200 mx-2">|</span> V2.0</h1>
-
+          {/* ... Header Status ... */}
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 rounded-full border border-green-100">
               <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
@@ -195,6 +316,7 @@ export default function CommandCenter() {
                 placeholder="Ask your agents... (e.g. 'Show me 24V sensors' then 'Filter by stock')"
                 className="w-full bg-white border border-slate-200 rounded-xl pl-12 pr-24 py-4 text-base text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 shadow-xl shadow-blue-500/5 transition-all"
               />
+              {/* ... Input Buttons ... */}
               <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
                 <span className="text-xs text-slate-400 font-medium px-2">⌘K</span>
                 <button
@@ -213,6 +335,7 @@ export default function CommandCenter() {
         <div className="flex-1 flex overflow-hidden min-h-0">
           {/* Agent Dock */}
           <div className="w-72 bg-white border-r border-slate-200 p-6 overflow-y-auto z-10">
+            {/* ... Agent Dock Content (same as before) ... */}
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Active Agents</h2>
               <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
@@ -253,7 +376,6 @@ export default function CommandCenter() {
           {/* Center Stage (Results) */}
           <div className="flex-1 p-8 overflow-y-auto bg-slate-50/50">
 
-            {/* Empty State */}
             {!isSearching && !clarification && matches.length === 0 && alternatives.length === 0 && (
               <div className="h-full flex flex-col items-center justify-center p-12 text-slate-400 opacity-60">
                 <div className="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mb-6">
@@ -284,16 +406,17 @@ export default function CommandCenter() {
             {/* Results Table (Matches & Alternatives) */}
             {(matches.length > 0 || alternatives.length > 0) && (
               <div className="space-y-8 animate-in fade-in duration-500">
-
                 {/* Best Matches */}
                 {matches.length > 0 && (
                   <div className="bg-white border border-blue-100 rounded-2xl overflow-hidden shadow-lg shadow-blue-500/5">
                     <div className="flex items-center justify-between px-6 py-4 border-b border-blue-50 bg-blue-50/30">
                       <div className="flex items-center gap-3">
                         <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-                        <h3 className="text-sm font-bold text-blue-900">Best Matches ({matches.length})</h3>
+                        <h3 className="text-sm font-bold text-blue-900">
+                          {clarification ? "Preliminary Matches" : "Best Matches"} ({matches.length})
+                        </h3>
                       </div>
-                      <span className="text-xs font-bold text-blue-600 bg-blue-100 px-2.5 py-1 rounded-full">High Confidence</span>
+                      <span className="text-xs font-bold text-blue-600 bg-blue-100 px-2.5 py-1 rounded-full">{clarification ? "Review Needed" : "High Confidence"}</span>
                     </div>
                     <div className="overflow-x-auto">
                       <table className="w-full">
@@ -309,7 +432,7 @@ export default function CommandCenter() {
                           {matches.map((p, i) => (
                             <tr
                               key={i}
-                              onClick={() => navigateToProduct(p.part_number)}
+                              onClick={() => handleProductClick(p)}
                               className="group hover:bg-blue-50/50 transition-colors cursor-pointer"
                             >
                               <td className="px-6 py-4 font-mono text-sm font-semibold text-blue-600 group-hover:underline">{p.part_number}</td>
@@ -337,7 +460,7 @@ export default function CommandCenter() {
                 )}
 
                 {/* Alternatives */}
-                {alternatives.length > 0 && (
+                {alternatives.length > 0 && !clarification && (
                   <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm opacity-90">
                     <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
                       <h3 className="text-sm font-bold text-slate-600">Alternatives & Related ({alternatives.length})</h3>
@@ -348,7 +471,7 @@ export default function CommandCenter() {
                           {alternatives.map((p, i) => (
                             <tr
                               key={i}
-                              onClick={() => navigateToProduct(p.part_number)}
+                              onClick={() => handleProductClick(p)}
                               className="hover:bg-slate-50 transition-colors cursor-pointer"
                             >
                               <td className="px-6 py-4 font-mono text-sm text-slate-500">{p.part_number}</td>
@@ -370,6 +493,7 @@ export default function CommandCenter() {
 
           {/* Neural Log (Right Panel) */}
           <div className="w-80 bg-white border-l border-slate-200 flex flex-col z-10">
+            {/* ... Log Content (same as before) ... */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 flex-shrink-0 bg-slate-50/50">
               <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Neural Log</h2>
               <div className="flex items-center gap-2">
