@@ -57,15 +57,45 @@ class SmartSearchService:
             
         return {"is_ambiguous": False, "clarifying_question": None}
 
+    def re_score_results(self, query: str, results: List[Dict]) -> List[Dict]:
+        """
+        Adjust scores based on how well technical keywords in the query 
+        match the product's specifications or name.
+        """
+        query_words = set(query.lower().split())
+        
+        for result in results:
+            boost = 0
+            specifications = result.get('specifications', {})
+            name = result.get('name', '').lower()
+            
+            # 1. Name match boost
+            for word in query_words:
+                if word in name:
+                    boost += 0.05
+            
+            # 2. Technical Specs Match Boost
+            if isinstance(specifications, dict):
+                for val in specifications.values():
+                    str_val = str(val).lower()
+                    if any(word in str_val for word in query_words if len(word) > 2):
+                        boost += 0.10
+            
+            # Apply boost and cap at 1.0 (100%)
+            current_score = result.get('combined_score', 0)
+            result['combined_score'] = min(0.99, current_score + boost)
+            
+        # Re-sort after boosting
+        return sorted(results, key=lambda x: x.get('combined_score', 0), reverse=True)
+
     def smart_search(self, query: str, context: List[Dict] = None) -> Dict:
         """
         Orchestrate the smart search flow.
         """
         # 1. Analyze Query with Context
-        # TODO: Pass context to analyze_query for better ambiguity detection
         analysis = self.analyze_query(query)
         
-        if analysis.get('is_ambiguous'):
+        if analysis.get('is_ambiguous') and not context: # Only ask if no context (follow-up usually clarifies)
             return {
                 "type": "clarification",
                 "question": analysis.get('clarifying_question', "Could you be more specific?"),
@@ -73,43 +103,38 @@ class SmartSearchService:
             }
             
         # 2. Perform Hybrid Search
-        # Simple Context Merging (if context exists, append to query for better semantic match)
         search_query = query
         if context:
-            # Take the last user message from context as previous subject if query is short
             last_msg = context[-1].get('content', '') if context else ''
             if len(query.split()) < 3 and last_msg:
                  search_query = f"{last_msg} {query}"
 
-        # Request more results than usual to allow for filtering
         raw_results = self.search_service.hybrid_search(search_query, size=30)
+        
+        # 3. Contextual Re-scoring (Boost based on specific technical keywords)
+        ranked_results = self.re_score_results(query, raw_results)
         
         matches = []
         alternatives = []
         
-        for result in raw_results:
+        for result in ranked_results:
             score = result.get('combined_score', 0)
-            
-            # Categorize
             if score >= self.MATCH_THRESHOLD:
                 matches.append(result)
             elif score >= self.ALTERNATIVE_THRESHOLD:
                 alternatives.append(result)
                 
-        # If we have no matches but high scoring alternatives, promote top alternatives to matches
         if not matches and alternatives:
-            # Take top 3 alternatives as functionality matches
             matches = alternatives[:3]
             alternatives = alternatives[3:]
 
-        # 3. Decision Logic
-        # If we have too many matches, ask for clarification BUT show top 5 results as "Hybrid"
+        # 4. Decision Logic
         if len(matches) > 5:
             return {
                 "type": "clarification", 
                 "question": f"I found {len(matches)} matches. Showing the top results. Could you specify the series or voltage?",
                 "original_query": query,
-                "matches": matches[:5], # Show top 5
+                "matches": matches[:5],
                 "alternatives": []
             }
 
