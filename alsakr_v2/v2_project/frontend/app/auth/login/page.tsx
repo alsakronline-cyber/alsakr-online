@@ -115,7 +115,10 @@ export default function LoginPage() {
 
                         <div className="mt-8 pt-8 border-t border-slate-800 text-center">
                             <p className="text-slate-500 text-sm">
-                                No account? Contact your distributor for access.
+                                Don't have an account?{" "}
+                                <a href="/auth/register" className="text-blue-400 hover:text-blue-300 font-medium transition-colors">
+                                    Create Account
+                                </a>
                             </p>
                         </div>
                     </div>
