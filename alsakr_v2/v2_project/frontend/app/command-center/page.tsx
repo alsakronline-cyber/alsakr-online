@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Camera, ShoppingCart, Scale, Shield, FileText, Mic,
   MapPin, Activity, Wrench, Users, Bell, Settings, HelpCircle,
   MoreVertical, ChevronRight, Zap, Send, TrendingUp, DollarSign,
-  Package, AlertTriangle
+  Package, AlertTriangle, Terminal
 } from 'lucide-react';
 
 const AGENTS = [
@@ -31,23 +31,42 @@ interface Product {
 export default function CommandCenter() {
   const [command, setCommand] = useState('');
   const [isSearching, setIsSearching] = useState(false);
+
   // Smart Search State
   const [matches, setMatches] = useState<Product[]>([]);
   const [alternatives, setAlternatives] = useState<Product[]>([]);
   const [clarification, setClarification] = useState<string | null>(null);
 
+  // Neural Log State
+  const [logs, setLogs] = useState<string[]>([]);
+  const logEndRef = useRef<HTMLDivElement>(null);
+
+  const addLog = (message: string) => {
+    const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false });
+    setLogs(prev => [...prev, `[${timestamp}] ${message}`]);
+  };
+
+  useEffect(() => {
+    logEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [logs]);
+
   const handleSearch = async () => {
     if (!command.trim()) return;
 
     setIsSearching(true);
-    // Reset previous results
     setClarification(null);
     setMatches([]);
     setAlternatives([]);
+    setLogs([]); // Clear logs on new search
+
+    addLog(`USER_QUERY: "${command}"`);
+    addLog("ORCHESTRATOR: Analyzing intent with LLM...");
 
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-      // Use the new Smart Search endpoint
+
+      addLog("NETWORK: Sending request to /api/search/smart...");
+
       const response = await fetch(`${apiUrl}/api/search/smart`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -55,15 +74,26 @@ export default function CommandCenter() {
       });
 
       const data = await response.json();
+      addLog("ORCHESTRATOR: Response received.");
 
       if (data.type === 'clarification') {
+        addLog("DECISION: Ambiguous query detected.");
+        addLog(`ACTION: Requesting clarification: "${data.question}"`);
         setClarification(data.question);
       } else if (data.type === 'results') {
+        const matchCount = data.matches?.length || 0;
+        addLog(`DECISION: Search successful. Found ${matchCount} direct matches.`);
         setMatches(data.matches || []);
         setAlternatives(data.alternatives || []);
+
+        if (matchCount > 0) {
+          addLog("VISUAL_MATCH: Cross-referencing technical specifications...");
+          addLog("COMPLETED: Results rendered.");
+        }
       }
     } catch (error) {
       console.error('Search failed:', error);
+      addLog("ERROR: Connection to backend failed.");
     } finally {
       setIsSearching(false);
     }
@@ -76,7 +106,7 @@ export default function CommandCenter() {
   };
 
   return (
-    <div className="h-screen bg-slate-900 text-slate-100 flex overflow-hidden">
+    <div className="h-screen bg-slate-900 text-slate-100 flex overflow-hidden font-sans">
       {/* Left Sidebar - Icon Nav */}
       <div className="w-14 bg-slate-950 border-r border-slate-800 flex flex-col items-center py-4 gap-3">
         <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-amber-600 rounded-lg flex items-center justify-center shadow-lg">
@@ -211,46 +241,14 @@ export default function CommandCenter() {
               <MoreVertical className="w-4 h-4 text-slate-500" />
             </div>
 
-            {/* Cards Grid */}
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              {/* MTD Savings */}
-              <div className="bg-slate-800/40 backdrop-blur border border-slate-700/50 rounded-2xl p-6 hover:border-slate-600 transition-all">
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <p className="text-xs text-slate-500 mb-1 uppercase tracking-wide font-medium">MTD Savings:</p>
-                    <p className="text-4xl font-bold text-cyan-400">$14,500</p>
-                  </div>
-                  <div className="w-12 h-12 bg-cyan-500/10 rounded-xl flex items-center justify-center">
-                    <TrendingUp className="w-6 h-6 text-cyan-400" />
-                  </div>
-                </div>
-                <p className="text-xs text-slate-400">Auto-Haggle saved 18% on 47 transactions</p>
+            {/* Empty State / Initial Instructions */}
+            {!isSearching && !clarification && matches.length === 0 && alternatives.length === 0 && (
+              <div className="flex flex-col items-center justify-center p-12 text-slate-500">
+                <Terminal className="w-12 h-12 mb-4 opacity-50" />
+                <p className="text-lg font-medium">System Ready</p>
+                <p className="text-sm">Initiate a search to activate agents.</p>
               </div>
-
-              {/* Critical Alert */}
-              <div className="bg-gradient-to-br from-orange-500/10 to-red-500/10 backdrop-blur border border-orange-500/30 rounded-2xl p-6 hover:border-orange-500/50 transition-all">
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <p className="text-xs text-orange-400 mb-1 uppercase tracking-wide font-bold">CRITICAL ALERT:</p>
-                    <p className="text-sm text-orange-300 font-medium">Pump #4 Vibration - Order Replacement</p>
-                  </div>
-                  <AlertTriangle className="w-5 h-5 text-orange-400" />
-                </div>
-
-                {/* Waveform */}
-                <div className="mt-4 h-16">
-                  <svg className="w-full h-full" viewBox="0 0 200 40" preserveAspectRatio="none">
-                    <path
-                      d="M0,20 Q10,15 20,20 T40,20 Q50,10 60,20 T80,20 Q90,5 100,20 T120,20 Q130,15 140,20 T160,20 Q170,10 180,20 T200,20"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      className="text-orange-400"
-                    />
-                  </svg>
-                </div>
-              </div>
-            </div>
+            )}
 
             {/* Clarification Prompt */}
             {clarification && (
@@ -270,34 +268,34 @@ export default function CommandCenter() {
 
             {/* Results Table (Matches & Alternatives) */}
             {(matches.length > 0 || alternatives.length > 0) && (
-              <div className="space-y-6">
+              <div className="space-y-6 animate-in fade-in duration-500">
 
                 {/* Best Matches */}
                 {matches.length > 0 && (
-                  <div className="bg-emerald-500/5 backdrop-blur border border-emerald-500/20 rounded-2xl overflow-hidden">
-                    <div className="flex items-center justify-between px-6 py-3 border-b border-emerald-500/20 bg-emerald-500/10">
+                  <div className="bg-amber-500/5 backdrop-blur border border-amber-500/20 rounded-2xl overflow-hidden">
+                    <div className="flex items-center justify-between px-6 py-3 border-b border-amber-500/20 bg-amber-500/10">
                       <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
-                        <h3 className="text-sm font-semibold text-emerald-300">Best Matches ({matches.length})</h3>
+                        <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse" />
+                        <h3 className="text-sm font-semibold text-amber-300">Best Matches ({matches.length})</h3>
                       </div>
-                      <span className="text-xs text-emerald-400/70 font-mono">High Confidence</span>
+                      <span className="text-xs text-amber-400/70 font-mono">High Confidence</span>
                     </div>
                     <div className="overflow-x-auto">
                       <table className="w-full">
                         <thead>
-                          <tr className="border-b border-emerald-500/10 text-left">
-                            <th className="px-6 py-3 text-xs font-semibold text-emerald-400/70 uppercase">Part Number</th>
-                            <th className="px-6 py-3 text-xs font-semibold text-emerald-400/70 uppercase">Name</th>
-                            <th className="px-6 py-3 text-xs font-semibold text-emerald-400/70 uppercase">Score</th>
+                          <tr className="border-b border-amber-500/10 text-left">
+                            <th className="px-6 py-3 text-xs font-semibold text-amber-400/70 uppercase">Part Number</th>
+                            <th className="px-6 py-3 text-xs font-semibold text-amber-400/70 uppercase">Name</th>
+                            <th className="px-6 py-3 text-xs font-semibold text-amber-400/70 uppercase">Score</th>
                           </tr>
                         </thead>
                         <tbody>
                           {matches.map((p, i) => (
-                            <tr key={i} className="border-b border-emerald-500/10 hover:bg-emerald-500/5 transition-colors">
-                              <td className="px-6 py-3 font-mono text-sm text-emerald-300">{p.part_number}</td>
+                            <tr key={i} className="border-b border-amber-500/10 hover:bg-amber-500/5 transition-colors">
+                              <td className="px-6 py-3 font-mono text-sm text-amber-300">{p.part_number}</td>
                               <td className="px-6 py-3 text-sm text-slate-300">{p.name}</td>
-                              <td className="px-6 py-3 text-xs font-mono text-emerald-500">
-                                {Math.round((p.combined_score || 0) * 100)}%
+                              <td className="px-6 py-3 text-xs font-mono text-amber-500">
+                                {Math.min(100, Math.round((p.combined_score || 0) * 100))}%
                               </td>
                             </tr>
                           ))}
@@ -316,14 +314,13 @@ export default function CommandCenter() {
                     </div>
                     <div className="overflow-x-auto">
                       <table className="w-full">
-                        {/* Reusing simplified table structure for alternatives */}
                         <tbody>
                           {alternatives.map((p, i) => (
                             <tr key={i} className="border-b border-slate-700/30 hover:bg-slate-700/20 transition-colors">
                               <td className="px-6 py-3 font-mono text-sm text-slate-400">{p.part_number}</td>
                               <td className="px-6 py-3 text-sm text-slate-400">{p.name}</td>
                               <td className="px-6 py-3 text-xs font-mono text-slate-600">
-                                {Math.round((p.combined_score || 0) * 100)}%
+                                {Math.min(100, Math.round((p.combined_score || 0) * 100))}%
                               </td>
                             </tr>
                           ))}
@@ -332,47 +329,6 @@ export default function CommandCenter() {
                     </div>
                   </div>
                 )}
-              </div>
-            )}
-
-            {/* Default State (Active Sourcing Projects) - Only show if NO search activity */}
-            {!isSearching && !clarification && matches.length === 0 && alternatives.length === 0 && (
-              <div className="bg-slate-800/40 backdrop-blur border border-slate-700/50 rounded-2xl overflow-hidden">
-                <div className="flex items-center justify-between px-6 py-3 border-b border-slate-700/50">
-                  <h3 className="text-sm font-semibold text-slate-300">Active Sourcing Projects</h3>
-                  <MoreVertical className="w-4 h-4 text-slate-500" />
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-slate-700/50">
-                        <th className="text-left px-6 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Project</th>
-                        <th className="text-left px-6 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Team</th>
-                        <th className="text-left px-6 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {[
-                        { project: 'Project', team: 'Riyadh: 500 Valves - Negotiating with 3 Vendors', status: 'Sindear', highlight: true },
-                        { project: 'Project', team: 'Riyadh: 500 Valves - Negotiating', status: 'Safety', highlight: false },
-                        { project: 'Project', team: 'Riyadh: 500 Valves - Negotiating', status: 'Supplier', highlight: false },
-                        { project: 'Project', team: 'Riyadh: 500 Valves - Receiving 3 quotes', status: 'Safety', highlight: false },
-                        { project: 'Project', team: 'Riyadh: 500 Valves - Supplier', status: 'Sales', highlight: false },
-                      ].map((row, i) => (
-                        <tr key={i} className={`border-b border-slate-700/30 hover:bg-slate-700/20 transition-colors ${row.highlight ? 'bg-orange-500/5' : ''}`}>
-                          <td className="px-6 py-3">
-                            <span className={`inline-block px-2.5 py-1 rounded-md text-xs font-medium ${row.highlight ? 'bg-orange-500/20 text-orange-300' : 'bg-slate-700 text-slate-400'
-                              }`}>
-                              {row.project}
-                            </span>
-                          </td>
-                          <td className="px-6 py-3 text-sm text-slate-300">{row.team}</td>
-                          <td className="px-6 py-3 text-sm text-slate-400">{row.status}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
               </div>
             )}
           </div>
@@ -384,17 +340,18 @@ export default function CommandCenter() {
               <ChevronRight className="w-4 h-4 text-slate-500" />
             </div>
 
-            <div className="flex-1 p-4 overflow-y-auto">
-              <div className="space-y-2 font-mono text-xs text-emerald-400">
-                <p>&gt; [14:02:11] VISUAL_MATCH:</p>
-                <p className="text-emerald-300/70 ml-4">Image analyzed. 98% match for SKF 6205 Bearing.</p>
-
-                <p className="mt-3">&gt; [14:02:15] MULTI_VENDOR:</p>
-                <p className="text-emerald-300/70 ml-4">Querying 45 local suppliers via WhatsApp API...</p>
-
-                <p className="mt-3">&gt; [14:02:30] QUOTE_COMPARE:</p>
-                <p className="text-emerald-300/70 ml-4">Received 3 quotes. Lowest landed cost: Supplier B.</p>
-              </div>
+            <div className="flex-1 p-4 overflow-y-auto bg-slate-950 font-mono text-xs text-emerald-500/80">
+              {logs.length === 0 ? (
+                <p className="text-slate-700 italic">Waiting for input triggers...</p>
+              ) : (
+                logs.map((log, i) => (
+                  <p key={i} className="mb-1 break-words animate-in fade-in slide-in-from-left-2 duration-300">
+                    <span className="text-slate-600 mr-2">&gt;</span>
+                    {log}
+                  </p>
+                ))
+              )}
+              <div ref={logEndRef} />
             </div>
           </div>
         </div>

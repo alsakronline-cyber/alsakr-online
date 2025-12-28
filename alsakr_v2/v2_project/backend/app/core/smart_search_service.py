@@ -93,8 +93,16 @@ class SmartSearchService:
             matches = alternatives[:3]
             alternatives = alternatives[3:]
 
+        # If we have too many matches, force clarification to narrow it down
+        if len(matches) > 5:
+            return {
+                "type": "clarification",
+                "question": f"I found {len(matches)} relevant items. Could you specify the series, voltage, or mounting type to help me narrow it down?",
+                "original_query": query
+            }
+
         return {
             "type": "results",
-            "matches": matches[:10],      # Top 10 matches
-            "alternatives": alternatives[:10]  # Top 10 alternatives
+            "matches": matches,      
+            "alternatives": alternatives[:5]  # Limit alternatives context
         }
