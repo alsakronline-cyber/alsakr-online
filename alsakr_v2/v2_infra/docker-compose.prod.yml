@@ -131,6 +131,7 @@ services:
       dockerfile: Dockerfile
       args:
         - NODE_ENV=production
+        - NEXT_PUBLIC_API_URL=https://app.alsakronline.com
     container_name: alsakr-frontend
     restart: always
     environment:

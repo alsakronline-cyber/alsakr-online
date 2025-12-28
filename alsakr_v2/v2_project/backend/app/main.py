@@ -4,7 +4,7 @@ from typing import Optional, List, Dict
 from pydantic import BaseModel
 from .core.es_client import es_client
 from .agents.orchestrator import AgentManager
-from .core.search_service import SearchService
+from .core.smart_search_service import SmartSearchService
 
 app = FastAPI(
     title="Al Sakr Online V2 - Agentic API",
@@ -23,12 +23,17 @@ app.add_middleware(
 
 agent_manager = AgentManager()
 search_service = SearchService()
+smart_search_service = SmartSearchService()
 
 
 # Pydantic models
 class SemanticSearchRequest(BaseModel):
     query: str
     limit: int = 10
+
+class SmartSearchRequest(BaseModel):
+    query: str
+    context: Optional[List[Dict]] = None
 
 
 @app.get("/")
@@ -42,6 +47,7 @@ async def root():
         "endpoints": {
             "chat": "/api/chat",
             "search": "/api/search/products",
+            "smart_search": "/api/search/smart",
             "semantic": "/api/search/semantic",
             "health": "/api/health"
         }
@@ -106,6 +112,17 @@ async def semantic_search(request: SemanticSearchRequest):
         "total": len(results),
         "results": results
     }
+
+
+@app.post("/api/search/smart")
+async def smart_search(request: SmartSearchRequest):
+    """
+    Intelligent search with ambiguity detection and result categorization.
+    Returns:
+    - {"type": "clarification", "question": "..."}
+    - {"type": "results", "matches": [...], "alternatives": [...]}
+    """
+    return smart_search_service.smart_search(request.query)
 
 
 @app.get("/api/search/hybrid")

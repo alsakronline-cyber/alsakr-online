@@ -31,19 +31,36 @@ interface Product {
 export default function CommandCenter() {
   const [command, setCommand] = useState('');
   const [isSearching, setIsSearching] = useState(false);
-  const [searchResults, setSearchResults] = useState<Product[]>([]);
+  // Smart Search State
+  const [matches, setMatches] = useState<Product[]>([]);
+  const [alternatives, setAlternatives] = useState<Product[]>([]);
+  const [clarification, setClarification] = useState<string | null>(null);
 
   const handleSearch = async () => {
     if (!command.trim()) return;
 
     setIsSearching(true);
+    // Reset previous results
+    setClarification(null);
+    setMatches([]);
+    setAlternatives([]);
+
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-      const response = await fetch(`${apiUrl}/api/search/products?q=${encodeURIComponent(command)}`);
+      // Use the new Smart Search endpoint
+      const response = await fetch(`${apiUrl}/api/search/smart`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: command })
+      });
+
       const data = await response.json();
 
-      if (data.results) {
-        setSearchResults(data.results);
+      if (data.type === 'clarification') {
+        setClarification(data.question);
+      } else if (data.type === 'results') {
+        setMatches(data.matches || []);
+        setAlternatives(data.alternatives || []);
       }
     } catch (error) {
       console.error('Search failed:', error);
@@ -235,49 +252,107 @@ export default function CommandCenter() {
               </div>
             </div>
 
-            {/* Active Sourcing Projects Table OR Search Results */}
-            <div className="bg-slate-800/40 backdrop-blur border border-slate-700/50 rounded-2xl overflow-hidden">
-              <div className="flex items-center justify-between px-6 py-3 border-b border-slate-700/50">
-                <h3 className="text-sm font-semibold text-slate-300">
-                  {searchResults.length > 0 ? `Search Results (${searchResults.length})` : 'Active Sourcing Projects'}
-                </h3>
-                <MoreVertical className="w-4 h-4 text-slate-500" />
+            {/* Clarification Prompt */}
+            {clarification && (
+              <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-6 mb-4 animate-in fade-in slide-in-from-top-4 duration-500">
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 bg-amber-500/20 rounded-full flex items-center justify-center flex-shrink-0">
+                    <HelpCircle className="w-6 h-6 text-amber-500" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-amber-200 mb-2">Clarification Needed</h3>
+                    <p className="text-slate-300 text-sm mb-4">{clarifiction}</p>
+                    <p className="text-xs text-slate-500">Please type a more specific query in the command bar above.</p>
+                  </div>
+                </div>
               </div>
+            )}
 
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-slate-700/50">
-                      {searchResults.length > 0 ? (
-                        <>
-                          <th className="text-left px-6 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Part Number</th>
-                          <th className="text-left px-6 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Name</th>
-                          <th className="text-left px-6 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Category</th>
-                        </>
-                      ) : (
-                        <>
-                          <th className="text-left px-6 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Project</th>
-                          <th className="text-left px-6 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Team</th>
-                          <th className="text-left px-6 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Status</th>
-                        </>
-                      )}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {searchResults.length > 0 ? (
-                      searchResults.map((product, i) => (
-                        <tr key={i} className="border-b border-slate-700/30 hover:bg-slate-700/20 transition-colors">
-                          <td className="px-6 py-3">
-                            <span className="inline-block px-2.5 py-1 rounded-md text-xs font-medium bg-orange-500/20 text-orange-300">
-                              {product.part_number}
-                            </span>
-                          </td>
-                          <td className="px-6 py-3 text-sm text-slate-300">{product.name}</td>
-                          <td className="px-6 py-3 text-sm text-slate-400">{product.category}</td>
-                        </tr>
-                      ))
-                    ) : (
-                      [
+            {/* Results Table (Matches & Alternatives) */}
+            {(matches.length > 0 || alternatives.length > 0) && (
+              <div className="space-y-6">
+
+                {/* Best Matches */}
+                {matches.length > 0 && (
+                  <div className="bg-emerald-500/5 backdrop-blur border border-emerald-500/20 rounded-2xl overflow-hidden">
+                    <div className="flex items-center justify-between px-6 py-3 border-b border-emerald-500/20 bg-emerald-500/10">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+                        <h3 className="text-sm font-semibold text-emerald-300">Best Matches ({matches.length})</h3>
+                      </div>
+                      <span className="text-xs text-emerald-400/70 font-mono">High Confidence</span>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="border-b border-emerald-500/10 text-left">
+                            <th className="px-6 py-3 text-xs font-semibold text-emerald-400/70 uppercase">Part Number</th>
+                            <th className="px-6 py-3 text-xs font-semibold text-emerald-400/70 uppercase">Name</th>
+                            <th className="px-6 py-3 text-xs font-semibold text-emerald-400/70 uppercase">Score</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {matches.map((p, i) => (
+                            <tr key={i} className="border-b border-emerald-500/10 hover:bg-emerald-500/5 transition-colors">
+                              <td className="px-6 py-3 font-mono text-sm text-emerald-300">{p.part_number}</td>
+                              <td className="px-6 py-3 text-sm text-slate-300">{p.name}</td>
+                              <td className="px-6 py-3 text-xs font-mono text-emerald-500">
+                                {Math.round((p.combined_score || 0) * 100)}%
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                {/* Alternatives */}
+                {alternatives.length > 0 && (
+                  <div className="bg-slate-800/40 backdrop-blur border border-slate-700/50 rounded-2xl overflow-hidden">
+                    <div className="flex items-center justify-between px-6 py-3 border-b border-slate-700/50">
+                      <h3 className="text-sm font-semibold text-amber-200/80">Alternatives & Related ({alternatives.length})</h3>
+                      <MoreVertical className="w-4 h-4 text-slate-500" />
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        {/* Reusing simplified table structure for alternatives */}
+                        <tbody>
+                          {alternatives.map((p, i) => (
+                            <tr key={i} className="border-b border-slate-700/30 hover:bg-slate-700/20 transition-colors">
+                              <td className="px-6 py-3 font-mono text-sm text-slate-400">{p.part_number}</td>
+                              <td className="px-6 py-3 text-sm text-slate-400">{p.name}</td>
+                              <td className="px-6 py-3 text-xs font-mono text-slate-600">
+                                {Math.round((p.combined_score || 0) * 100)}%
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Default State (Active Sourcing Projects) - Only show if NO search activity */}
+            {!isSearching && !clarification && matches.length === 0 && alternatives.length === 0 && (
+              <div className="bg-slate-800/40 backdrop-blur border border-slate-700/50 rounded-2xl overflow-hidden">
+                <div className="flex items-center justify-between px-6 py-3 border-b border-slate-700/50">
+                  <h3 className="text-sm font-semibold text-slate-300">Active Sourcing Projects</h3>
+                  <MoreVertical className="w-4 h-4 text-slate-500" />
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-slate-700/50">
+                        <th className="text-left px-6 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Project</th>
+                        <th className="text-left px-6 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Team</th>
+                        <th className="text-left px-6 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[
                         { project: 'Project', team: 'Riyadh: 500 Valves - Negotiating with 3 Vendors', status: 'Sindear', highlight: true },
                         { project: 'Project', team: 'Riyadh: 500 Valves - Negotiating', status: 'Safety', highlight: false },
                         { project: 'Project', team: 'Riyadh: 500 Valves - Negotiating', status: 'Supplier', highlight: false },
@@ -294,12 +369,12 @@ export default function CommandCenter() {
                           <td className="px-6 py-3 text-sm text-slate-300">{row.team}</td>
                           <td className="px-6 py-3 text-sm text-slate-400">{row.status}</td>
                         </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Neural Log */}
