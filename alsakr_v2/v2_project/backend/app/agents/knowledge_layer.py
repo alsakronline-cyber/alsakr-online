@@ -2,6 +2,9 @@ import json
 from typing import Dict, Any, List
 from .base import BaseAgent
 from ..core.es_client import es_client
+from qdrant_client import QdrantClient
+from ..core.config import get_qdrant_url, settings
+import requests
 
 # AGENT 4: InventoryVoice
 class InventoryVoiceAgent(BaseAgent):
@@ -37,36 +40,79 @@ class InventoryVoiceAgent(BaseAgent):
         except:
             return {"raw_response": response_text}
 
-# AGENT 5: Tech Doc Assistant
-class TechDocAssistantAgent(BaseAgent):
+# AGENT 5: Tech Doc Assistant (RAG Enabled)
+class TechDocAgent(BaseAgent):
     def __init__(self):
         system_prompt = """
-        You are the 'Assembly Completer' (The Engineeer's Assistant).
-        When a user selects a part, you check the machine's Bill of Materials (BOM).
+        You are the 'Technical Documentation Assistant'.
+        You have access to a database of product manuals and datasheets.
         
         GOAL:
-        - Identify missing accessories (e.g. if ordering a Motor, suggest the Coupling).
-        - Prevent downtime caused by missing small parts.
+        Answer user questions about technical specifications, wiring, installation, and troubleshooting 
+        based STRICTLY on the provided context chunks.
         
-        JSON OUTPUT:
-        {
-            "main_part": "...",
-            "suggested_additions": [
-                {"sku": "...", "name": "...", "reason": "..."}
-            ],
-            "engineering_note": "..."
-        }
+        If the context doesn't contain the answer, say "I couldn't find that specific information in the manuals."
         """
-        super().__init__(name="AssemblyCompleter", system_prompt=system_prompt)
+        super().__init__(name="TechDoc", system_prompt=system_prompt)
+        self.qdrant = QdrantClient(url=get_qdrant_url())
+        self.ollama_url = settings.OLLAMA_HOST
 
-    async def check_bom_for_completion(self, main_sku: str, machine_id: str = None) -> Dict[str, Any]:
-        """
-        1. Look up 'Digital Twin' (BOM) in Qdrant/ES.
-        2. Identify related parts.
-        """
-        prompt = f"Main Part: {main_sku}. Machine context: {machine_id}. What else is needed?"
-        response_text = await self.run(prompt)
+    async def _get_embedding(self, text: str) -> List[float]:
         try:
-            return json.loads(response_text)
-        except:
-            return {"raw_response": response_text}
+            response = requests.post(
+                f"{self.ollama_url}/api/embeddings",
+                json={
+                    "model": settings.OLLAMA_EMBEDDING_MODEL,
+                    "prompt": text
+                },
+                timeout=10
+            )
+            if response.status_code == 200:
+                return response.json()['embedding']
+        except Exception as e:
+            print(f"Embedding error: {e}")
+        return []
+
+    async def query_manuals(self, query: str, limit: int = 3) -> str:
+        """
+        RAG Workflow:
+        1. Embed query.
+        2. Search Qdrant PDF collection.
+        3. Pass chunks + query to LLM.
+        """
+        # 1. Embed
+        query_vector = await self._get_embedding(query)
+        if not query_vector:
+            return "Error: Could not process query."
+
+        # 2. Search
+        try:
+            results = self.qdrant.search(
+                collection_name=settings.QDRANT_PDF_COLLECTION,
+                query_vector=query_vector,
+                limit=limit
+            )
+        except Exception:
+            return "Knowledge base unavailable."
+
+        # 3. Construct Context
+        context_text = ""
+        for hit in results:
+            payload = hit.payload
+            info = f"Source: {payload.get('product_name')} ({payload.get('part_number')})\nContent: {payload.get('chunk_text')}\n---\n"
+            context_text += info
+
+        if not context_text:
+            return "No relevant technical documents found."
+
+        # 4. Ask LLM
+        prompt = f"""
+        Context from Manuals:
+        {context_text}
+        
+        User Question: {query}
+        
+        Answer based on the context:
+        """
+        
+        return await self.run(prompt)

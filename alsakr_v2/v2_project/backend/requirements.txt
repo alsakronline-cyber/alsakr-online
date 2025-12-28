@@ -17,12 +17,15 @@ redis>=5.0.0
 pocketbase>=0.1.0  # Or generic python client if specific one unavailable
 
 # Utilities
-httpx>=0.25.0
+httpx>=0.26.0
+faster-whisper>=0.10.0
 pydantic>=2.5.0
 pydantic-settings>=2.1.0
 python-dotenv>=1.0.0
 pandas>=2.1.0  # For CSV/Excel processing
 openpyxl>=3.1.2 # For Excel files
+pdfplumber>=0.10.0 # For PDF extraction
+Pillow>=10.0.0 # For Image processing
 
 # Automation & Scrapers
 playwright>=1.40.0

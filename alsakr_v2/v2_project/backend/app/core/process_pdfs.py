@@ -12,6 +12,9 @@ from elasticsearch import Elasticsearch, helpers
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, VectorParams, PointStruct
 import hashlib
+import pdfplumber
+from PIL import Image
+import io
 
 from app.core.config import settings, get_es_url, get_qdrant_url, get_pdf_dir_path
 
@@ -104,13 +107,23 @@ class PDFProcessor:
     
     def extract_text_simple(self, pdf_path: str) -> Optional[str]:
         """
-        Simple text extraction placeholder
-        Note: For production, use PyPDF2 or pdfplumber
-        This is a simplified version for demonstration
+        Extract text from PDF using pdfplumber
         """
-        # TODO: Implement actual PDF text extraction
-        # For now, return a placeholder message
-        return f"PDF content extraction requires additional libraries (PyPDF2/pdfplumber). File: {pdf_path}"
+        try:
+            text_content = []
+            with pdfplumber.open(pdf_path) as pdf:
+                for page in pdf.pages:
+                    # Extract text
+                    text = page.extract_text()
+                    if text:
+                        text_content.append(text)
+                    
+                    # Optional: access tables via page.extract_tables()
+            
+            return "\\n".join(text_content)
+        except Exception as e:
+            print(f"  ✗ PDF Extraction Error: {e}")
+            return None
     
     def chunk_text(self, text: str, chunk_size: int = 1000, overlap: int = 200) -> List[str]:
         """Split text into overlapping chunks"""

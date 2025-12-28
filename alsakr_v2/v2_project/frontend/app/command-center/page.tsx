@@ -36,8 +36,14 @@ interface Product {
 }
 
 // Minimal Product Modal
-const ProductDetailsModal = ({ product, onClose }: { product: Product, onClose: () => void }) => {
+const ProductDetailsModal = ({ product, onClose, onInquiry }: { product: Product, onClose: () => void, onInquiry: (p: Product) => void }) => {
   const [activeImage, setActiveImage] = useState(product.image_url || product.image_urls?.[0] || null);
+  const [inquirySent, setInquirySent] = useState(false);
+
+  const handleInquiry = () => {
+    onInquiry(product);
+    setInquirySent(true);
+  };
 
   if (!product) return null;
 
@@ -135,8 +141,20 @@ const ProductDetailsModal = ({ product, onClose }: { product: Product, onClose: 
                   </div>
                 </div>
 
-                <button className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-500/20 transition-all active:scale-95 flex items-center justify-center gap-2">
-                  <ShoppingCart className="w-4 h-4" /> Request Official Quote
+                <button
+                  onClick={handleInquiry}
+                  disabled={inquirySent}
+                  className={`w-full py-3.5 ${inquirySent ? 'bg-green-600' : 'bg-blue-600 hover:bg-blue-700'} text-white rounded-xl font-bold shadow-lg shadow-blue-500/20 transition-all active:scale-95 flex items-center justify-center gap-2`}
+                >
+                  {inquirySent ? (
+                    <>
+                      <CheckCircle className="w-4 h-4" /> Request Sent
+                    </>
+                  ) : (
+                    <>
+                      <ShoppingCart className="w-4 h-4" /> Request Official Quote
+                    </>
+                  )}
                 </button>
               </div>
             </div>
@@ -202,6 +220,15 @@ export default function CommandCenter() {
   const [logs, setLogs] = useState<string[]>([]);
   const logEndRef = useRef<HTMLDivElement>(null);
 
+  // Voice Search State
+  const [isRecording, setIsRecording] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+
+  // Vision Search State
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isAnalyzingImage, setIsAnalyzingImage] = useState(false);
+
   // ... (Sort Agents useEffect remains same) ...
   useEffect(() => {
     const sorted = [...INITIAL_AGENTS].sort((a, b) => {
@@ -224,8 +251,9 @@ export default function CommandCenter() {
     logEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [logs]);
 
-  const handleSearch = async () => {
-    if (!command.trim()) return;
+  const handleSearch = async (overrideCommand?: string) => {
+    const finalCommand = overrideCommand || command;
+    if (!finalCommand.trim()) return;
 
     setIsSearching(true);
     setClarification(null);
@@ -234,11 +262,11 @@ export default function CommandCenter() {
     setLogs([]);
 
     // Update context
-    const newHistory = [...history, command];
+    const newHistory = [...history, finalCommand];
     if (newHistory.length > 5) newHistory.shift();
     setHistory(newHistory);
 
-    addLog(`USER_QUERY: "${command}"`);
+    addLog(`USER_QUERY: "${finalCommand}"`);
     addLog("ORCHESTRATOR: Analyzing intent with LLM (Context Aware)...");
 
     try {
@@ -250,7 +278,7 @@ export default function CommandCenter() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          query: command,
+          query: finalCommand,
           context: history.map(h => ({ role: 'user', content: h }))
         })
       });
@@ -288,6 +316,197 @@ export default function CommandCenter() {
     }
   };
 
+  const handleVoiceSearch = async () => {
+    if (isRecording) {
+      // Stop recording
+      mediaRecorderRef.current?.stop();
+      setIsRecording(false);
+    } else {
+      // Start recording
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const mediaRecorder = new MediaRecorder(stream);
+        mediaRecorderRef.current = mediaRecorder;
+        chunksRef.current = [];
+
+        mediaRecorder.ondataavailable = (e) => {
+          if (e.data.size > 0) {
+            chunksRef.current.push(e.data);
+          }
+        };
+
+        mediaRecorder.onstop = async () => {
+          const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
+
+          addLog("VOICE: Audio captured. Uploading for transcription...");
+          const formData = new FormData();
+          formData.append('file', blob, 'recording.webm');
+
+          try {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+            const response = await fetch(`${apiUrl}/api/voice/transcribe`, {
+              method: 'POST',
+              body: formData
+            });
+            const data = await response.json();
+            if (data.text) {
+              addLog(`VOICE: Transcribed: "${data.text}"`);
+              setCommand(data.text);
+              handleSearch(data.text);
+            } else {
+              addLog("VOICE: Transcription failed or empty.");
+            }
+          } catch (e) {
+            addLog("ERROR: Voice processing failed.");
+          }
+
+          // Stop tracks
+          stream.getTracks().forEach(track => track.stop());
+        };
+
+        mediaRecorder.start();
+        setIsRecording(true);
+        addLog("VOICE: Listening...");
+      } catch (err) {
+        console.error("Mic error:", err);
+        addLog("ERROR: Microphone access denied.");
+      }
+    }
+  };
+
+  const handleInquiry = async (product: Product) => {
+    addLog(`INQUIRY: Initiating quote request for ${product.part_number}...`);
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      await fetch(`${apiUrl}/api/inquiries`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          buyer_id: "user_123", // Mock user ID
+          products: [product],
+          message: "Requesting official quote for this item."
+        })
+      });
+      addLog("INQUIRY: Request sent to vendors successfully.");
+    } catch (e) {
+      addLog("ERROR: Failed to send inquiry.");
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsAnalyzingImage(true);
+    addLog("VISION: Image captured. Uploading for analysis...");
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const response = await fetch(`${apiUrl}/api/vision/identify`, {
+        method: 'POST',
+        body: formData
+      });
+      const data = await response.json();
+
+      if (data.identification) {
+        const id = data.identification;
+        const desc = `Identified: ${id.brand || 'Unknown'} ${id.series || ''} ${id.part_number || ''}`;
+        addLog(`VISION: ${desc}`);
+        if (id.part_number) {
+          handleSearch(id.part_number);
+        } else {
+          handleSearch(id.description || "industrial part");
+        }
+      } else {
+        addLog("VISION: Could not identify part.");
+      }
+    } catch (err) {
+      addLog("ERROR: Vision analysis failed.");
+      console.error(err);
+    } finally {
+      setIsAnalyzingImage(false);
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsAnalyzingImage(true);
+    addLog("VISION: Image captured. Uploading for analysis...");
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const response = await fetch(`${apiUrl}/api/vision/identify`, {
+        method: 'POST',
+        body: formData
+      });
+      const data = await response.json();
+
+      if (data.identification) {
+        const id = data.identification;
+        const desc = `Identified: ${id.brand || 'Unknown'} ${id.series || ''} ${id.part_number || ''}`;
+        addLog(`VISION: ${desc}`);
+        if (id.part_number) {
+          handleSearch(id.part_number);
+        } else {
+          handleSearch(id.description || "industrial part");
+        }
+      } else {
+        addLog("VISION: Could not identify part.");
+      }
+    } catch (err) {
+      addLog("ERROR: Vision analysis failed.");
+      console.error(err);
+    } finally {
+      setIsAnalyzingImage(false);
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsAnalyzingImage(true);
+    addLog("VISION: Image captured. Uploading for analysis...");
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const response = await fetch(`${apiUrl}/api/vision/identify`, {
+        method: 'POST',
+        body: formData
+      });
+      const data = await response.json();
+
+      if (data.identification) {
+        const id = data.identification;
+        const desc = `Identified: ${id.brand || 'Unknown'} ${id.series || ''} ${id.part_number || ''}`;
+        addLog(`VISION: ${desc}`);
+        if (id.part_number) {
+          handleSearch(id.part_number);
+        } else {
+          handleSearch(id.description || "industrial part");
+        }
+      } else {
+        addLog("VISION: Could not identify part.");
+      }
+    } catch (err) {
+      addLog("ERROR: Vision analysis failed.");
+      console.error(err);
+    } finally {
+      setIsAnalyzingImage(false);
+    }
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') handleSearch();
   };
@@ -304,6 +523,7 @@ export default function CommandCenter() {
         <ProductDetailsModal
           product={selectedProduct}
           onClose={() => setSelectedProduct(null)}
+          onInquiry={handleInquiry}
         />
       )}
 
@@ -314,8 +534,11 @@ export default function CommandCenter() {
         </div>
 
         <div className="flex-1 flex flex-col gap-3 mt-4">
-          <button className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 hover:bg-blue-100 transition-colors">
-            <Zap className="w-5 h-5" />
+          <button
+            onClick={handleVoiceSearch}
+            className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${isRecording ? 'bg-red-50 text-red-500 animate-pulse' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'}`}
+          >
+            <Mic className="w-5 h-5" />
           </button>
           {/* ... Other icons ... */}
           {[FileText, Shield, Users].map((Icon, i) => (
@@ -372,7 +595,7 @@ export default function CommandCenter() {
               <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
                 <span className="text-xs text-slate-400 font-medium px-2">⌘K</span>
                 <button
-                  onClick={handleSearch}
+                  onClick={() => handleSearch()}
                   disabled={isSearching}
                   className="w-10 h-10 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 rounded-lg flex items-center justify-center transition-colors shadow-md shadow-blue-600/20"
                 >

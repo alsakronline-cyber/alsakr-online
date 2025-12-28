@@ -6,6 +6,9 @@ from .core.es_client import es_client
 from .agents.orchestrator import AgentManager
 from .core.search_service import SearchService
 from .core.smart_search_service import SmartSearchService
+from .core.voice_service import VoiceService
+from .core.inquiry_service import InquiryService, InquiryCreate
+from .agents.vision_agent import VisualMatchAgent
 
 app = FastAPI(
     title="Al Sakr Online V2 - Agentic API",
@@ -24,7 +27,10 @@ app.add_middleware(
 
 agent_manager = AgentManager()
 search_service = SearchService()
+search_service = SearchService()
 smart_search_service = SmartSearchService()
+voice_service = VoiceService()
+inquiry_service = InquiryService()
 
 
 # Pydantic models
@@ -76,6 +82,45 @@ async def identify_part(file: UploadFile = File(...)):
     """Vision agent endpoint for image-based product identification"""
     # Logic to save file and call VisualMatchAgent
     return {"status": "processing"}
+
+
+@app.post("/api/vision/identify")
+async def identify_part(file: UploadFile = File(...)):
+    """Identify part from uploaded image"""
+    # 1. Save temp
+    temp_filename = f"temp_{file.filename}"
+    with open(temp_filename, "wb") as buffer:
+        buffer.write(await file.read())
+    
+    # 2. Process
+    try:
+        agent = VisualMatchAgent()
+        result = await agent.identify_and_match(temp_filename, mode="path")
+    finally:
+        # Cleanup
+        if os.path.exists(temp_filename):
+            os.remove(temp_filename)
+            
+    return result
+
+@app.post("/api/voice/transcribe")
+async def transcribe_audio(file: UploadFile = File(...)):
+    """Transcribe uploaded audio file to text"""
+    text = await voice_service.transcribe(file)
+    return {"text": text}
+
+
+# ============= INQUIRY ENDPOINTS =============
+
+@app.post("/api/inquiries")
+async def create_inquiry(inquiry: InquiryCreate):
+    """Create a new buyer inquiry"""
+    return await inquiry_service.create_inquiry(inquiry)
+
+@app.get("/api/inquiries")
+async def get_inquiries():
+    """Get all inquiries for vendor dashboard"""
+    return await inquiry_service.get_vendor_inquiries()
 
 
 # ============= SEARCH ENDPOINTS =============
