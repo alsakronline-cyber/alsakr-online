@@ -39,7 +39,7 @@ class AgentManager:
         from .vision_agent import VisualMatchAgent
         from .multi_vendor import MultiVendorAgent
         from .quote_compare import QuoteCompareAgent
-        from .knowledge_layer import InventoryVoiceAgent, TechDocAssistantAgent
+        from .knowledge_layer import InventoryVoiceAgent, TechDocAgent
         from .industry_logic_layer import ComplianceGuideAgent, LocalSourcerAgent, AutoReplenishAgent, TroubleshootAgent
         from .management_layer import SupplierHubAgent
 
@@ -48,7 +48,7 @@ class AgentManager:
             "MultiVendor": MultiVendorAgent(),
             "QuoteCompare": QuoteCompareAgent(),
             "InventoryVoice": InventoryVoiceAgent(),
-            "TechDoc": TechDocAssistantAgent(),
+            "TechDoc": TechDocAgent(),
             "Compliance": ComplianceGuideAgent(),
             "Service": LocalSourcerAgent(),  # Agent 7: Local Services
             "Troubleshoot": TroubleshootAgent(), # Agent 9: Troubleshooter
