@@ -431,82 +431,6 @@ export default function CommandCenter() {
     }
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setIsAnalyzingImage(true);
-    addLog("VISION: Image captured. Uploading for analysis...");
-
-    const formData = new FormData();
-    formData.append('file', file);
-
-    try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-      const response = await fetch(`${apiUrl}/api/vision/identify`, {
-        method: 'POST',
-        body: formData
-      });
-      const data = await response.json();
-
-      if (data.identification) {
-        const id = data.identification;
-        const desc = `Identified: ${id.brand || 'Unknown'} ${id.series || ''} ${id.part_number || ''}`;
-        addLog(`VISION: ${desc}`);
-        if (id.part_number) {
-          handleSearch(id.part_number);
-        } else {
-          handleSearch(id.description || "industrial part");
-        }
-      } else {
-        addLog("VISION: Could not identify part.");
-      }
-    } catch (err) {
-      addLog("ERROR: Vision analysis failed.");
-      console.error(err);
-    } finally {
-      setIsAnalyzingImage(false);
-    }
-  };
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setIsAnalyzingImage(true);
-    addLog("VISION: Image captured. Uploading for analysis...");
-
-    const formData = new FormData();
-    formData.append('file', file);
-
-    try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-      const response = await fetch(`${apiUrl}/api/vision/identify`, {
-        method: 'POST',
-        body: formData
-      });
-      const data = await response.json();
-
-      if (data.identification) {
-        const id = data.identification;
-        const desc = `Identified: ${id.brand || 'Unknown'} ${id.series || ''} ${id.part_number || ''}`;
-        addLog(`VISION: ${desc}`);
-        if (id.part_number) {
-          handleSearch(id.part_number);
-        } else {
-          handleSearch(id.description || "industrial part");
-        }
-      } else {
-        addLog("VISION: Could not identify part.");
-      }
-    } catch (err) {
-      addLog("ERROR: Vision analysis failed.");
-      console.error(err);
-    } finally {
-      setIsAnalyzingImage(false);
-    }
-  };
-
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') handleSearch();
   };
@@ -539,6 +463,20 @@ export default function CommandCenter() {
             className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${isRecording ? 'bg-red-50 text-red-500 animate-pulse' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'}`}
           >
             <Mic className="w-5 h-5" />
+          </button>
+
+          <input
+            type="file"
+            ref={fileInputRef}
+            className="hidden"
+            accept="image/*"
+            onChange={handleImageUpload}
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${isAnalyzingImage ? 'bg-purple-50 text-purple-600 animate-pulse' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
+          >
+            <Camera className="w-5 h-5" />
           </button>
           {/* ... Other icons ... */}
           {[FileText, Shield, Users].map((Icon, i) => (
