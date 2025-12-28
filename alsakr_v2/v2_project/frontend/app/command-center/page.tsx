@@ -6,7 +6,7 @@ import {
   Camera, ShoppingCart, Scale, Shield, FileText, Mic,
   MapPin, Activity, Wrench, Users, Bell, Settings, HelpCircle,
   MoreVertical, ChevronRight, Zap, Send, TrendingUp, DollarSign,
-  Package, AlertTriangle, Terminal, LayoutGrid, X, CheckCircle
+  Package, AlertTriangle, Terminal, LayoutGrid, X, CheckCircle, ShieldCheck
 } from 'lucide-react';
 
 // ... (AGENTS array remains the same) ...
@@ -51,12 +51,19 @@ const ProductDetailsModal = ({ product, onClose }: { product: Product, onClose: 
               <span className="text-xs font-bold text-blue-600 uppercase tracking-wider bg-blue-50 px-2 py-1 rounded-md">
                 {product.category || 'Component'}
               </span>
-              <div className="flex items-center gap-1.5 px-2 py-1 bg-blue-600 rounded-md shadow-sm shadow-blue-600/20">
-                <TrendingUp className="w-3 h-3 text-white" />
-                <span className="text-[10px] font-bold text-white">
-                  {Math.round((product.combined_score || 0) * 100)}% Match
-                </span>
-              </div>
+              {(product.combined_score || 0) > 0.95 ? (
+                <div className="flex items-center gap-1 px-2 py-1 bg-emerald-500 rounded-md shadow-sm shadow-emerald-500/20 animate-pulse">
+                  <ShieldCheck className="w-3 h-3 text-white" />
+                  <span className="text-[10px] font-bold text-white uppercase tracking-tighter">Precision Match</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5 px-2 py-1 bg-blue-600 rounded-md shadow-sm shadow-blue-600/20">
+                  <TrendingUp className="w-3 h-3 text-white" />
+                  <span className="text-[10px] font-bold text-white">
+                    {Math.round((product.combined_score || 0) * 100)}% Match
+                  </span>
+                </div>
+              )}
             </div>
             <h2 className="text-xl font-bold text-slate-800">{product.name}</h2>
             <span className="font-mono text-sm text-slate-500">{product.part_number}</span>
@@ -481,7 +488,14 @@ export default function CommandCenter() {
                               className="group hover:bg-blue-50/50 transition-colors cursor-pointer"
                             >
                               <td className="px-6 py-4 font-mono text-sm font-semibold text-blue-600 group-hover:underline">{p.part_number}</td>
-                              <td className="px-6 py-4 text-sm font-medium text-slate-700">{p.name}</td>
+                              <td className="px-6 py-4 text-sm font-medium text-slate-700">
+                                <div className="flex items-center gap-2">
+                                  <span>{p.name}</span>
+                                  {(p.combined_score || 0) > 0.90 && (
+                                    <span className="text-[9px] font-bold bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded border border-blue-100 uppercase tracking-tighter shadow-sm shadow-blue-500/5">Highly Relevant</span>
+                                  )}
+                                </div>
+                              </td>
                               <td className="px-6 py-4 text-sm text-slate-500">{p.category}</td>
                               <td className="px-6 py-4">
                                 <div className="flex items-center gap-2">

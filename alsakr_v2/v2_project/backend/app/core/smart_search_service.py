@@ -59,33 +59,60 @@ class SmartSearchService:
 
     def re_score_results(self, query: str, results: List[Dict]) -> List[Dict]:
         """
-        Adjust scores based on how well technical keywords in the query 
-        match the product's specifications or name.
+        Advanced re-scoring:
+        1. Exact Part Number: 0.99 (Immediate win)
+        2. Technical Tokens: Boost (24V, PNP, M12, etc.)
+        3. Strict Mismatch: Penalty (if conflict found)
         """
-        query_words = set(query.lower().split())
+        query_lower = query.lower()
+        query_words = set(query_lower.split())
         
+        # Technical keywords that carry high weight
+        tech_tokens = {"24v", "pnp", "npn", "m12", "m8", "ip67", "ip65", "analog", "digital", "io-link"}
+        found_tech_tokens = query_words.intersection(tech_tokens)
+
         for result in results:
             boost = 0
-            specifications = result.get('specifications', {})
+            penalty = 0
+            part_number = result.get('part_number', '').lower()
             name = result.get('name', '').lower()
+            specifications = result.get('specifications', {})
             
-            # 1. Name match boost
-            for word in query_words:
-                if word in name:
-                    boost += 0.05
-            
-            # 2. Technical Specs Match Boost
+            # 1. Exact Part Number Match
+            if query_lower == part_number or query_lower.replace('-', '') == part_number.replace('-', ''):
+                result['combined_score'] = 0.99
+                continue
+
+            # 2. Part Number partial match
+            if query_lower in part_number:
+                boost += 0.15
+
+            # 3. Name & Category Boost
+            if any(word in name for word in query_words if len(word) > 3):
+                boost += 0.05
+
+            # 4. Technical Specs Intelligence
             if isinstance(specifications, dict):
-                for val in specifications.values():
-                    str_val = str(val).lower()
-                    if any(word in str_val for word in query_words if len(word) > 2):
-                        boost += 0.10
-            
-            # Apply boost and cap at 1.0 (100%)
+                spec_values_str = " ".join(str(v).lower() for v in specifications.values())
+                
+                # Check for Tech Token Matches
+                for token in found_tech_tokens:
+                    if token in spec_values_str:
+                        boost += 0.20 # Significant boost for tech requirements
+                    else:
+                        # Logic to check for direct conflict (e.g. Query has PNP, result has NPN)
+                        if token == "pnp" and "npn" in spec_values_str:
+                            penalty += 0.40
+                        elif token == "npn" and "pnp" in spec_values_str:
+                            penalty += 0.40
+                        elif "v" in token and any(v_spec in spec_values_str for v_spec in ["12v", "24v", "230v"] if v_spec != token):
+                            penalty += 0.30
+
+            # Apply final logic
             current_score = result.get('combined_score', 0)
-            result['combined_score'] = min(0.99, current_score + boost)
+            result['combined_score'] = max(0.1, min(0.99, current_score + boost - penalty))
             
-        # Re-sort after boosting
+        # Re-sort after re-scoring
         return sorted(results, key=lambda x: x.get('combined_score', 0), reverse=True)
 
     def smart_search(self, query: str, context: List[Dict] = None) -> Dict:
