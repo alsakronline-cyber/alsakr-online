@@ -57,11 +57,12 @@ class SmartSearchService:
             
         return {"is_ambiguous": False, "clarifying_question": None}
 
-    def smart_search(self, query: str) -> Dict:
+    def smart_search(self, query: str, context: List[Dict] = None) -> Dict:
         """
         Orchestrate the smart search flow.
         """
-        # 1. Analyze Query
+        # 1. Analyze Query with Context
+        # TODO: Pass context to analyze_query for better ambiguity detection
         analysis = self.analyze_query(query)
         
         if analysis.get('is_ambiguous'):
@@ -72,8 +73,16 @@ class SmartSearchService:
             }
             
         # 2. Perform Hybrid Search
+        # Simple Context Merging (if context exists, append to query for better semantic match)
+        search_query = query
+        if context:
+            # Take the last user message from context as previous subject if query is short
+            last_msg = context[-1].get('content', '') if context else ''
+            if len(query.split()) < 3 and last_msg:
+                 search_query = f"{last_msg} {query}"
+
         # Request more results than usual to allow for filtering
-        raw_results = self.search_service.hybrid_search(query, size=30)
+        raw_results = self.search_service.hybrid_search(search_query, size=30)
         
         matches = []
         alternatives = []

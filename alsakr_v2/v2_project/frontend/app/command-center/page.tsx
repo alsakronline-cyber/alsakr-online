@@ -1,23 +1,24 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Camera, ShoppingCart, Scale, Shield, FileText, Mic,
   MapPin, Activity, Wrench, Users, Bell, Settings, HelpCircle,
   MoreVertical, ChevronRight, Zap, Send, TrendingUp, DollarSign,
-  Package, AlertTriangle, Terminal
+  Package, AlertTriangle, Terminal, LayoutGrid
 } from 'lucide-react';
 
-const AGENTS = [
-  { id: 1, name: 'VisualMatch', icon: Camera, status: 'active', theme: 'cyan' },
-  { id: 2, name: 'MultiVendor', icon: ShoppingCart, status: 'active', theme: 'cyan' },
-  { id: 3, name: 'QuoteCompare', icon: Scale, status: 'negotiating', theme: 'orange' },
+const INITIAL_AGENTS = [
+  { id: 1, name: 'VisualMatch', icon: Camera, status: 'active', theme: 'sky' },
+  { id: 2, name: 'MultiVendor', icon: ShoppingCart, status: 'active', theme: 'sky' },
+  { id: 3, name: 'QuoteCompare', icon: Scale, status: 'negotiating', theme: 'blue' },
   { id: 4, name: 'InventoryVoice', icon: Mic, status: 'idle', theme: 'gray' },
   { id: 5, name: 'TechDoc + Asset', icon: FileText, status: 'idle', theme: 'gray' },
   { id: 6, name: 'ComplianceGuide', icon: Shield, status: 'idle', theme: 'gray' },
-  { id: 7, name: 'Service & DeadStock', icon: Wrench, status: 'negotiating', theme: 'orange' },
-  { id: 8, name: 'AutoReplenish', icon: Activity, status: 'active', theme: 'cyan' },
-  { id: 9, name: 'Troubleshooter', icon: Wrench, status: 'negotiating', theme: 'orange' },
+  { id: 7, name: 'Service & DeadStock', icon: Wrench, status: 'negotiating', theme: 'blue' },
+  { id: 8, name: 'AutoReplenish', icon: Activity, status: 'active', theme: 'sky' },
+  { id: 9, name: 'Troubleshooter', icon: Wrench, status: 'negotiating', theme: 'blue' },
   { id: 10, name: 'SupplierHub', icon: Users, status: 'idle', theme: 'gray' },
 ];
 
@@ -29,17 +30,33 @@ interface Product {
 }
 
 export default function CommandCenter() {
+  const router = useRouter();
   const [command, setCommand] = useState('');
   const [isSearching, setIsSearching] = useState(false);
+  const [agents, setAgents] = useState(INITIAL_AGENTS);
 
   // Smart Search State
   const [matches, setMatches] = useState<Product[]>([]);
   const [alternatives, setAlternatives] = useState<Product[]>([]);
   const [clarification, setClarification] = useState<string | null>(null);
+  const [history, setHistory] = useState<string[]>([]); // Context History
 
   // Neural Log State
   const [logs, setLogs] = useState<string[]>([]);
   const logEndRef = useRef<HTMLDivElement>(null);
+
+  // Sort Agents: Active/Negotiating first, Idle last
+  useEffect(() => {
+    const sorted = [...INITIAL_AGENTS].sort((a, b) => {
+      const score = (status: string) => {
+        if (status === 'active') return 3;
+        if (status === 'negotiating') return 2;
+        return 1;
+      };
+      return score(b.status) - score(a.status);
+    });
+    setAgents(sorted);
+  }, []);
 
   const addLog = (message: string) => {
     const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false });
@@ -59,8 +76,13 @@ export default function CommandCenter() {
     setAlternatives([]);
     setLogs([]); // Clear logs on new search
 
+    // Update context
+    const newHistory = [...history, command];
+    if (newHistory.length > 5) newHistory.shift();
+    setHistory(newHistory);
+
     addLog(`USER_QUERY: "${command}"`);
-    addLog("ORCHESTRATOR: Analyzing intent with LLM...");
+    addLog("ORCHESTRATOR: Analyzing intent with LLM (Context Aware)...");
 
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -70,7 +92,10 @@ export default function CommandCenter() {
       const response = await fetch(`${apiUrl}/api/search/smart`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: command })
+        body: JSON.stringify({
+          query: command,
+          context: history.map(h => ({ role: 'user', content: h }))
+        })
       });
 
       const data = await response.json();
@@ -100,89 +125,86 @@ export default function CommandCenter() {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleSearch();
-    }
+    if (e.key === 'Enter') handleSearch();
+  };
+
+  const navigateToProduct = (partNumber: string) => {
+    router.push(`/product/${partNumber}`);
   };
 
   return (
-    <div className="h-screen bg-slate-900 text-slate-100 flex overflow-hidden font-sans">
+    <div className="h-screen bg-slate-50 text-slate-900 flex overflow-hidden font-sans selection:bg-blue-100">
       {/* Left Sidebar - Icon Nav */}
-      <div className="w-14 bg-slate-950 border-r border-slate-800 flex flex-col items-center py-4 gap-3">
-        <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-amber-600 rounded-lg flex items-center justify-center shadow-lg">
-          <Zap className="w-5 h-5 text-white" />
+      <div className="w-16 bg-white border-r border-slate-200 flex flex-col items-center py-6 gap-4 shadow-sm z-20">
+        <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
+          <LayoutGrid className="w-5 h-5 text-white" />
         </div>
 
-        <div className="flex-1 flex flex-col gap-2 mt-4">
-          <button className="w-10 h-10 bg-orange-500/20 rounded-lg flex items-center justify-center text-orange-500 hover:bg-orange-500/30 transition-colors">
-            <div className="grid grid-cols-2 gap-0.5">
-              <div className="w-2 h-2 bg-current rounded-sm" />
-              <div className="w-2 h-2 bg-current rounded-sm" />
-              <div className="w-2 h-2 bg-current rounded-sm" />
-              <div className="w-2 h-2 bg-current rounded-sm" />
-            </div>
+        <div className="flex-1 flex flex-col gap-3 mt-4">
+          <button className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 hover:bg-blue-100 transition-colors">
+            <Zap className="w-5 h-5" />
           </button>
 
           {[FileText, Shield, Users].map((Icon, i) => (
-            <button key={i} className="w-10 h-10 rounded-lg flex items-center justify-center text-slate-500 hover:bg-slate-800 hover:text-slate-300 transition-colors">
+            <button key={i} className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors">
               <Icon className="w-5 h-5" />
             </button>
           ))}
         </div>
 
-        <div className="flex flex-col gap-2">
-          <button className="w-10 h-10 rounded-lg flex items-center justify-center text-slate-500 hover:bg-slate-800 hover:text-slate-300 transition-colors">
-            <HelpCircle className="w-5 h-5" />
-          </button>
-          <button className="w-10 h-10 rounded-lg flex items-center justify-center text-slate-500 hover:bg-slate-800 hover:text-slate-300 transition-colors">
+        <div className="flex flex-col gap-3">
+          <button className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors">
             <Settings className="w-5 h-5" />
           </button>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 bg-slate-50">
         {/* Top Header */}
-        <div className="h-16 bg-slate-900 border-b border-slate-800 px-6 flex items-center justify-between flex-shrink-0">
-          <h1 className="text-sm font-semibold text-slate-200">Al Sakr Online: Industrial AI Command Center</h1>
+        <div className="h-16 bg-white border-b border-slate-200 px-8 flex items-center justify-between flex-shrink-0 shadow-sm z-10">
+          <h1 className="text-sm font-bold text-slate-700 uppercase tracking-wide">Al Sakr Command Center <span className="text-blue-200 mx-2">|</span> V2.0</h1>
 
-          <div className="flex items-center gap-3">
-            <button className="w-9 h-9 rounded-lg flex items-center justify-center text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-colors">
-              <HelpCircle className="w-4 h-4" />
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 rounded-full border border-green-100">
+              <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+              <span className="text-xs font-semibold text-green-700">System Online</span>
+            </div>
+
+            <button className="w-9 h-9 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors relative">
+              <Bell className="w-5 h-5" />
+              <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
             </button>
-            <button className="w-9 h-9 rounded-lg flex items-center justify-center text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-colors relative">
-              <Bell className="w-4 h-4" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-orange-500 rounded-full" />
-            </button>
-            <div className="w-9 h-9 bg-gradient-to-br from-slate-700 to-slate-600 rounded-full" />
+            <div className="w-9 h-9 bg-slate-200 rounded-full" />
           </div>
         </div>
 
         {/* Command Input */}
-        <div className="px-6 py-4 border-b border-slate-800 bg-slate-900/50 flex-shrink-0">
-          <div className="relative">
-            <div className="absolute left-4 top-1/2 -translate-y-1/2">
-              <Zap className="w-4 h-4 text-orange-500" />
-            </div>
-            <input
-              type="text"
-              value={command}
-              onChange={(e) => setCommand(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Command your agents... (e.g., 'Find 50 DN50 Valves' or 'Upload broken gear photo')"
-              className="w-full bg-slate-800/50 border border-orange-500/30 rounded-xl pl-11 pr-20 py-3 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-transparent transition-all"
-            />
-            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
-              <button className="px-2.5 py-1 bg-slate-700 hover:bg-slate-600 rounded-md text-xs text-slate-300 font-medium transition-colors">
-                ⌘K
-              </button>
-              <button
-                onClick={handleSearch}
-                disabled={isSearching}
-                className="w-8 h-8 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 rounded-lg flex items-center justify-center transition-colors"
-              >
-                <Send className={`w-3.5 h-3.5 text-white ${isSearching ? 'animate-pulse' : ''}`} />
-              </button>
+        <div className="px-8 py-6 bg-white border-b border-slate-200 flex-shrink-0">
+          <div className="max-w-4xl mx-auto relative group">
+            <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-2xl opacity-20 group-hover:opacity-30 transition duration-1000 blur-sm"></div>
+            <div className="relative">
+              <div className="absolute left-4 top-1/2 -translate-y-1/2">
+                <Zap className="w-5 h-5 text-blue-500" />
+              </div>
+              <input
+                type="text"
+                value={command}
+                onChange={(e) => setCommand(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Ask your agents... (e.g. 'Show me 24V sensors' then 'Filter by stock')"
+                className="w-full bg-white border border-slate-200 rounded-xl pl-12 pr-24 py-4 text-base text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 shadow-xl shadow-blue-500/5 transition-all"
+              />
+              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                <span className="text-xs text-slate-400 font-medium px-2">⌘K</span>
+                <button
+                  onClick={handleSearch}
+                  disabled={isSearching}
+                  className="w-10 h-10 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 rounded-lg flex items-center justify-center transition-colors shadow-md shadow-blue-600/20"
+                >
+                  <Send className={`w-4 h-4 text-white ${isSearching ? 'animate-pulse' : ''}`} />
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -190,77 +212,70 @@ export default function CommandCenter() {
         {/* 3-Panel Layout */}
         <div className="flex-1 flex overflow-hidden min-h-0">
           {/* Agent Dock */}
-          <div className="w-64 bg-slate-900 border-r border-slate-800 p-4 overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Agent Dock</h2>
-              <MoreVertical className="w-4 h-4 text-slate-500" />
+          <div className="w-72 bg-white border-r border-slate-200 p-6 overflow-y-auto z-10">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Active Agents</h2>
+              <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
             </div>
 
-            <div className="space-y-2">
-              {AGENTS.map(agent => (
+            <div className="space-y-3">
+              {agents.map(agent => (
                 <div
                   key={agent.id}
-                  className={`group flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all ${agent.theme === 'cyan'
-                    ? 'bg-cyan-500/15 border border-cyan-500/20 hover:bg-cyan-500/20'
-                    : agent.theme === 'orange'
-                      ? 'bg-orange-500/15 border border-orange-500/20 hover:bg-orange-500/20'
-                      : 'bg-slate-800/50 border border-transparent hover:bg-slate-800'
+                  className={`group flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-all border ${agent.status === 'active' || agent.status === 'negotiating'
+                      ? 'bg-blue-50 border-blue-100 shadow-sm hover:shadow-md'
+                      : 'bg-white border-slate-100 opacity-60 hover:opacity-100 hover:bg-slate-50'
                     }`}
                 >
-                  <div className={`p-1.5 rounded ${agent.theme === 'cyan' ? 'bg-cyan-500/20' :
-                    agent.theme === 'orange' ? 'bg-orange-500/20' :
-                      'bg-slate-700'
+                  <div className={`p-2 rounded-lg ${agent.status === 'active' || agent.status === 'negotiating' ? 'bg-white shadow-sm text-blue-600' : 'bg-slate-100 text-slate-400'
                     }`}>
-                    <agent.icon className={`w-3.5 h-3.5 ${agent.theme === 'cyan' ? 'text-cyan-400' :
-                      agent.theme === 'orange' ? 'text-orange-400' :
-                        'text-slate-400'
-                      }`} />
+                    <agent.icon className="w-4 h-4" />
                   </div>
 
-                  <span className={`text-xs font-medium flex-1 ${agent.theme === 'cyan' ? 'text-cyan-300' :
-                    agent.theme === 'orange' ? 'text-orange-300' :
-                      'text-slate-400'
-                    }`}>
-                    {agent.name}
-                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm font-semibold truncate ${agent.status === 'active' || agent.status === 'negotiating' ? 'text-slate-700' : 'text-slate-500'
+                      }`}>
+                      {agent.name}
+                    </p>
+                    <p className="text-[10px] uppercase font-bold tracking-wider text-slate-400">
+                      {agent.status}
+                    </p>
+                  </div>
 
-                  {agent.theme !== 'gray' && (
-                    <div className={`w-1.5 h-1.5 rounded-full ${agent.theme === 'cyan' ? 'bg-cyan-400 animate-pulse' :
-                      'bg-orange-400 animate-pulse'
-                      }`} />
+                  {(agent.status === 'active' || agent.status === 'negotiating') && (
+                    <div className="w-2 h-2 rounded-full bg-blue-500" />
                   )}
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Bento Box Center */}
-          <div className="flex-1 p-6 overflow-y-auto bg-slate-950/30">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-semibold text-slate-300">Bento Box</h2>
-              <MoreVertical className="w-4 h-4 text-slate-500" />
-            </div>
+          {/* Center Stage (Results) */}
+          <div className="flex-1 p-8 overflow-y-auto bg-slate-50/50">
 
-            {/* Empty State / Initial Instructions */}
+            {/* Empty State */}
             {!isSearching && !clarification && matches.length === 0 && alternatives.length === 0 && (
-              <div className="flex flex-col items-center justify-center p-12 text-slate-500">
-                <Terminal className="w-12 h-12 mb-4 opacity-50" />
-                <p className="text-lg font-medium">System Ready</p>
+              <div className="h-full flex flex-col items-center justify-center p-12 text-slate-400 opacity-60">
+                <div className="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mb-6">
+                  <Terminal className="w-10 h-10 text-slate-300" />
+                </div>
+                <p className="text-lg font-medium text-slate-500">System Ready</p>
                 <p className="text-sm">Initiate a search to activate agents.</p>
               </div>
             )}
 
             {/* Clarification Prompt */}
             {clarification && (
-              <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-6 mb-4 animate-in fade-in slide-in-from-top-4 duration-500">
-                <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 bg-amber-500/20 rounded-full flex items-center justify-center flex-shrink-0">
+              <div className="bg-white border border-amber-200 rounded-2xl p-6 mb-8 shadow-sm animate-in fade-in slide-in-from-top-4 duration-500 relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-1 h-full bg-amber-400" />
+                <div className="flex items-start gap-4 relative">
+                  <div className="w-12 h-12 bg-amber-50 rounded-full flex items-center justify-center flex-shrink-0 border border-amber-100">
                     <HelpCircle className="w-6 h-6 text-amber-500" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-amber-200 mb-2">Clarification Needed</h3>
-                    <p className="text-slate-300 text-sm mb-4">{clarification}</p>
-                    <p className="text-xs text-slate-500">Please type a more specific query in the command bar above.</p>
+                    <h3 className="text-lg font-bold text-slate-800 mb-2">Refining Search</h3>
+                    <p className="text-slate-600 text-sm mb-4 leading-relaxed">{clarification}</p>
+                    <p className="text-xs font-semibold text-amber-600 bg-amber-50 inline-block px-2 py-1 rounded">Action Required: Please specify below</p>
                   </div>
                 </div>
               </div>
@@ -268,34 +283,50 @@ export default function CommandCenter() {
 
             {/* Results Table (Matches & Alternatives) */}
             {(matches.length > 0 || alternatives.length > 0) && (
-              <div className="space-y-6 animate-in fade-in duration-500">
+              <div className="space-y-8 animate-in fade-in duration-500">
 
                 {/* Best Matches */}
                 {matches.length > 0 && (
-                  <div className="bg-amber-500/5 backdrop-blur border border-amber-500/20 rounded-2xl overflow-hidden">
-                    <div className="flex items-center justify-between px-6 py-3 border-b border-amber-500/20 bg-amber-500/10">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse" />
-                        <h3 className="text-sm font-semibold text-amber-300">Best Matches ({matches.length})</h3>
+                  <div className="bg-white border border-blue-100 rounded-2xl overflow-hidden shadow-lg shadow-blue-500/5">
+                    <div className="flex items-center justify-between px-6 py-4 border-b border-blue-50 bg-blue-50/30">
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+                        <h3 className="text-sm font-bold text-blue-900">Best Matches ({matches.length})</h3>
                       </div>
-                      <span className="text-xs text-amber-400/70 font-mono">High Confidence</span>
+                      <span className="text-xs font-bold text-blue-600 bg-blue-100 px-2.5 py-1 rounded-full">High Confidence</span>
                     </div>
                     <div className="overflow-x-auto">
                       <table className="w-full">
                         <thead>
-                          <tr className="border-b border-amber-500/10 text-left">
-                            <th className="px-6 py-3 text-xs font-semibold text-amber-400/70 uppercase">Part Number</th>
-                            <th className="px-6 py-3 text-xs font-semibold text-amber-400/70 uppercase">Name</th>
-                            <th className="px-6 py-3 text-xs font-semibold text-amber-400/70 uppercase">Score</th>
+                          <tr className="border-b border-slate-100 text-left bg-slate-50/50">
+                            <th className="px-6 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">Part Number</th>
+                            <th className="px-6 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">Name</th>
+                            <th className="px-6 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">Category</th>
+                            <th className="px-6 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">Confidence</th>
                           </tr>
                         </thead>
-                        <tbody>
+                        <tbody className="divide-y divide-slate-50">
                           {matches.map((p, i) => (
-                            <tr key={i} className="border-b border-amber-500/10 hover:bg-amber-500/5 transition-colors">
-                              <td className="px-6 py-3 font-mono text-sm text-amber-300">{p.part_number}</td>
-                              <td className="px-6 py-3 text-sm text-slate-300">{p.name}</td>
-                              <td className="px-6 py-3 text-xs font-mono text-amber-500">
-                                {Math.min(100, Math.round((p.combined_score || 0) * 100))}%
+                            <tr
+                              key={i}
+                              onClick={() => navigateToProduct(p.part_number)}
+                              className="group hover:bg-blue-50/50 transition-colors cursor-pointer"
+                            >
+                              <td className="px-6 py-4 font-mono text-sm font-semibold text-blue-600 group-hover:underline">{p.part_number}</td>
+                              <td className="px-6 py-4 text-sm font-medium text-slate-700">{p.name}</td>
+                              <td className="px-6 py-4 text-sm text-slate-500">{p.category}</td>
+                              <td className="px-6 py-4">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                    <div
+                                      className="h-full bg-blue-500 rounded-full"
+                                      style={{ width: `${Math.min(100, Math.round((p.combined_score || 0) * 100))}%` }}
+                                    />
+                                  </div>
+                                  <span className="text-xs font-bold text-slate-600">
+                                    {Math.min(100, Math.round((p.combined_score || 0) * 100))}%
+                                  </span>
+                                </div>
                               </td>
                             </tr>
                           ))}
@@ -307,19 +338,23 @@ export default function CommandCenter() {
 
                 {/* Alternatives */}
                 {alternatives.length > 0 && (
-                  <div className="bg-slate-800/40 backdrop-blur border border-slate-700/50 rounded-2xl overflow-hidden">
-                    <div className="flex items-center justify-between px-6 py-3 border-b border-slate-700/50">
-                      <h3 className="text-sm font-semibold text-amber-200/80">Alternatives & Related ({alternatives.length})</h3>
-                      <MoreVertical className="w-4 h-4 text-slate-500" />
+                  <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm opacity-90">
+                    <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+                      <h3 className="text-sm font-bold text-slate-600">Alternatives & Related ({alternatives.length})</h3>
                     </div>
                     <div className="overflow-x-auto">
                       <table className="w-full">
-                        <tbody>
+                        <tbody className="divide-y divide-slate-50">
                           {alternatives.map((p, i) => (
-                            <tr key={i} className="border-b border-slate-700/30 hover:bg-slate-700/20 transition-colors">
-                              <td className="px-6 py-3 font-mono text-sm text-slate-400">{p.part_number}</td>
-                              <td className="px-6 py-3 text-sm text-slate-400">{p.name}</td>
-                              <td className="px-6 py-3 text-xs font-mono text-slate-600">
+                            <tr
+                              key={i}
+                              onClick={() => navigateToProduct(p.part_number)}
+                              className="hover:bg-slate-50 transition-colors cursor-pointer"
+                            >
+                              <td className="px-6 py-4 font-mono text-sm text-slate-500">{p.part_number}</td>
+                              <td className="px-6 py-4 text-sm text-slate-600">{p.name}</td>
+                              <td className="px-6 py-4 text-sm text-slate-400">{p.category}</td>
+                              <td className="px-6 py-4 text-xs font-mono text-slate-400">
                                 {Math.min(100, Math.round((p.combined_score || 0) * 100))}%
                               </td>
                             </tr>
@@ -333,25 +368,43 @@ export default function CommandCenter() {
             )}
           </div>
 
-          {/* Neural Log */}
-          <div className="w-80 bg-slate-900 border-l border-slate-800 flex flex-col">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800 flex-shrink-0">
-              <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Neural Log</h2>
-              <ChevronRight className="w-4 h-4 text-slate-500" />
+          {/* Neural Log (Right Panel) */}
+          <div className="w-80 bg-white border-l border-slate-200 flex flex-col z-10">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 flex-shrink-0 bg-slate-50/50">
+              <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Neural Log</h2>
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-[10px] font-bold text-slate-400">LIVE</span>
+              </div>
             </div>
 
-            <div className="flex-1 p-4 overflow-y-auto bg-slate-950 font-mono text-xs text-emerald-500/80">
+            <div className="flex-1 p-6 overflow-y-auto font-mono text-xs space-y-3 bg-white">
               {logs.length === 0 ? (
-                <p className="text-slate-700 italic">Waiting for input triggers...</p>
+                <div className="text-center mt-10 opacity-40">
+                  <Activity className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                  <p className="text-slate-400 italic">Waiting... </p>
+                </div>
               ) : (
                 logs.map((log, i) => (
-                  <p key={i} className="mb-1 break-words animate-in fade-in slide-in-from-left-2 duration-300">
-                    <span className="text-slate-600 mr-2">&gt;</span>
-                    {log}
-                  </p>
+                  <div key={i} className="flex gap-2 animate-in fade-in slide-in-from-left-2 duration-300">
+                    <span className="text-slate-300 select-none">›</span>
+                    <p className="text-slate-600 leading-relaxed break-words">
+                      {log.includes("USER_QUERY") ? (
+                        <span className="font-bold text-slate-800">{log}</span>
+                      ) : log.includes("DECISION") ? (
+                        <span className="font-bold text-blue-600">{log}</span>
+                      ) : (
+                        log
+                      )}
+                    </p>
+                  </div>
                 ))
               )}
               <div ref={logEndRef} />
+            </div>
+
+            <div className="p-4 border-t border-slate-100 bg-slate-50 text-[10px] text-slate-400 text-center uppercase tracking-wider font-semibold">
+              System Latency: 45ms
             </div>
           </div>
         </div>
