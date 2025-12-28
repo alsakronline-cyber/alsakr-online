@@ -245,6 +245,15 @@ EOF
     else
         print_info "Chat model already exists"
     fi
+
+    # Pull vision model (Phase 3)
+    if ! docker exec alsakr-ollama ollama list | grep -q "llava"; then
+        print_info "Pulling llava vision model..."
+        docker exec alsakr-ollama ollama pull llava
+        print_success "Vision model pulled"
+    else
+        print_info "Vision model already exists"
+    fi
     
     # Final Summary
     print_header "✨ DEPLOYMENT COMPLETE!"
