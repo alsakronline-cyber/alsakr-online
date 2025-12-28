@@ -261,7 +261,7 @@ export default function CommandCenter() {
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold text-amber-200 mb-2">Clarification Needed</h3>
-                    <p className="text-slate-300 text-sm mb-4">{clarifiction}</p>
+                    <p className="text-slate-300 text-sm mb-4">{clarification}</p>
                     <p className="text-xs text-slate-500">Please type a more specific query in the command bar above.</p>
                   </div>
                 </div>
