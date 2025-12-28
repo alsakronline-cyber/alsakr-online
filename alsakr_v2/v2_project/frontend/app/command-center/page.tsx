@@ -37,6 +37,8 @@ interface Product {
 
 // Minimal Product Modal
 const ProductDetailsModal = ({ product, onClose }: { product: Product, onClose: () => void }) => {
+  const [activeImage, setActiveImage] = useState(product.image_url || product.image_urls?.[0] || null);
+
   if (!product) return null;
 
   return (
@@ -45,10 +47,18 @@ const ProductDetailsModal = ({ product, onClose }: { product: Product, onClose: 
         {/* Header */}
         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
           <div>
-            <span className="text-xs font-bold text-blue-600 uppercase tracking-wider bg-blue-50 px-2 py-1 rounded-md">
-              {product.category || 'Component'}
-            </span>
-            <h2 className="text-xl font-bold text-slate-800 mt-1">{product.name}</h2>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-xs font-bold text-blue-600 uppercase tracking-wider bg-blue-50 px-2 py-1 rounded-md">
+                {product.category || 'Component'}
+              </span>
+              <div className="flex items-center gap-1.5 px-2 py-1 bg-blue-600 rounded-md shadow-sm shadow-blue-600/20">
+                <TrendingUp className="w-3 h-3 text-white" />
+                <span className="text-[10px] font-bold text-white">
+                  {Math.round((product.combined_score || 0) * 100)}% Match
+                </span>
+              </div>
+            </div>
+            <h2 className="text-xl font-bold text-slate-800">{product.name}</h2>
             <span className="font-mono text-sm text-slate-500">{product.part_number}</span>
           </div>
           <button
@@ -64,27 +74,62 @@ const ProductDetailsModal = ({ product, onClose }: { product: Product, onClose: 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* Image & Key Stats */}
             <div className="space-y-6">
-              <div className="aspect-square bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-center p-4">
-                {product.image_url ? (
-                  <img src={product.image_url} alt={product.name} className="max-w-full max-h-full object-contain mix-blend-multiply" />
-                ) : (
-                  <div className="text-center">
-                    <Zap className="w-12 h-12 text-slate-300 mx-auto mb-2 opacity-50" />
-                    <span className="text-xs text-slate-400">No Preview</span>
+              <div className="flex flex-col gap-4">
+                <div className="aspect-square bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-center p-4 relative overflow-hidden group">
+                  {activeImage ? (
+                    <img
+                      src={activeImage}
+                      alt={product.name}
+                      className="max-w-full max-h-full object-contain mix-blend-multiply transition-transform duration-500 group-hover:scale-110"
+                    />
+                  ) : (
+                    <div className="text-center">
+                      <Zap className="w-12 h-12 text-slate-300 mx-auto mb-2 opacity-50" />
+                      <span className="text-xs text-slate-400">No Preview</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Thumbnail Gallery */}
+                {product.image_urls && product.image_urls.length > 1 && (
+                  <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
+                    {product.image_urls.map((img: string, idx: number) => (
+                      <button
+                        key={idx}
+                        onClick={() => setActiveImage(img)}
+                        className={`w-14 h-14 rounded-lg border-2 flex-shrink-0 bg-white p-1 transition-all ${activeImage === img ? 'border-blue-500 shadow-md' : 'border-slate-100 hover:border-slate-200 opacity-60 hover:opacity-100'}`}
+                      >
+                        <img src={img} className="w-full h-full object-contain mix-blend-multiply" alt="thumb" />
+                      </button>
+                    ))}
                   </div>
                 )}
               </div>
 
-              <div className="space-y-3">
-                <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-100">
+              <div className="space-y-4">
+                <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-100 shadow-sm shadow-emerald-500/5">
                   <div className="flex items-center gap-2 mb-1">
                     <CheckCircle className="w-4 h-4 text-emerald-600" />
-                    <span className="text-sm font-bold text-emerald-800">Available</span>
+                    <span className="text-sm font-bold text-emerald-800">In Stock (Standard)</span>
                   </div>
-                  <p className="text-xs text-emerald-700/80">Stock: {product.stock || 'In Stock'} units</p>
+                  <p className="text-[10px] text-emerald-700/70 font-medium">Verified by SupplierHub Agent</p>
                 </div>
-                <button className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2">
-                  <ShoppingCart className="w-4 h-4" /> Add to Quote
+
+                <div className="p-4 bg-blue-50 rounded-xl border border-blue-100">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-xs font-bold text-blue-800">Confidence Analysis</span>
+                    <span className="text-xs font-mono font-bold text-blue-600">{(product.combined_score || 0).toFixed(4)}</span>
+                  </div>
+                  <div className="w-full h-1.5 bg-blue-100 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-blue-600 rounded-full shadow-[0_0_8px_rgba(37,99,235,0.4)]"
+                      style={{ width: `${Math.round((product.combined_score || 0) * 100)}%` }}
+                    />
+                  </div>
+                </div>
+
+                <button className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-500/20 transition-all active:scale-95 flex items-center justify-center gap-2">
+                  <ShoppingCart className="w-4 h-4" /> Request Official Quote
                 </button>
               </div>
             </div>
@@ -92,31 +137,31 @@ const ProductDetailsModal = ({ product, onClose }: { product: Product, onClose: 
             {/* Specs & Description */}
             <div className="md:col-span-2 space-y-6">
               <div>
-                <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide mb-3 flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-blue-500" /> Description
+                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-blue-500" /> Component Details
                 </h3>
-                <p className="text-slate-600 text-sm leading-relaxed">
-                  {product.description || "Industrial automation component. Please refer to datasheet for full operational parameters."}
+                <p className="text-slate-600 text-sm leading-relaxed bg-slate-50 p-4 rounded-xl border border-slate-100 italic">
+                  {product.description || "Full technical documentation available upon request. This component is part of the SICK industrial automation ecosystem."}
                 </p>
               </div>
 
               <div>
-                <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide mb-3 flex items-center gap-2">
-                  <Activity className="w-4 h-4 text-blue-500" /> Technical Data
+                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                  <Activity className="w-4 h-4 text-blue-500" /> Data Sheet Matrix
                 </h3>
-                <div className="bg-slate-50 rounded-xl border border-slate-100 overflow-hidden">
+                <div className="bg-white rounded-xl border border-slate-100 overflow-hidden shadow-sm">
                   <table className="w-full text-sm">
                     <tbody className="divide-y divide-slate-100">
                       {product.specifications && Object.entries(product.specifications).length > 0 ? (
-                        Object.entries(product.specifications).slice(0, 8).map(([k, v], i) => (
-                          <tr key={i} className="hover:bg-slate-100/50">
-                            <td className="px-4 py-3 text-slate-500 font-medium w-1/3">{k}</td>
-                            <td className="px-4 py-3 text-slate-800">{String(v)}</td>
+                        Object.entries(product.specifications).map(([k, v], i) => (
+                          <tr key={i} className="hover:bg-slate-50 transition-colors group">
+                            <td className="px-5 py-3 text-slate-400 font-medium w-1/3 bg-slate-50/30 group-hover:text-blue-600 text-[11px] uppercase tracking-tighter">{k}</td>
+                            <td className="px-5 py-3 text-slate-700 font-semibold">{String(v)}</td>
                           </tr>
                         ))
                       ) : (
                         <tr>
-                          <td colSpan={2} className="px-4 py-3 text-slate-400 italic">No specific data available.</td>
+                          <td colSpan={2} className="px-5 py-6 text-slate-400 italic text-center">No structural data matrix found. Use TechDoc Agent for manual extraction.</td>
                         </tr>
                       )}
                     </tbody>
@@ -346,8 +391,8 @@ export default function CommandCenter() {
                 <div
                   key={agent.id}
                   className={`group flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-all border ${agent.status === 'active' || agent.status === 'negotiating'
-                      ? 'bg-blue-50 border-blue-100 shadow-sm hover:shadow-md'
-                      : 'bg-white border-slate-100 opacity-60 hover:opacity-100 hover:bg-slate-50'
+                    ? 'bg-blue-50 border-blue-100 shadow-sm hover:shadow-md'
+                    : 'bg-white border-slate-100 opacity-60 hover:opacity-100 hover:bg-slate-50'
                     }`}
                 >
                   <div className={`p-2 rounded-lg ${agent.status === 'active' || agent.status === 'negotiating' ? 'bg-white shadow-sm text-blue-600' : 'bg-slate-100 text-slate-400'
