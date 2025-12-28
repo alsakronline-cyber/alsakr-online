@@ -4,6 +4,7 @@ from typing import Optional, List, Dict
 from pydantic import BaseModel
 from .core.es_client import es_client
 from .agents.orchestrator import AgentManager
+from .core.search_service import SearchService
 from .core.smart_search_service import SmartSearchService
 
 app = FastAPI(
