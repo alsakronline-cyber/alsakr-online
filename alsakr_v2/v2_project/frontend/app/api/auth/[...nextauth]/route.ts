@@ -1,61 +1,62 @@
-import NextAuth from 'next-auth';
-import CredentialsProvider from 'next-auth/providers/credentials';
-import PocketBase from 'pocketbase';
+import NextAuth from "next-auth";
+import CredentialsProvider from "next-auth/providers/credentials";
+import PocketBase from "pocketbase";
 
-const pb = new PocketBase(process.env.PB_URL || 'http://pocketbase:8090');
+const pb = new PocketBase(process.env.NEXT_PUBLIC_PB_URL || "http://127.0.0.1:8090");
 
 export const authOptions = {
     providers: [
         CredentialsProvider({
-            name: 'Credentials',
+            name: "Credentials",
             credentials: {
-                email: { label: "Email", type: "text" },
+                email: { label: "Email", type: "email" },
                 password: { label: "Password", type: "password" }
             },
             async authorize(credentials) {
                 if (!credentials?.email || !credentials?.password) return null;
 
                 try {
-                    const authData = await pb.collection('users').authWithPassword(
+                    const authData = await pb.collection("users").authWithPassword(
                         credentials.email,
                         credentials.password
                     );
 
-                    if (authData.record) {
+                    if (authData.token) {
                         return {
                             id: authData.record.id,
                             email: authData.record.email,
                             name: authData.record.name,
+                            token: authData.token,
                         };
                     }
                     return null;
-                } catch (e) {
-                    console.error('PocketBase Auth Error:', e);
+                } catch (error) {
+                    console.error("Auth error:", error);
                     return null;
                 }
             }
         })
     ],
     callbacks: {
-        async session({ session, token }) {
-            if (token) {
-                session.user.id = token.sub;
-            }
-            return session;
-        },
         async jwt({ token, user }) {
             if (user) {
-                token.sub = user.id;
+                token.id = user.id;
+                token.accessToken = (user as any).token;
             }
             return token;
+        },
+        async session({ session, token }) {
+            if (token) {
+                (session as any).user.id = token.id;
+                (session as any).user.accessToken = token.accessToken;
+            }
+            return session;
         }
     },
     pages: {
-        signIn: '/auth/login',
+        signIn: "/auth/login",
     },
-    session: {
-        strategy: 'jwt',
-    },
+    secret: process.env.NEXTAUTH_SECRET || "CHANGE_ME",
 };
 
 const handler = NextAuth(authOptions);

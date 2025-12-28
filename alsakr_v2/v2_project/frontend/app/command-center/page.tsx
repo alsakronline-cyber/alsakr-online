@@ -6,8 +6,9 @@ import {
   Camera, ShoppingCart, Scale, Shield, FileText, Mic,
   MapPin, Activity, Wrench, Users, Bell, Settings, HelpCircle,
   MoreVertical, ChevronRight, Zap, Send, TrendingUp, DollarSign,
-  Package, AlertTriangle, Terminal, LayoutGrid, X, CheckCircle, ShieldCheck
+  Package, AlertTriangle, Terminal, LayoutGrid, X, CheckCircle, ShieldCheck, LogOut
 } from 'lucide-react';
+import { useSession, signOut } from 'next-auth/react';
 
 // ... (AGENTS array remains the same) ...
 const INITIAL_AGENTS = [
@@ -374,6 +375,8 @@ export default function CommandCenter() {
     }
   };
 
+  const { data: session } = useSession();
+
   const handleInquiry = async (product: Product) => {
     addLog(`INQUIRY: Initiating quote request for ${product.part_number}...`);
     try {
@@ -382,7 +385,7 @@ export default function CommandCenter() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          buyer_id: "user_123", // Mock user ID
+          buyer_id: session?.user?.email || "anonymous",
           products: [product],
           message: "Requesting official quote for this item."
         })
@@ -509,7 +512,24 @@ export default function CommandCenter() {
               <Bell className="w-5 h-5" />
               <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
             </button>
-            <div className="w-9 h-9 bg-slate-200 rounded-full" />
+            <div className="flex items-center gap-3 pl-4 border-l border-slate-200">
+              <div className="text-right hidden sm:block">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Authorized User</p>
+                <p className="text-xs font-semibold text-slate-700 truncate max-w-[120px]">
+                  {session?.user?.name || session?.user?.email || 'Industrial Agent'}
+                </p>
+              </div>
+              <div className="w-9 h-9 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full border border-blue-200 flex items-center justify-center text-blue-600 font-bold text-sm shadow-sm">
+                {(session?.user?.name || session?.user?.email || 'A')[0].toUpperCase()}
+              </div>
+              <button
+                onClick={() => signOut({ callbackUrl: "/auth/login" })}
+                className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                title="Log Out"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
 
