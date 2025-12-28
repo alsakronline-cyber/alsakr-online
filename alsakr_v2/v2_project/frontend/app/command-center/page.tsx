@@ -21,8 +21,42 @@ const AGENTS = [
   { id: 10, name: 'SupplierHub', icon: Users, status: 'idle', theme: 'gray' },
 ];
 
+interface Product {
+  part_number: string;
+  name: string;
+  category: string;
+  [key: string]: any;
+}
+
 export default function CommandCenter() {
   const [command, setCommand] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchResults, setSearchResults] = useState<Product[]>([]);
+
+  const handleSearch = async () => {
+    if (!command.trim()) return;
+
+    setIsSearching(true);
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const response = await fetch(`${apiUrl}/api/search/products?q=${encodeURIComponent(command)}`);
+      const data = await response.json();
+
+      if (data.results) {
+        setSearchResults(data.results);
+      }
+    } catch (error) {
+      console.error('Search failed:', error);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
 
   return (
     <div className="h-screen bg-slate-900 text-slate-100 flex overflow-hidden">
@@ -87,6 +121,7 @@ export default function CommandCenter() {
               type="text"
               value={command}
               onChange={(e) => setCommand(e.target.value)}
+              onKeyDown={handleKeyDown}
               placeholder="Command your agents... (e.g., 'Find 50 DN50 Valves' or 'Upload broken gear photo')"
               className="w-full bg-slate-800/50 border border-orange-500/30 rounded-xl pl-11 pr-20 py-3 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-transparent transition-all"
             />
@@ -94,8 +129,12 @@ export default function CommandCenter() {
               <button className="px-2.5 py-1 bg-slate-700 hover:bg-slate-600 rounded-md text-xs text-slate-300 font-medium transition-colors">
                 ⌘K
               </button>
-              <button className="w-8 h-8 bg-orange-500 hover:bg-orange-600 rounded-lg flex items-center justify-center transition-colors">
-                <Send className="w-3.5 h-3.5 text-white" />
+              <button
+                onClick={handleSearch}
+                disabled={isSearching}
+                className="w-8 h-8 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 rounded-lg flex items-center justify-center transition-colors"
+              >
+                <Send className={`w-3.5 h-3.5 text-white ${isSearching ? 'animate-pulse' : ''}`} />
               </button>
             </div>
           </div>
@@ -115,32 +154,32 @@ export default function CommandCenter() {
                 <div
                   key={agent.id}
                   className={`group flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all ${agent.theme === 'cyan'
-                      ? 'bg-cyan-500/15 border border-cyan-500/20 hover:bg-cyan-500/20'
-                      : agent.theme === 'orange'
-                        ? 'bg-orange-500/15 border border-orange-500/20 hover:bg-orange-500/20'
-                        : 'bg-slate-800/50 border border-transparent hover:bg-slate-800'
+                    ? 'bg-cyan-500/15 border border-cyan-500/20 hover:bg-cyan-500/20'
+                    : agent.theme === 'orange'
+                      ? 'bg-orange-500/15 border border-orange-500/20 hover:bg-orange-500/20'
+                      : 'bg-slate-800/50 border border-transparent hover:bg-slate-800'
                     }`}
                 >
                   <div className={`p-1.5 rounded ${agent.theme === 'cyan' ? 'bg-cyan-500/20' :
-                      agent.theme === 'orange' ? 'bg-orange-500/20' :
-                        'bg-slate-700'
+                    agent.theme === 'orange' ? 'bg-orange-500/20' :
+                      'bg-slate-700'
                     }`}>
                     <agent.icon className={`w-3.5 h-3.5 ${agent.theme === 'cyan' ? 'text-cyan-400' :
-                        agent.theme === 'orange' ? 'text-orange-400' :
-                          'text-slate-400'
+                      agent.theme === 'orange' ? 'text-orange-400' :
+                        'text-slate-400'
                       }`} />
                   </div>
 
                   <span className={`text-xs font-medium flex-1 ${agent.theme === 'cyan' ? 'text-cyan-300' :
-                      agent.theme === 'orange' ? 'text-orange-300' :
-                        'text-slate-400'
+                    agent.theme === 'orange' ? 'text-orange-300' :
+                      'text-slate-400'
                     }`}>
                     {agent.name}
                   </span>
 
                   {agent.theme !== 'gray' && (
                     <div className={`w-1.5 h-1.5 rounded-full ${agent.theme === 'cyan' ? 'bg-cyan-400 animate-pulse' :
-                        'bg-orange-400 animate-pulse'
+                      'bg-orange-400 animate-pulse'
                       }`} />
                   )}
                 </div>
@@ -196,10 +235,12 @@ export default function CommandCenter() {
               </div>
             </div>
 
-            {/* Active Sourcing Projects Table */}
+            {/* Active Sourcing Projects Table OR Search Results */}
             <div className="bg-slate-800/40 backdrop-blur border border-slate-700/50 rounded-2xl overflow-hidden">
               <div className="flex items-center justify-between px-6 py-3 border-b border-slate-700/50">
-                <h3 className="text-sm font-semibold text-slate-300">Active Sourcing Projects</h3>
+                <h3 className="text-sm font-semibold text-slate-300">
+                  {searchResults.length > 0 ? `Search Results (${searchResults.length})` : 'Active Sourcing Projects'}
+                </h3>
                 <MoreVertical className="w-4 h-4 text-slate-500" />
               </div>
 
@@ -207,30 +248,54 @@ export default function CommandCenter() {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-slate-700/50">
-                      <th className="text-left px-6 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Project</th>
-                      <th className="text-left px-6 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Team</th>
-                      <th className="text-left px-6 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Status</th>
+                      {searchResults.length > 0 ? (
+                        <>
+                          <th className="text-left px-6 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Part Number</th>
+                          <th className="text-left px-6 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Name</th>
+                          <th className="text-left px-6 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Category</th>
+                        </>
+                      ) : (
+                        <>
+                          <th className="text-left px-6 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Project</th>
+                          <th className="text-left px-6 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Team</th>
+                          <th className="text-left px-6 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Status</th>
+                        </>
+                      )}
                     </tr>
                   </thead>
                   <tbody>
-                    {[
-                      { project: 'Project', team: 'Riyadh: 500 Valves - Negotiating with 3 Vendors', status: 'Sindear', highlight: true },
-                      { project: 'Project', team: 'Riyadh: 500 Valves - Negotiating', status: 'Safety', highlight: false },
-                      { project: 'Project', team: 'Riyadh: 500 Valves - Negotiating', status: 'Supplier', highlight: false },
-                      { project: 'Project', team: 'Riyadh: 500 Valves - Receiving 3 quotes', status: 'Safety', highlight: false },
-                      { project: 'Project', team: 'Riyadh: 500 Valves - Supplier', status: 'Sales', highlight: false },
-                    ].map((row, i) => (
-                      <tr key={i} className={`border-b border-slate-700/30 hover:bg-slate-700/20 transition-colors ${row.highlight ? 'bg-orange-500/5' : ''}`}>
-                        <td className="px-6 py-3">
-                          <span className={`inline-block px-2.5 py-1 rounded-md text-xs font-medium ${row.highlight ? 'bg-orange-500/20 text-orange-300' : 'bg-slate-700 text-slate-400'
-                            }`}>
-                            {row.project}
-                          </span>
-                        </td>
-                        <td className="px-6 py-3 text-sm text-slate-300">{row.team}</td>
-                        <td className="px-6 py-3 text-sm text-slate-400">{row.status}</td>
-                      </tr>
-                    ))}
+                    {searchResults.length > 0 ? (
+                      searchResults.map((product, i) => (
+                        <tr key={i} className="border-b border-slate-700/30 hover:bg-slate-700/20 transition-colors">
+                          <td className="px-6 py-3">
+                            <span className="inline-block px-2.5 py-1 rounded-md text-xs font-medium bg-orange-500/20 text-orange-300">
+                              {product.part_number}
+                            </span>
+                          </td>
+                          <td className="px-6 py-3 text-sm text-slate-300">{product.name}</td>
+                          <td className="px-6 py-3 text-sm text-slate-400">{product.category}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      [
+                        { project: 'Project', team: 'Riyadh: 500 Valves - Negotiating with 3 Vendors', status: 'Sindear', highlight: true },
+                        { project: 'Project', team: 'Riyadh: 500 Valves - Negotiating', status: 'Safety', highlight: false },
+                        { project: 'Project', team: 'Riyadh: 500 Valves - Negotiating', status: 'Supplier', highlight: false },
+                        { project: 'Project', team: 'Riyadh: 500 Valves - Receiving 3 quotes', status: 'Safety', highlight: false },
+                        { project: 'Project', team: 'Riyadh: 500 Valves - Supplier', status: 'Sales', highlight: false },
+                      ].map((row, i) => (
+                        <tr key={i} className={`border-b border-slate-700/30 hover:bg-slate-700/20 transition-colors ${row.highlight ? 'bg-orange-500/5' : ''}`}>
+                          <td className="px-6 py-3">
+                            <span className={`inline-block px-2.5 py-1 rounded-md text-xs font-medium ${row.highlight ? 'bg-orange-500/20 text-orange-300' : 'bg-slate-700 text-slate-400'
+                              }`}>
+                              {row.project}
+                            </span>
+                          </td>
+                          <td className="px-6 py-3 text-sm text-slate-300">{row.team}</td>
+                          <td className="px-6 py-3 text-sm text-slate-400">{row.status}</td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
