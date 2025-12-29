@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { LayoutDashboard, MessageSquare, ShoppingBag, LogOut, Package } from 'lucide-react';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
@@ -17,15 +18,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     ];
 
     return (
-        <div className="min-h-screen bg-slate-50 flex">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex transition-colors duration-300">
             {/* Sidebar */}
-            <aside className="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col">
-                <div className="p-6 border-b border-slate-100">
+            <aside className="w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 hidden md:flex flex-col transition-colors duration-300">
+                <div className="p-6 border-b border-slate-100 dark:border-slate-800">
                     <Link href="/" className="flex items-center gap-2">
                         <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
                             <Package className="text-white w-5 h-5" />
                         </div>
-                        <span className="font-bold text-xl text-slate-800">Al Sakr</span>
+                        <span className="font-bold text-xl text-slate-800 dark:text-slate-100">Al Sakr</span>
                     </Link>
                 </div>
 
@@ -37,8 +38,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                 key={item.href}
                                 href={item.href}
                                 className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${isActive
-                                        ? 'bg-blue-50 text-blue-600'
-                                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                                    ? 'bg-blue-50 text-blue-600'
+                                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                                     }`}
                             >
                                 <item.icon className="w-5 h-5" />
@@ -48,21 +49,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     })}
                 </nav>
 
-                <div className="p-4 border-t border-slate-100">
+                <div className="p-4 border-t border-slate-100 dark:border-slate-800">
+                    <div className="flex items-center justify-between mb-4">
+                        <ThemeToggle />
+                        <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Theme</span>
+                    </div>
+
                     <div className="flex items-center gap-3 px-4 py-3 mb-2">
-                        <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-xs">
+                        <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-blue-700 dark:text-blue-300 font-bold text-xs">
                             {session?.user?.name?.[0] || 'U'}
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-slate-900 truncate">
+                            <p className="text-sm font-medium text-slate-900 dark:text-slate-200 truncate">
                                 {session?.user?.name || 'User'}
                             </p>
-                            <p className="text-xs text-slate-500 truncate">
+                            <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
                                 {session?.user?.email}
                             </p>
                         </div>
                     </div>
-                    <Link href="/api/auth/signout" className="flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                    <Link href="/api/auth/signout" className="flex items-center gap-3 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
                         <LogOut className="w-4 h-4" />
                         Sign Out
                     </Link>
