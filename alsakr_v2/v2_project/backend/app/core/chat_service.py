@@ -3,6 +3,8 @@ import httpx
 from pydantic import BaseModel
 import os
 
+from app.core.pb_client import pb_client
+
 class MessageCreate(BaseModel):
     inquiry_id: str
     sender_id: str  # User ID of the sender
@@ -26,9 +28,12 @@ class ChatService:
                     "read": False
                 }
 
+                headers = await pb_client.get_headers()
+
                 response = await client.post(
                     f"{self.pb_url}/api/collections/{self.collection}/records",
                     json=payload,
+                    headers=headers,
                     timeout=5.0
                 )
                 response.raise_for_status()
@@ -41,8 +46,10 @@ class ChatService:
         """Get message history for an inquiry."""
         async with httpx.AsyncClient() as client:
             try:
+                headers = await pb_client.get_headers()
                 response = await client.get(
                     f"{self.pb_url}/api/collections/{self.collection}/records?filter=(inquiry_id='{inquiry_id}')&sort=created",
+                    headers=headers,
                     timeout=5.0
                 )
                 response.raise_for_status()

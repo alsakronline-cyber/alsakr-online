@@ -3,6 +3,8 @@ import httpx
 from pydantic import BaseModel
 import os
 
+from app.core.pb_client import pb_client
+
 # Pydantic schema for creating an inquiry
 class InquiryCreate(BaseModel):
     buyer_id: str
@@ -19,21 +21,20 @@ class InquiryService:
         """Creates a new inquiry record in PocketBase."""
         async with httpx.AsyncClient() as client:
             try:
-                # We assume the collection 'inquiries' exists. 
-                # In a real scenario, we might auth as admin, but for now we'll allow public create
-                # or assume the API server is within the trust boundary if using admin token.
-                # For simplicity in this demo phase, we'll try public create.
-                
                 payload = {
                     "buyer_id": inquiry.buyer_id,
                     "products": inquiry.products, # PocketBase handles JSON fields
                     "message": inquiry.message,
                     "status": "pending"
                 }
+
+                # Get auth headers
+                headers = await pb_client.get_headers()
                 
                 response = await client.post(
                     f"{self.pb_url}/api/collections/{self.collection}/records",
                     json=payload,
+                    headers=headers,
                     timeout=5.0
                 )
                 response.raise_for_status()

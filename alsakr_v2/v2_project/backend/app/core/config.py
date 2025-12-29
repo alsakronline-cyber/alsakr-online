@@ -35,6 +35,8 @@ class Settings(BaseSettings):
     
     # PocketBase Settings
     PB_URL: str = os.getenv("PB_URL", "http://localhost:8090")
+    ADMIN_EMAIL: str = os.getenv("ADMIN_EMAIL", "admin@alsakronline.com")
+    ADMIN_PASSWORD: str = os.getenv("ADMIN_PASSWORD", "#Anas231#Bkar3110")
     
     # Redis Settings
     REDIS_HOST: str = "localhost"
