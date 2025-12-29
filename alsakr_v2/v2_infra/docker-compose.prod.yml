@@ -47,6 +47,8 @@ services:
           memory: 2G
         reservations:
           memory: 1G
+    ports:
+      - "9200:9200"
     networks:
       - industry-net
     healthcheck:
