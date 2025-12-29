@@ -188,9 +188,17 @@ export default function VendorInquiryPage() {
                             <button
                                 type="submit"
                                 disabled={submitting}
-                                className="w-full py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition active:scale-95 shadow-lg shadow-blue-500/20"
+                                className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold text-lg rounded-xl hover:from-blue-700 hover:to-indigo-700 transition active:scale-95 shadow-xl shadow-blue-500/25 flex items-center justify-center gap-2"
                             >
-                                {submitting ? 'Sending...' : 'Send Quote'}
+                                {submitting ? (
+                                    <>
+                                        <span className="animate-spin">↻</span> Sending...
+                                    </>
+                                ) : (
+                                    <>
+                                        Send Quote <span className="text-xl">→</span>
+                                    </>
+                                )}
                             </button>
                         </form>
                     </div>
