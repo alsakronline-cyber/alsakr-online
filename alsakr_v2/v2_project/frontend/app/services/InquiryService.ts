@@ -36,16 +36,10 @@ export interface Message {
 
 export const InquiryService = {
     // Get all inquiries for the current buyer
-    async getMyInquiries(token: string): Promise<Inquiry[]> {
-        const res = await fetch(`${API_URL}/api/inquiries/buyer`, {
-            headers: {
-                "Authorization": `Bearer ${token}`,
-                "Content-Type": "application/json"
-            }
-        });
+    async getMyInquiries(buyerId: string): Promise<Inquiry[]> {
+        const res = await fetch(`${API_URL}/api/inquiries/buyer/${buyerId}`);
         if (!res.ok) return [];
-        const data = await res.json();
-        return data;
+        return await res.json();
     },
 
     // Get details of a single inquiry

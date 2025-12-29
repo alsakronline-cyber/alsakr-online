@@ -30,12 +30,31 @@ class SearchService:
         Returns:
             List of product documents
         """
-        # Build query
-        must_clauses = [
+        # Build query - use should clauses for better part number matching
+        should_clauses = [
+            # Exact part number match (highest priority)
+            {
+                "term": {
+                    "part_number": {
+                        "value": query,
+                        "boost": 10.0
+                    }
+                }
+            },
+            # Case-insensitive part number match
+            {
+                "match": {
+                    "part_number": {
+                        "query": query,
+                        "boost": 5.0
+                    }
+                }
+            },
+            # Multi-field search for other fields
             {
                 "multi_match": {
                     "query": query,
-                    "fields": ["name^3", "description^2", "category", "part_number^2"],
+                    "fields": ["name^3", "description^2", "category"],
                     "type": "best_fields",
                     "fuzziness": "AUTO"
                 }
@@ -54,8 +73,9 @@ class SearchService:
         es_query = {
             "query": {
                 "bool": {
-                    "must": must_clauses,
-                    "filter": filter_clauses
+                    "should": should_clauses,
+                    "filter": filter_clauses,
+                    "minimum_should_match": 1
                 }
             },
             "size": size,

@@ -12,16 +12,9 @@ export default function InquiriesPage() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (session?.user) {
-            // Logic to get token would go here, for now assuming the session has what we need or the API handles cookie auth
-            // Since we don't have the token in the session object types easily available without extending types,
-            // we'll simulate the token extraction or rely on the backend cookie if httpOnly.
-            // For this demo, let's assume we pass a dummy token or modifying NextAuth callbacks is needed.
-            // BUT, checking InquiryService, it expects a token. 
-            // We will cast session to any to access accessToken if it exists.
-            const token = (session as any).accessToken || "";
-
-            InquiryService.getMyInquiries(token)
+        if (session?.user?.email) {
+            // Use email as buyer_id (this matches what's stored when creating inquiries)
+            InquiryService.getMyInquiries(session.user.email)
                 .then(setInquiries)
                 .finally(() => setLoading(false));
         }
