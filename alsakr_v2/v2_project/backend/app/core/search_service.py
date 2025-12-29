@@ -179,6 +179,9 @@ class SearchService:
             if part_no:
                 merged[part_no] = product
                 merged[part_no]['text_score'] = product.get('_score', 0)
+                # Initialize combined_score effectively as text_score * 0.3 (assuming semantic is 0)
+                # This ensures valid sorting even if semantic search misses it
+                merged[part_no]['combined_score'] = product.get('_score', 0) * 0.3
         
         # Add semantic results
         for product in semantic_results:
