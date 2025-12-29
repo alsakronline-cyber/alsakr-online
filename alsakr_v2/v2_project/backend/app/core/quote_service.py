@@ -61,7 +61,11 @@ class QuoteService:
         async with httpx.AsyncClient() as client:
             try:
                 response = await client.get(
-                    f"{self.pb_url}/api/collections/{self.collection}/records?filter=(inquiry_id='{inquiry_id}')&sort=-created",
+                    f"{self.pb_url}/api/collections/{self.collection}/records",
+                    params={
+                        "filter": f"inquiry_id='{inquiry_id}'",
+                        "sort": "-created"
+                    },
                     timeout=5.0
                 )
                 response.raise_for_status()
