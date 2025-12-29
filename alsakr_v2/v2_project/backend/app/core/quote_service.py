@@ -60,15 +60,19 @@ class QuoteService:
         """Get all quotes associated with a specific inquiry."""
         async with httpx.AsyncClient() as client:
             try:
+                # Use exact pattern from inquiry_service which works
+                filter_query = f"inquiry_id='{inquiry_id}'"
                 response = await client.get(
-                    f"{self.pb_url}/api/collections/{self.collection}/records",
-                    params={
-                        "filter": f"inquiry_id='{inquiry_id}'",
-                        "sort": "-created"
-                    },
+                    f"{self.pb_url}/api/collections/{self.collection}/records?filter={filter_query}&sort=-created",
                     timeout=5.0
                 )
-                response.raise_for_status()
+                try:
+                    response.raise_for_status()
+                except Exception as e:
+                    print(f"Error Status: {response.status_code}")
+                    print(f"Error Body: {response.text}")
+                    raise e
+                    
                 data = response.json()
                 return data.get("items", [])
             except Exception as e:
