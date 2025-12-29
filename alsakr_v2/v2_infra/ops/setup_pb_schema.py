@@ -14,6 +14,8 @@ async def create_collection(client, token, name, schema):
     
     # Check if exists
     try:
+        # PB v0.23+ uses ID or Name, but fetching by name directly might need filter
+        # but let's just try to get by name. If it fails, that's fine.
         resp = await client.get(f"{PB_URL}/api/collections/{name}", headers=headers)
         if resp.status_code == 200:
             print(f"  - Exists.")
@@ -44,9 +46,19 @@ async def main():
     async with httpx.AsyncClient() as client:
         # Auth
         try:
-            resp = await client.post(f"{PB_URL}/api/admins/auth-with-password", json={
+            # Try Superuser auth (PB v0.23+)
+            url = f"{PB_URL}/api/collections/_superusers/auth-with-password"
+            resp = await client.post(url, json={
                 "identity": ADMIN_EMAIL, "password": ADMIN_PASS
             })
+            
+            # Fallback to legacy Admin auth
+            if resp.status_code == 404:
+                url = f"{PB_URL}/api/admins/auth-with-password"
+                resp = await client.post(url, json={
+                    "identity": ADMIN_EMAIL, "password": ADMIN_PASS
+                })
+
             if resp.status_code != 200:
                 print(f"Admin auth failed: {resp.text}")
                 return
@@ -81,6 +93,14 @@ async def main():
             {"name": "part_number", "type": "text", "required": True},
             {"name": "custom_price", "type": "number"},
             {"name": "stock_quantity", "type": "number"}
+        ])
+
+        # 4. Inquiries
+        await create_collection(client, token, "inquiries", [
+            {"name": "buyer_id", "type": "text", "required": True},
+            {"name": "products", "type": "json", "required": True},
+            {"name": "message", "type": "text"},
+            {"name": "status", "type": "select", "options": ["pending", "quoted", "processed", "closed"]}
         ])
 
 if __name__ == "__main__":

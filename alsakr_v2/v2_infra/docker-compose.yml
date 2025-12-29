@@ -7,7 +7,7 @@ services:
     container_name: alsakr-ollama
     restart: unless-stopped
     volumes:
-      - ollama_data:/root/.ollama
+      - ../ollama_data:/root/.ollama
     deploy:
       resources:
         limits:
@@ -25,7 +25,7 @@ services:
       - xpack.security.enabled=false
       - "ES_JAVA_OPTS=-Xms1g -Xmx1g" # HEAP LIMIT 1GB (Critical for VPS)
     volumes:
-      - es_data:/usr/share/elasticsearch/data
+      - ../es_data:/usr/share/elasticsearch/data
     deploy:
       resources:
         limits:
@@ -40,7 +40,7 @@ services:
     image: qdrant/qdrant:latest
     container_name: alsakr-qdrant
     volumes:
-      - qdrant_data:/qdrant/storage
+      - ../qdrant_data:/qdrant/storage
     deploy:
       resources:
         limits:
@@ -55,7 +55,7 @@ services:
     image: ghcr.io/muchobien/pocketbase:latest
     container_name: alsakr-pb
     volumes:
-      - pb_data:/pb/pb_data
+      - ../pb_data:/pb/pb_data
     ports:
       - "8090:8090"
     deploy:
@@ -73,7 +73,7 @@ services:
       - N8N_HOST=n8n.local
       - N8N_PORT=5678
     volumes:
-      - n8n_data:/home/node/.n8n
+      - ../n8n_data:/home/node/.n8n
     ports:
       - "5678:5678"
     deploy:
@@ -93,9 +93,10 @@ services:
     container_name: alsakr-frontend
     environment:
       - NEXTAUTH_URL=${NEXTAUTH_URL:-https://app.alsakronline.com}
-      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-pYn8X8vA4j2M5K9S7wG3R1L6Q0T2B5V4}
       - NEXT_PUBLIC_PB_URL=${NEXT_PUBLIC_PB_URL:-https://crm.app.alsakronline.com}
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-https://app.alsakronline.com}
+      - PB_INTERNAL_URL=http://pocketbase:8090
     ports:
       - "3000:3000"
     deploy:
@@ -142,19 +143,12 @@ services:
       - "443:443"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
-      - caddy_data:/data
-      - caddy_config:/config
+      - ../caddy_data:/data
+      - ../caddy_config:/config
     networks:
       - industry-net
 
-volumes:
-  ollama_data:
-  es_data:
-  qdrant_data:
-  pb_data:
-  n8n_data:
-  caddy_data:
-  caddy_config:
+# Named volumes removed in favor of host paths
 
 
 networks:
