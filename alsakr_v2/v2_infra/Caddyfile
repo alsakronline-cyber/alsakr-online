@@ -28,7 +28,7 @@ api.app.alsakronline.com {
 # PocketBase CRM - Developer Access Only (SSH Tunnel Required)
 # Public access blocked for security
 crm.app.alsakronline.com {
-    respond "Access Denied: This service is for internal developer use only. Please use SSH tunnel." 403
+    reverse_proxy pocketbase:8090
     encode gzip
 }
 
