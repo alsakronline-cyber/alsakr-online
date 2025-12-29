@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { Package, Search, Filter, MoreVertical, CheckCircle, Clock, XCircle, LayoutGrid, FileText, Settings, Bell, Zap, Users, Shield } from 'lucide-react';
 
 interface Inquiry {
@@ -121,7 +122,9 @@ export default function VendorDashboard() {
                                                     {new Date(inquiry.created).toLocaleDateString()}
                                                 </td>
                                                 <td className="px-6 py-4 text-right">
-                                                    <button className="text-blue-600 hover:text-blue-800 font-medium text-xs">From Quote</button>
+                                                    <Link href={`/vendor/inquiries/${inquiry.id}`}>
+                                                        <button className="text-blue-600 hover:text-blue-800 font-medium text-xs">From Quote</button>
+                                                    </Link>
                                                 </td>
                                             </tr>
                                         ))
