@@ -55,7 +55,7 @@ services:
     image: ghcr.io/muchobien/pocketbase:latest
     container_name: alsakr-pb
     volumes:
-      - ../pb_data:/pb/pb_data
+      - ../pb_data:/pb_data
     ports:
       - "8090:8090"
     deploy:
