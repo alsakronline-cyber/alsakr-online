@@ -22,10 +22,12 @@ export const authOptions: NextAuthOptions = {
                         credentials.password
                     );
 
+                    /* 
                     // Check if email is verified
                     if (!authData.record.verified) {
                         throw new Error("Please verify your email before logging in. Check your inbox for the verification link.");
                     }
+                    */
 
                     if (authData.token) {
                         return {
