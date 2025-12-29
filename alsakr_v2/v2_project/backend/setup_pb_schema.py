@@ -26,11 +26,11 @@ async def create_collection(client, token, name, schema):
         "name": name,
         "type": "base",
         "schema": schema,
-        "listRule": null,  # null = public access (no auth required)
-        "viewRule": null,
-        "createRule": null,
-        "updateRule": null,
-        "deleteRule": null
+        "listRule": None,  # null = public access (no auth required)
+        "viewRule": None,
+        "createRule": None,
+        "updateRule": None,
+        "deleteRule": None
     }
     
     resp = await client.post(f"{PB_URL}/api/collections", json=data, headers=headers)
