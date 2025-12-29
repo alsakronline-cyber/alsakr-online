@@ -16,29 +16,28 @@ echo "Starting Backup at $TIMESTAMP"
 echo "Source: $DATA_DIR"
 echo "Destination: $BACKUP_FILE"
 
-# check if source exists
-if [ ! -d "$DATA_DIR" ]; then
-    echo "❌ Error: Source directory $DATA_DIR does not exist!"
+# check if container exists/running (optional, but good practice)
+if ! docker ps -a --format '{{.Names}}' | grep -q "^alsakr-pb$"; then
+    echo "❌ Error: Container alsakr-pb does not exist!"
     exit 1
 fi
 
-# Create tarball
-# We use docker-compose stop to ensure consistency? 
-# Or copy on the fly (SQLite/PB usually handles read access fine, but WAL mode might be tricky).
-# Safest: Stop container, backup, start.
-# Low Downtime: SQLite vacuum into backup?
-# For now, let's do a hot backup (tar). PB uses SQLite WAL, so it *might* be inconsistent if heavy writes happen.
-# Better approach: Use PocketBase's export API? Or just copy.
-# Let's stop the backend explicitly to be 100% safe for now. It takes 2 seconds.
+echo "Stopping PocketBase container..."
+docker stop alsakr-pb
 
-echo "Stopping backend container..."
-docker stop alsakr-backend
+echo "Copying data from container..."
+# Copy from container to temp dir
+TEMP_DIR="$BACKUP_DIR/temp_pb_data_$TIMESTAMP"
+docker cp alsakr-pb:/pb/pb_data "$TEMP_DIR"
+
+echo "Restarting PocketBase container..."
+docker start alsakr-pb
 
 echo "Compressing data..."
-tar -czf "$BACKUP_FILE" -C "$PROJECT_DIR/v2_infra" pb_data
+tar -czf "$BACKUP_FILE" -C "$TEMP_DIR" .
 
-echo "Restarting backend container..."
-docker start alsakr-backend
+echo "Cleaning up temp files..."
+rm -rf "$TEMP_DIR"
 
 echo "✅ Backup created successfully."
 
