@@ -16,36 +16,38 @@ export const authOptions: NextAuthOptions = {
             async authorize(credentials) {
                 if (!credentials?.email || !credentials?.password) return null;
 
+                // Use internal Docker network URL for server-side operations
+                const pbInstance = new PocketBase(process.env.PB_INTERNAL_URL || "http://pocketbase:8090");
+
                 try {
-                    const authData = await pb.collection("users").authWithPassword(
+                    const authData = await pbInstance.collection("users").authWithPassword(
                         credentials.email,
                         credentials.password
                     );
-
-                    /* 
-                    // Check if email is verified
-                    if (!authData.record.verified) {
-                        throw new Error("Please verify your email before logging in. Check your inbox for the verification link.");
-                    }
-                    */
 
                     if (authData.token) {
                         return {
                             id: authData.record.id,
                             email: authData.record.email,
                             name: authData.record.name,
-                            role: authData.record.role, // Add role
+                            role: authData.record.role,
                             token: authData.token,
                         };
                     }
                     return null;
                 } catch (error: any) {
-                    console.error("Auth error:", error);
+                    console.error("Auth error details:", {
+                        message: error.message,
+                        status: error.status,
+                        data: error.data
+                    });
+
                     // Pass through the verification error message
-                    if (error.message && error.message.includes("verify your email")) {
-                        throw error;
+                    if (error.message && (error.message.includes("verify your email") || error.status === 400)) {
+                        throw new Error(error.data?.message || error.message);
                     }
-                    return null;
+
+                    throw new Error("Invalid email or password");
                 }
             }
         })

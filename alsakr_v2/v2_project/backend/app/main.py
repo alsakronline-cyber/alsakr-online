@@ -10,7 +10,7 @@ from .core.voice_service import VoiceService
 from .core.inquiry_service import InquiryService, InquiryCreate
 from .core.quote_service import QuoteService, QuoteCreate
 from .core.chat_service import ChatService, MessageCreate
-from fastapi import FastAPI, HTTPException, Body
+
 
 from .agents.vision_agent import VisualMatchAgent
 
@@ -31,7 +31,7 @@ app.add_middleware(
 
 agent_manager = AgentManager()
 search_service = SearchService()
-search_service = SearchService()
+
 smart_search_service = SmartSearchService()
 voice_service = VoiceService()
 inquiry_service = InquiryService()
@@ -84,11 +84,7 @@ async def chat(message: str = Form(...), user_id: str = Form(...)):
     return {"response": response}
 
 
-@app.post("/api/vision/identify")
-async def identify_part(file: UploadFile = File(...)):
-    """Vision agent endpoint for image-based product identification"""
-    # Logic to save file and call VisualMatchAgent
-    return {"status": "processing"}
+
 
 
 @app.post("/api/vision/identify")
