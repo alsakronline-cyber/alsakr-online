@@ -8,60 +8,61 @@ PB_URL = "http://pocketbase:8090"
 ADMIN_EMAIL = "admin@alsakronline.com"
 ADMIN_PASS = "password123"
 
-async def create_collection(client, token, name, schema):
-    print(f"Checking collection {name}...")
+async def create_collection(client, token, name, schema, rules=None):
+    print(f"Syncing collection {name}...")
     headers = {"Authorization": token}
     
-    # Check if exists
-    try:
-        # PB v0.23+ uses ID or Name, but fetching by name directly might need filter
-        # but let's just try to get by name. If it fails, that's fine.
-        resp = await client.get(f"{PB_URL}/api/collections/{name}", headers=headers)
-        if resp.status_code == 200:
-            print(f"  - Exists.")
-            return
-    except Exception as e:
-        print(f"  - Error checking: {e}")
+    # Default rules
+    if rules is None:
+        rules = {
+            "listRule": "",
+            "viewRule": "",
+            "createRule": "",
+            "updateRule": "",
+            "deleteRule": ""
+        }
 
-    # Create
+    # Check if exists
+    resp = await client.get(f"{PB_URL}/api/collections/{name}", headers=headers)
+    exists = resp.status_code == 200
+    
     data = {
         "name": name,
         "type": "base",
         "schema": schema,
-        "listRule": "", # Public list
-        "viewRule": "", # Public view
-        "createRule": "", # Public create
-        "updateRule": "", # Public update
-        "deleteRule": ""  # Admin only delete
+        **rules
     }
-    
-    resp = await client.post(f"{PB_URL}/api/collections", json=data, headers=headers)
-    if resp.status_code == 200:
-        print(f"  - Created successfully.")
+
+    if exists:
+        # Update existing
+        resp = await client.patch(f"{PB_URL}/api/collections/{name}", json=data, headers=headers)
+        if resp.status_code == 200:
+            print(f"  - Updated successfully.")
+        else:
+            print(f"  - Update failed: {resp.status_code} {resp.text}")
     else:
-        print(f"  - Failed: {resp.status_code} {resp.text}")
+        # Create new
+        resp = await client.post(f"{PB_URL}/api/collections", json=data, headers=headers)
+        if resp.status_code == 200:
+            print(f"  - Created successfully.")
+        else:
+            print(f"  - Creation failed: {resp.status_code} {resp.text}")
 
 async def main():
-    print("Starting PB Schema Setup...")
+    print("Starting PB System-Wide Schema Setup...")
     async with httpx.AsyncClient() as client:
         # Auth
         try:
-            # Try Superuser auth (PB v0.23+)
             url = f"{PB_URL}/api/collections/_superusers/auth-with-password"
-            print(f"Attempting Superuser auth at {url}...")
             resp = await client.post(url, json={
                 "identity": ADMIN_EMAIL, "password": ADMIN_PASS
             })
-            print(f"Superuser auth status: {resp.status_code}")
             
-            # Fallback to legacy Admin auth
             if resp.status_code == 404:
                 url = f"{PB_URL}/api/admins/auth-with-password"
-                print(f"Falling back to legacy Admin auth at {url}...")
                 resp = await client.post(url, json={
                     "identity": ADMIN_EMAIL, "password": ADMIN_PASS
                 })
-                print(f"Legacy auth status: {resp.status_code}")
 
             if resp.status_code != 200:
                 print(f"Admin auth failed ({resp.status_code}): {resp.text}")
@@ -72,17 +73,27 @@ async def main():
             print(f"Connection error to {PB_URL}: {e}")
             return
 
-        # 1. Quotations
+        # 1. Inquiries
+        await create_collection(client, token, "inquiries", [
+            {"name": "buyer_id", "type": "text", "required": True},
+            {"name": "products", "type": "json", "required": True},
+            {"name": "message", "type": "text"},
+            {"name": "status", "type": "select", "options": ["pending", "quoted", "processed", "closed"]}
+        ])
+
+        # 2. Quotations
         await create_collection(client, token, "quotations", [
             {"name": "inquiry_id", "type": "text", "required": True},
             {"name": "vendor_id", "type": "text", "required": True},
             {"name": "items", "type": "json"},
             {"name": "total_price", "type": "number"},
             {"name": "currency", "type": "text"},
+            {"name": "valid_until", "type": "date"},
+            {"name": "notes", "type": "text"},
             {"name": "status", "type": "select", "options": ["pending", "accepted", "rejected", "expired"]}
         ])
 
-        # 2. Messages
+        # 3. Messages
         await create_collection(client, token, "messages", [
             {"name": "inquiry_id", "type": "text", "required": True},
             {"name": "sender_id", "type": "text"},
@@ -91,7 +102,7 @@ async def main():
             {"name": "read", "type": "bool"}
         ])
 
-        # 3. Vendor Stock
+        # 4. Vendor Stock
         await create_collection(client, token, "vendor_stock", [
             {"name": "vendor_id", "type": "text", "required": True},
             {"name": "part_number", "type": "text", "required": True},
@@ -99,13 +110,27 @@ async def main():
             {"name": "stock_quantity", "type": "number"}
         ])
 
-        # 4. Inquiries
-        await create_collection(client, token, "inquiries", [
-            {"name": "buyer_id", "type": "text", "required": True},
-            {"name": "products", "type": "json", "required": True},
-            {"name": "message", "type": "text"},
-            {"name": "status", "type": "select", "options": ["pending", "quoted", "processed", "closed"]}
+        # 5. Vendor Profiles
+        await create_collection(client, token, "vendor_profiles", [
+            {"name": "user_id", "type": "text", "required": True},
+            {"name": "brands", "type": "json"},
+            {"name": "categories", "type": "json"},
+            {"name": "rating", "type": "number"},
+            {"name": "cr_number", "type": "text"},
+            {"name": "sector", "type": "text"},
+            {"name": "location", "type": "text"},
+            {"name": "verification_status", "type": "select", "options": ["pending", "verified", "rejected"]}
         ])
+
+        # 6. Conversations (AI History)
+        await create_collection(client, token, "conversations", [
+            {"name": "user_id", "type": "text", "required": True},
+            {"name": "messages", "type": "json"},
+            {"name": "summary", "type": "text"}
+        ])
+
+if __name__ == "__main__":
+    asyncio.run(main())
 
 if __name__ == "__main__":
     asyncio.run(main())
