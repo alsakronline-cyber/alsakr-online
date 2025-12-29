@@ -3,6 +3,8 @@ import httpx
 from pydantic import BaseModel
 import os
 from datetime import datetime
+import asyncio
+from app.core.email_service import email_service
 
 class QuoteCreate(BaseModel):
     inquiry_id: str
@@ -51,6 +53,15 @@ class QuoteService:
                     timeout=5.0
                 )
 
+                # Send Notification (Fire & Forget)
+                # TODO: We need Buyer Email. Inquiry Service has it.
+                # For now, we skip or assume Inquiry Object has it?
+                # Ideally we fetch inquiry first.
+                # Let's add a quick fetch to get buyer ID details if needed, 
+                # but 'send_quote_notification' implementation in email_service was empty/pass.
+                # So we just place the hook here for now.
+                asyncio.create_task(email_service.send_quote_notification(quote_record))
+
                 return quote_record
             except Exception as e:
                 print(f"Error creating quote: {e}")
@@ -89,7 +100,13 @@ class QuoteService:
                     timeout=5.0
                 )
                 response.raise_for_status()
-                return response.json()
+                data = response.json()
+                
+                # Notify Vendor (Admin)
+                if status in ['accepted', 'rejected']:
+                    asyncio.create_task(email_service.send_quote_status_notification(data, status))
+
+                return data
             except Exception as e:
                 print(f"Error updating quote status: {e}")
                 raise e
