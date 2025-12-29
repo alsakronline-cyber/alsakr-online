@@ -9,7 +9,7 @@ import {
   Package, AlertTriangle, Terminal, LayoutGrid, X, CheckCircle, ShieldCheck, LogOut
 } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
-import { ThemeToggle } from '../components/ui/theme-toggle';
+import { ThemeToggle } from '../../components/ui/theme-toggle';
 
 // ... (AGENTS array remains the same) ...
 const INITIAL_AGENTS = [
@@ -484,14 +484,21 @@ export default function CommandCenter() {
           </button>
           {/* ... Other icons ... */}
           {[FileText, Shield, Users].map((Icon, i) => (
-            <button key={i} className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+            <button
+              key={i}
+              onClick={() => addLog("SYSTEM: This module is currently in standby mode.")}
+              className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+            >
               <Icon className="w-5 h-5" />
             </button>
           ))}
         </div>
         {/* ... Settings icons ... */}
         <div className="flex flex-col gap-3">
-          <button className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+          <button
+            onClick={() => addLog("SYSTEM: Settings configuration is restricted to Admin.")}
+            className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+          >
             <Settings className="w-5 h-5" />
           </button>
         </div>
