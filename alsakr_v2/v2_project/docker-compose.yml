@@ -87,7 +87,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        - NEXT_PUBLIC_API_URL=https://app.alsakronline.com/api
+        - NEXT_PUBLIC_API_URL=https://app.alsakronline.com
         - NEXT_PUBLIC_PB_URL=https://app.alsakronline.com/pb
     container_name: alsakr-frontend
     environment:
