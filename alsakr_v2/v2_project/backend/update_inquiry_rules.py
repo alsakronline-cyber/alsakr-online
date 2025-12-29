@@ -1,68 +1,61 @@
-import httpx
 import asyncio
-import sys
+import httpx
 
-# Internal URL inside docker network
-PB_URL = "http://pocketbase:8090"
+# Configuration
+PB_URL = "http://127.0.0.1:8090"
 ADMIN_EMAIL = "admin@alsakronline.com"
-ADMIN_PASS = "#Anas231#Bkar3110"
+ADMIN_PASSWORD = "#Anas231#Bkar3110"
 
 async def main():
-    print("Starting Inquiry Rules Update...")
+    print(f"Connecting to PocketBase at {PB_URL}...")
+    
     async with httpx.AsyncClient() as client:
-        # Auth
+        # 1. Authenticate as Admin
         try:
-            # Try v0.23+ path first (superusers)
-            auth_url = f"{PB_URL}/api/collections/_superusers/auth-with-password"
-            resp = await client.post(auth_url, json={
-                "identity": ADMIN_EMAIL, "password": ADMIN_PASS
+            resp = await client.post(f"{PB_URL}/api/admins/auth-with-password", json={
+                "identity": ADMIN_EMAIL,
+                "password": ADMIN_PASSWORD
             })
-            
-            # If 404, fall back to legacy admins
-            if resp.status_code == 404:
-                auth_url = f"{PB_URL}/api/admins/auth-with-password"
-                resp = await client.post(auth_url, json={
-                    "identity": ADMIN_EMAIL, "password": ADMIN_PASS
-                })
-
             if resp.status_code != 200:
-                print(f"Admin auth failed: {resp.text}")
+                print(f"❌ Authentication failed: {resp.text}")
                 return
+            
             token = resp.json()["token"]
-            print("Admin authenticated.")
+            headers = {"Authorization": token}
+            print("✅ Admin authenticated successfully.")
         except Exception as e:
-            print(f"Connection error to {PB_URL}: {e}")
+            print(f"❌ Connection error: {e}")
             return
 
-        headers = {"Authorization": token}
-        
-        # Get existing collection
-        try:
-            resp = await client.get(f"{PB_URL}/api/collections/inquiries", headers=headers)
-            if resp.status_code != 200:
-                print(f"Error fetching collection: {resp.text}")
-                return
-            
-            collection = resp.json()
-            print(f"Current rules: {collection.get('listRule')}, {collection.get('createRule')}")
-            
-            # Update rules to null (public)
-            data = {
-                "listRule": None,
-                "viewRule": None,
-                "createRule": None,
-                "updateRule": None,
-                "deleteRule": None
-            }
-            
-            resp = await client.patch(f"{PB_URL}/api/collections/inquiries", json=data, headers=headers)
-            if resp.status_code == 200:
-                print("Successfully updated inquiry rules to PUBLIC (null).")
-            else:
-                print(f"Failed to update rules: {resp.text}")
-                
-        except Exception as e:
-            print(f"Error updating collection: {e}")
+        # 2. Update Collection Rules
+        # Define rules for public access (null means public in PocketBase)
+        # We set them to null (None) to allow unrestricted access for now.
+        public_rules = {
+            "listRule": None,
+            "viewRule": None,
+            "createRule": None,
+            "updateRule": None,
+            "deleteRule": None,
+        }
+
+        collections_to_update = ["inquiries", "quotations", "messages"]
+
+        for collection_name in collections_to_update:
+            print(f"Updating rules for '{collection_name}'...")
+            try:
+                # Update rules to null (public)
+                resp = await client.patch(
+                    f"{PB_URL}/api/collections/{collection_name}", 
+                    json=public_rules, 
+                    headers=headers
+                )
+                if resp.status_code == 200:
+                    print(f"✅ Successfully updated rules for '{collection_name}' to PUBLIC (null).")
+                else:
+                    print(f"❌ Failed to update rules for '{collection_name}': {resp.text}")
+                    
+            except Exception as e:
+                print(f"❌ Error updating collection '{collection_name}': {e}")
 
 if __name__ == "__main__":
     asyncio.run(main())
