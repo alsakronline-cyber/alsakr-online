@@ -48,19 +48,23 @@ async def main():
         try:
             # Try Superuser auth (PB v0.23+)
             url = f"{PB_URL}/api/collections/_superusers/auth-with-password"
+            print(f"Attempting Superuser auth at {url}...")
             resp = await client.post(url, json={
                 "identity": ADMIN_EMAIL, "password": ADMIN_PASS
             })
+            print(f"Superuser auth status: {resp.status_code}")
             
             # Fallback to legacy Admin auth
             if resp.status_code == 404:
                 url = f"{PB_URL}/api/admins/auth-with-password"
+                print(f"Falling back to legacy Admin auth at {url}...")
                 resp = await client.post(url, json={
                     "identity": ADMIN_EMAIL, "password": ADMIN_PASS
                 })
+                print(f"Legacy auth status: {resp.status_code}")
 
             if resp.status_code != 200:
-                print(f"Admin auth failed: {resp.text}")
+                print(f"Admin auth failed ({resp.status_code}): {resp.text}")
                 return
             token = resp.json()["token"]
             print("Admin authenticated.")
