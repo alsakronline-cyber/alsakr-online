@@ -39,6 +39,10 @@ class VoiceService:
             print(f"Transcription error: {e}")
             return ""
         finally:
+            # Cleanup
+            if os.path.exists(temp_filename):
+                os.remove(temp_filename)
+
     async def generate_audio(self, text: str, language: str = "en") -> str:
         """
         Generates audio from text using Edge TTS.
