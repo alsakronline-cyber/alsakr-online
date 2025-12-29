@@ -36,7 +36,13 @@ export default function VendorMarketplace() {
     );
 }
 
-function MarketplaceItem({ title, location, deadline }) {
+interface MarketplaceItemProps {
+    title: string;
+    location: string;
+    deadline: string;
+}
+
+function MarketplaceItem({ title, location, deadline }: MarketplaceItemProps) {
     return (
         <div className="bg-neutral-900 p-4 rounded-lg border border-neutral-800 flex justify-between items-center">
             <div>
