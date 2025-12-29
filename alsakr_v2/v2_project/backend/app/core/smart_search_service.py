@@ -78,13 +78,17 @@ class SmartSearchService:
             name = result.get('name', '').lower()
             specifications = result.get('specifications', {})
             
-            # 1. Exact Part Number Match
-            if query_lower == part_number or query_lower.replace('-', '') == part_number.replace('-', ''):
+            
+            # 1. Exact Part Number or Name Match (highest priority)
+            if (query_lower == part_number or 
+                query_lower.replace('-', '') == part_number.replace('-', '') or
+                query_lower == name or
+                query_lower.replace('-', '') == name.replace('-', '')):
                 result['combined_score'] = 0.99
                 continue
 
-            # 2. Part Number partial match
-            if query_lower in part_number:
+            # 2. Partial match in part_number or name
+            if query_lower in part_number or query_lower in name:
                 boost += 0.15
 
             # 3. Name & Category Boost
