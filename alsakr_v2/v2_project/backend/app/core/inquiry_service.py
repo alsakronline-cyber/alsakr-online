@@ -56,3 +56,20 @@ class InquiryService:
             except Exception as e:
                 print(f"Error fetching inquiries: {e}")
                 return []
+
+    async def get_buyer_inquiries(self, buyer_id: str) -> List[Dict]:
+        """Fetches inquiries for a specific buyer."""
+        async with httpx.AsyncClient() as client:
+            try:
+                # Filter by buyer_id
+                filter_query = f"buyer_id='{buyer_id}'"
+                response = await client.get(
+                    f"{self.pb_url}/api/collections/{self.collection}/records?filter={filter_query}&sort=-created",
+                    timeout=5.0
+                )
+                response.raise_for_status()
+                data = response.json()
+                return data.get("items", [])
+            except Exception as e:
+                print(f"Error fetching buyer inquiries: {e}")
+                return []

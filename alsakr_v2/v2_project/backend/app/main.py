@@ -129,6 +129,11 @@ async def get_inquiries():
     """Get all inquiries for vendor dashboard"""
     return await inquiry_service.get_vendor_inquiries()
 
+@app.get("/api/inquiries/buyer/{buyer_id}")
+async def get_buyer_inquiries_endpoint(buyer_id: str):
+    """Get inquiries for a specific buyer"""
+    return await inquiry_service.get_buyer_inquiries(buyer_id)
+
 # ============= QUOTE ENDPOINTS =============
 
 @app.post("/api/quotes")
