@@ -44,9 +44,21 @@ async def main():
     async with httpx.AsyncClient() as client:
         # Auth
         try:
-            resp = await client.post(f"{PB_URL}/api/admins/auth-with-password", json={
+            # Try v0.23+ path first (superusers)
+            auth_url = f"{PB_URL}/api/collections/_superusers/auth-with-password"
+            print(f"Attempting auth via {auth_url}...")
+            resp = await client.post(auth_url, json={
                 "identity": ADMIN_EMAIL, "password": ADMIN_PASS
             })
+            
+            # If 404, fall back to legacy admins
+            if resp.status_code == 404:
+                auth_url = f"{PB_URL}/api/admins/auth-with-password"
+                print(f"v0.23+ path failed (404), trying legacy {auth_url}...")
+                resp = await client.post(auth_url, json={
+                    "identity": ADMIN_EMAIL, "password": ADMIN_PASS
+                })
+
             if resp.status_code != 200:
                 print(f"Admin auth failed: {resp.text}")
                 return
