@@ -9,7 +9,7 @@ export const metadata = {
 };
 
 import { AuthProvider } from './providers';
-import { ThemeProvider } from '@/components/theme-provider';
+import { ThemeProvider } from '../components/theme-provider';
 
 export default function RootLayout({
     children,

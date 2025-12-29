@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { LayoutDashboard, MessageSquare, ShoppingBag, LogOut, Package } from 'lucide-react';
-import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { ThemeToggle } from '../../components/ui/theme-toggle';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
