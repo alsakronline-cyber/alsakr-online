@@ -9,6 +9,7 @@ export const metadata = {
 };
 
 import { AuthProvider } from './providers';
+import { ThemeProvider } from '@/components/theme-provider';
 
 export default function RootLayout({
     children,
@@ -17,10 +18,12 @@ export default function RootLayout({
 }) {
     return (
         <html lang="en">
-            <body className={`${inter.className} bg-slate-950 text-slate-200 antialiased`}>
-                <AuthProvider>
-                    {children}
-                </AuthProvider>
+            <body className={`${inter.className} bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-200 antialiased`}>
+                <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+                    <AuthProvider>
+                        {children}
+                    </AuthProvider>
+                </ThemeProvider>
             </body>
         </html>
     );
