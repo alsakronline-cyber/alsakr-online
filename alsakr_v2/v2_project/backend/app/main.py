@@ -8,6 +8,10 @@ from .core.search_service import SearchService
 from .core.smart_search_service import SmartSearchService
 from .core.voice_service import VoiceService
 from .core.inquiry_service import InquiryService, InquiryCreate
+from .core.quote_service import QuoteService, QuoteCreate
+from .core.chat_service import ChatService, MessageCreate
+from fastapi import FastAPI, HTTPException, Body
+
 from .agents.vision_agent import VisualMatchAgent
 
 app = FastAPI(
@@ -31,6 +35,9 @@ search_service = SearchService()
 smart_search_service = SmartSearchService()
 voice_service = VoiceService()
 inquiry_service = InquiryService()
+quote_service = QuoteService()
+chat_service = ChatService()
+
 
 
 # Pydantic models
@@ -121,6 +128,36 @@ async def create_inquiry(inquiry: InquiryCreate):
 async def get_inquiries():
     """Get all inquiries for vendor dashboard"""
     return await inquiry_service.get_vendor_inquiries()
+
+# ============= QUOTE ENDPOINTS =============
+
+@app.post("/api/quotes")
+async def create_quote(quote: QuoteCreate):
+    """Submit a new vendor quotation"""
+    return await quote_service.create_quote(quote)
+
+@app.get("/api/quotes/inquiry/{inquiry_id}")
+async def get_quotes(inquiry_id: str):
+    """Get all quotes for a specific inquiry"""
+    return await quote_service.get_quotes_for_inquiry(inquiry_id)
+
+@app.patch("/api/quotes/{quote_id}/status")
+async def update_quote_status(quote_id: str, status: str = Body(..., embed=True)):
+    """Update quote status (accepted/rejected)"""
+    return await quote_service.update_quote_status(quote_id, status)
+
+# ============= CHAT ENDPOINTS =============
+
+@app.post("/api/chat/message")
+async def send_chat_message(message: MessageCreate):
+    """Send a message in the buyer-vendor chat"""
+    return await chat_service.send_message(message)
+
+@app.get("/api/chat/history/{inquiry_id}")
+async def get_chat_history(inquiry_id: str):
+    """Get chat history for an inquiry"""
+    return await chat_service.get_messages(inquiry_id)
+
 
 
 # ============= SEARCH ENDPOINTS =============
