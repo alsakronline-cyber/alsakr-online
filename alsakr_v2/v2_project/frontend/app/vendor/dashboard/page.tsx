@@ -104,9 +104,9 @@ export default function VendorDashboard() {
                                                 <td className="px-6 py-4 font-mono text-xs text-slate-500">#{inquiry.id.substring(0, 8)}</td>
                                                 <td className="px-6 py-4 font-medium text-slate-700">{inquiry.buyer_id}</td>
                                                 <td className="px-6 py-4 text-slate-600">
-                                                    {inquiry.products.map(p => (
-                                                        <div key={p.part_number} className="text-xs">{p.name} <span className="text-slate-400">({p.part_number})</span></div>
-                                                    ))}
+                                                    {Array.isArray(inquiry.products) ? inquiry.products.map(p => (
+                                                        <div key={p.part_number || Math.random()} className="text-xs">{p.name} <span className="text-slate-400">({p.part_number})</span></div>
+                                                    )) : <div className="text-xs text-red-400">Invalid product data</div>}
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold capitalize
