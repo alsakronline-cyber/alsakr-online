@@ -19,6 +19,8 @@ export interface Quote {
     total_price: number;
     currency: string;
     status: 'pending' | 'accepted' | 'rejected' | 'expired';
+    valid_until?: string;
+    notes?: string;
     created: string;
 }
 
