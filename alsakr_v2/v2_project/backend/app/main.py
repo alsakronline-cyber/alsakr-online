@@ -1,6 +1,6 @@
 from fastapi import FastAPI, UploadFile, File, Form, Depends, Query, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from typing import Optional, List, Dict
+from typing import List, Dict, Any, Optional
 from pydantic import BaseModel
 from .core.es_client import es_client
 from .agents.orchestrator import AgentManager
@@ -133,6 +133,14 @@ async def get_inquiries():
 async def get_buyer_inquiries_endpoint(buyer_id: str):
     """Get inquiries for a specific buyer"""
     return await inquiry_service.get_buyer_inquiries(buyer_id)
+
+@app.get("/api/inquiries/{inquiry_id}")
+async def get_inquiry_detail(inquiry_id: str):
+    """Get details of a specific inquiry"""
+    inquiry = await inquiry_service.get_inquiry(inquiry_id)
+    if not inquiry:
+        raise HTTPException(status_code=404, detail="Inquiry not found")
+    return inquiry
 
 # ============= QUOTE ENDPOINTS =============
 

@@ -73,3 +73,17 @@ class InquiryService:
             except Exception as e:
                 print(f"Error fetching buyer inquiries: {e}")
                 return []
+
+    async def get_inquiry(self, inquiry_id: str) -> Optional[Dict]:
+        """Fetches a single inquiry by ID."""
+        async with httpx.AsyncClient() as client:
+            try:
+                response = await client.get(
+                    f"{self.pb_url}/api/collections/{self.collection}/records/{inquiry_id}",
+                    timeout=5.0
+                )
+                response.raise_for_status()
+                return response.json()
+            except Exception as e:
+                print(f"Error fetching inquiry {inquiry_id}: {e}")
+                return None
