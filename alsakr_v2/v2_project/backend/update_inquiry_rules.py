@@ -10,9 +10,10 @@ async def main():
     print(f"Connecting to PocketBase at {PB_URL}...")
     
     async with httpx.AsyncClient() as client:
-        # 1. Authenticate as Admin
+        # 1. Authenticate as Superuser (Admin)
         try:
-            resp = await client.post(f"{PB_URL}/api/admins/auth-with-password", json={
+            # PocketBase v0.23+ uses _superusers collection
+            resp = await client.post(f"{PB_URL}/api/collections/_superusers/auth-with-password", json={
                 "identity": ADMIN_EMAIL,
                 "password": ADMIN_PASSWORD
             })
