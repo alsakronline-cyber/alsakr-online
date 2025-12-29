@@ -89,6 +89,11 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: alsakr-frontend
+    environment:
+      - NEXTAUTH_URL=https://app.alsakronline.com
+      - NEXTAUTH_SECRET=pYn8X8vA4j2M5K9S7wG3R1L6Q0T2B5V4 # Secure generated secret
+      - PB_INTERNAL_URL=http://pocketbase:8090
+      - NEXT_PUBLIC_PB_URL=https://app.alsakronline.com/pb # For client-side if needed
     ports:
       - "3000:3000"
     deploy:
