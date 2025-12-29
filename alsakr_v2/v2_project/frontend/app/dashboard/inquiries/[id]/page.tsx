@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useParams } from 'next/navigation';
 import { InquiryService, Inquiry, Quote, Message } from '../../../services/InquiryService';
-import { Send, Clock, CheckCircle, XCircle, AlertCircle, ShoppingCart } from 'lucide-react';
+import { Send, Clock, CheckCircle, XCircle, AlertCircle, ShoppingCart, MessageSquare } from 'lucide-react';
 import Link from 'next/link';
 
 export default function InquiryDetailPage() {
@@ -135,8 +135,8 @@ export default function InquiryDetailPage() {
                                         <div className="flex items-center gap-2 mb-1">
                                             <span className="font-bold text-lg text-slate-900">{quote.currency} {quote.total_price.toLocaleString()}</span>
                                             <span className={`text-xs px-2 py-0.5 rounded-full border ${quote.status === 'accepted' ? 'bg-green-100 text-green-700 border-green-200' :
-                                                    quote.status === 'rejected' ? 'bg-red-50 text-red-600 border-red-100' :
-                                                        'bg-slate-100 text-slate-500'
+                                                quote.status === 'rejected' ? 'bg-red-50 text-red-600 border-red-100' :
+                                                    'bg-slate-100 text-slate-500'
                                                 }`}>
                                                 {quote.status.toUpperCase()}
                                             </span>
