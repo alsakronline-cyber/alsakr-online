@@ -28,7 +28,7 @@ docker stop alsakr-pb
 echo "Copying data from container..."
 # Copy from container to temp dir
 TEMP_DIR="$BACKUP_DIR/temp_pb_data_$TIMESTAMP"
-docker cp alsakr-pb:/pb/pb_data "$TEMP_DIR"
+docker cp alsakr-pb:/pb_data "$TEMP_DIR"
 
 echo "Restarting PocketBase container..."
 docker start alsakr-pb
