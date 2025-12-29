@@ -17,11 +17,25 @@ class Orchestrator:
         try:
             # Clean up the response to ensure valid JSON
             content = response.content.strip()
-            if content.startswith("```json"):
-                content = content.replace("```json", "").replace("```", "")
+            print(f"DEBUG: Raw LLM Output: [{content}]")
+            
+            # More robust JSON extraction
+            if "```json" in content:
+                content = content.split("```json")[1].split("```")[0].strip()
+            elif "```" in content:
+                content = content.split("```")[1].split("```")[0].strip()
+            
+            # Final attempt to find JSON if there's outside text
+            if not (content.startswith("{") and content.endswith("}")):
+                start = content.find("{")
+                end = content.rfind("}") + 1
+                if start != -1 and end != 0:
+                    content = content[start:end]
+
             return json.loads(content)
-        except Exception:
+        except Exception as e:
             # Fallback for parsing errors
+            print(f"Orchestrator Error: {e} | Content: {content}")
             return {"action": "chat", "response": "Sorry, I encountered an error processing your request.", "language": "en"}
 
     def __init__(self):
