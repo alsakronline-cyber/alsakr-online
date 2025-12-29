@@ -10,6 +10,7 @@ from .core.voice_service import VoiceService
 from .core.inquiry_service import InquiryService, InquiryCreate
 from .core.quote_service import QuoteService, QuoteCreate
 from .core.chat_service import ChatService, MessageCreate
+from .core.profile_service import profile_service, VendorProfileCreate
 
 
 from .agents.vision_agent import VisualMatchAgent
@@ -166,6 +167,21 @@ async def send_chat_message(message: MessageCreate):
 async def get_chat_history(inquiry_id: str):
     """Get chat history for an inquiry"""
     return await chat_service.get_messages(inquiry_id)
+
+# ============= PROFILE ENDPOINTS =============
+
+@app.post("/api/profiles/vendor")
+async def update_vendor_profile(profile: VendorProfileCreate):
+    """Create or update vendor business profile"""
+    return await profile_service.create_or_update_profile(profile)
+
+@app.get("/api/profiles/vendor/{user_id}")
+async def get_vendor_profile(user_id: str):
+    """Get vendor profile details"""
+    profile = await profile_service.get_profile(user_id)
+    if not profile:
+        raise HTTPException(status_code=404, detail="Profile not found")
+    return profile
 
 
 
