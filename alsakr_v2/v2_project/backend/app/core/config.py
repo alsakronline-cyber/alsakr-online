@@ -36,13 +36,13 @@ class Settings(BaseSettings):
     # PocketBase Settings
     PB_URL: str = os.getenv("PB_URL", "http://localhost:8090")
     ADMIN_EMAIL: str = os.getenv("ADMIN_EMAIL", "admin@alsakronline.com")
-    ADMIN_PASSWORD: str = os.getenv("ADMIN_PASSWORD", "#Anas231#Bkar3110")
+    ADMIN_PASSWORD: str = os.getenv("ADMIN_PASSWORD", "password123")
     
     # SMTP Settings (Hostinger)
     SMTP_HOST: str = os.getenv("SMTP_HOST", "smtp.hostinger.com")
     SMTP_PORT: int = int(os.getenv("SMTP_PORT", "465"))
     SMTP_USER: str = os.getenv("SMTP_USER", "admin@alsakronline.com")
-    SMTP_PASSWORD: str = os.getenv("SMTP_PASSWORD", "#Anas231#Bkar3110")
+    SMTP_PASSWORD: str = os.getenv("SMTP_PASSWORD", "password123")
     EMAILS_FROM_EMAIL: str = os.getenv("EMAILS_FROM_EMAIL", "admin@alsakronline.com")
     EMAILS_FROM_NAME: str = os.getenv("EMAILS_FROM_NAME", "Alsakr Online")
     
