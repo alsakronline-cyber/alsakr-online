@@ -2,8 +2,9 @@ from typing import List, Dict, Optional, Any
 import httpx
 from pydantic import BaseModel
 import os
-
+import asyncio
 from app.core.pb_client import pb_client
+from app.core.email_service import email_service
 
 # Pydantic schema for creating an inquiry
 class InquiryCreate(BaseModel):
@@ -38,7 +39,12 @@ class InquiryService:
                     timeout=5.0
                 )
                 response.raise_for_status()
-                return response.json()
+                data = response.json()
+                
+                # Send Notification (Fire & Forget)
+                asyncio.create_task(email_service.send_inquiry_notification(data))
+                
+                return data
             except Exception as e:
                 print(f"Error creating inquiry: {e}")
                 raise e
