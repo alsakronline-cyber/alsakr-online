@@ -12,7 +12,7 @@ services:
       resources:
         limits:
           cpus: '2.00'
-          memory: 6G  # Strict Limit
+          memory: 6G # Strict Limit
     networks:
       - industry-net
 
@@ -23,7 +23,7 @@ services:
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false
-      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"  # HEAP LIMIT 1GB (Critical for VPS)
+      - "ES_JAVA_OPTS=-Xms1g -Xmx1g" # HEAP LIMIT 1GB (Critical for VPS)
     volumes:
       - es_data:/usr/share/elasticsearch/data
     deploy:
@@ -85,8 +85,8 @@ services:
 
   # 6. The Command Center (Frontend)
   frontend:
-    build: 
-      context: ../frontend
+    build:
+      context: ./frontend
       dockerfile: Dockerfile
     container_name: alsakr-frontend
     ports:
@@ -100,8 +100,8 @@ services:
 
   # 7. The Agent Swarm (Backend)
   backend:
-    build: 
-      context: ../backend
+    build:
+      context: ./backend
       dockerfile: Dockerfile
     container_name: alsakr-backend
     environment:
@@ -120,7 +120,7 @@ services:
         limits:
           memory: 2G
     volumes:
-      - ../backend:/app
+      - ./backend:/app
     networks:
       - industry-net
 
@@ -130,6 +130,7 @@ volumes:
   qdrant_data:
   pb_data:
   n8n_data:
+
 
 networks:
   industry-net:
