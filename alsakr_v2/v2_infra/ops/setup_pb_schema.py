@@ -6,7 +6,7 @@ import sys
 # Internal URL inside docker network
 PB_URL = "http://pocketbase:8090"
 ADMIN_EMAIL = "admin@alsakronline.com"
-ADMIN_PASS = "#Anas231#Bkar3110"
+ADMIN_PASS = "password123"
 
 async def create_collection(client, token, name, schema):
     print(f"Checking collection {name}...")
