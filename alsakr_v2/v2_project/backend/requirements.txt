@@ -18,6 +18,7 @@ pocketbase>=0.1.0  # Or generic python client if specific one unavailable
 
 # Utilities
 httpx>=0.26.0
+edge-tts>=6.1.9
 faster-whisper>=0.10.0
 pydantic>=2.5.0
 pydantic-settings>=2.1.0

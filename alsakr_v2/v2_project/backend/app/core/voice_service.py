@@ -1,5 +1,7 @@
 import os
 import shutil
+import asyncio
+import edge_tts
 from typing import Optional
 from faster_whisper import WhisperModel
 from fastapi import UploadFile
@@ -37,6 +39,17 @@ class VoiceService:
             print(f"Transcription error: {e}")
             return ""
         finally:
-            # Cleanup
-            if os.path.exists(temp_filename):
-                os.remove(temp_filename)
+    async def generate_audio(self, text: str, language: str = "en") -> str:
+        """
+        Generates audio from text using Edge TTS.
+        Returns the path to the generated file.
+        """
+        voice = "en-US-AriaNeural"
+        if any("\u0600" <= c <= "\u06FF" for c in text): # Simple Arabic detection
+            voice = "ar-SA-ZariyahNeural"
+            
+        output_file = f"temp_speech_{os.urandom(4).hex()}.mp3"
+        communicate = edge_tts.Communicate(text, voice)
+        await communicate.save(output_file)
+        
+        return output_file

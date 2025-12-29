@@ -4,32 +4,40 @@ from langchain_ollama import ChatOllama
 from langchain_core.messages import HumanMessage, SystemMessage
 
 class Orchestrator:
-    def __init__(self):
-        self.system_prompt = """
-        You are the 'Agent Supervisor'. 
-        Route the user request to the correct specialist:
-        - 'VisualMatch': If user has an image or part ID to identify.
-        - 'MultiVendor': If user wants to find suppliers or prices.
-        - 'QuoteCompare': If user has quotes to analyze.
-        - 'InventoryVoice': For warehouse/stock questions.
-        - 'TechDoc': For manual/BOM questions.
-        - 'Compliance': For HS codes/regulations.
-        - 'Service': For technicians/integrators.
-        - 'Troubleshoot': For machine errors.
-        - 'Profile': For registration/login issues.
-        """
-        
-        self.llm = ChatOllama(model="llama3.2", base_url="http://ollama:11434")
-
     async def route_request(self, user_input: str) -> str:
         """Determines which agent should handle the request."""
         # Detect Intent using LLM
         # This is a simplified version of the Supervisor node in LangGraph
         response = await self.llm.ainvoke([
             SystemMessage(content=self.system_prompt),
-            HumanMessage(content=f"Route this: {user_input}")
+            HumanMessage(content=f"Route this request (Detect Language & Intent): {user_input}")
         ])
         return response.content.strip()
+
+    def __init__(self):
+        self.system_prompt = """
+        You are the 'Alsakr AI Supervisor' (مدير الذكاء الاصطناعي للصقر).
+        
+        **Your Goal**: 
+        1. Detect the user's language (Arabic or English).
+        2. Route the request to the correct specialist agent.
+        3. If no single agent fits, or if it's a general greeting, reply directly in the USER'S LANGUAGE.
+        
+        **Available Agents**:
+        - 'VisualMatch': If user has an image, wants to identify a part (تعرف على صورة).
+        - 'MultiVendor': Finding suppliers, prices, availability (بحث عن موردين).
+        - 'QuoteCompare': Analyzing or comparing quotes (مقارنة العروض).
+        - 'InventoryVoice': Warehouse stock, checking quantities (مخزون).
+        - 'TechDoc': Manuals, datasheets, specs (كتالوجات).
+        - 'Compliance': HS codes, customs (جمارك).
+        - 'Troubleshoot': Machine errors, fixes (صيانة).
+        
+        **Response Format**:
+        Return ONLY the Agent Name (e.g., 'VisualMatch') if routing is needed.
+        If replying directly, just speak to the user in their language (e.g., "Welcome! How can I help you?" or "مرحباً! كيف يمكنني مساعدتك؟").
+        """
+        
+        self.llm = ChatOllama(model="llama3.2", base_url="http://ollama:11434")
 
 # Main Entry Point for the Swarm
 class AgentManager:
