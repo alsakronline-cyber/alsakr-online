@@ -171,6 +171,8 @@ services:
       - ES_HOST=elasticsearch
       - OLLAMA_HOST=http://ollama:11434
       - PB_URL=http://pocketbase:8090
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@alsakronline.com}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-password123}
       - QDRANT_HOST=qdrant
       - REDIS_HOST=redis
       - PYTHONUNBUFFERED=1

@@ -4,9 +4,9 @@ import os
 import sys
 
 # Internal URL inside docker network
-PB_URL = "http://pocketbase:8090"
-ADMIN_EMAIL = "admin@alsakronline.com"
-ADMIN_PASS = "password123"
+PB_URL = os.getenv("PB_URL", "http://pocketbase:8090")
+ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "admin@alsakronline.com")
+ADMIN_PASS = os.getenv("ADMIN_PASSWORD", "password123")
 
 async def create_collection(client, token, name, schema, rules=None):
     print(f"Syncing collection {name}...")
