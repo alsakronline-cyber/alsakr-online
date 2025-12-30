@@ -57,9 +57,13 @@ class VisualMatchAgent(BaseAgent):
             
             # Enhancer: Cross-reference with ES if brand/part detected
             matches = []
-            if "part_number" in vision_data:
-                # Search ES
-                pass # (Existing ES logic here)
+            if vision_data.get("part_number"):
+                from ..core.search_service import SearchService
+                ss = SearchService()
+                matches = ss.text_search(vision_data["part_number"], size=3)
+                
+                if not matches and vision_data.get("description"):
+                    matches = ss.semantic_search(vision_data["description"], limit=3)
 
             return {
                 "identification": vision_data,
