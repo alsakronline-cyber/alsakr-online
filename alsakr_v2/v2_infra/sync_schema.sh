@@ -4,7 +4,7 @@
 echo "🔄 Syncing PocketBase Schema..."
 
 # Run the setup script inside the backend container
-docker exec -it alsakr-backend python3 -m app.core.setup_pb_schema_vps
+docker exec alsakr-backend python3 -m app.core.setup_pb_schema_vps
 
 if [ $? -eq 0 ]; then
     echo "✅ Schema sync complete!"
