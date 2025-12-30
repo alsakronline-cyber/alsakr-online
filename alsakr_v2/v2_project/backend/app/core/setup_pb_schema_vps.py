@@ -54,11 +54,23 @@ async def main():
         # Auth
         try:
             url = f"{PB_URL}/api/collections/_superusers/auth-with-password"
+            print(f"Attempting auth at: {url}")
+            print(f"Using Identity: {ADMIN_EMAIL[:3]}...{ADMIN_EMAIL[-3:]}")
+            print(f"Using Pass Length: {len(ADMIN_PASS)}")
+            
             resp = await client.post(url, json={
                 "identity": ADMIN_EMAIL, "password": ADMIN_PASS
             })
             
+            # If 400, try with 'email' field just in case
+            if resp.status_code == 400:
+                print("400 Error. Retrying with 'email' field...")
+                resp = await client.post(url, json={
+                    "email": ADMIN_EMAIL, "password": ADMIN_PASS
+                })
+
             if resp.status_code == 404:
+                print("404 Error. Retrying legacy admins endpoint...")
                 url = f"{PB_URL}/api/admins/auth-with-password"
                 resp = await client.post(url, json={
                     "identity": ADMIN_EMAIL, "password": ADMIN_PASS
