@@ -214,6 +214,7 @@ export default function CommandCenter() {
   const [alternatives, setAlternatives] = useState<Product[]>([]);
   const [clarification, setClarification] = useState<string | null>(null);
   const [history, setHistory] = useState<string[]>([]);
+  const normalizeUrl = (url: string) => url.endsWith('/') ? url.slice(0, -1) : url;
 
   // Modal State
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -272,7 +273,7 @@ export default function CommandCenter() {
     addLog("ORCHESTRATOR: Analyzing intent with LLM (Context Aware)...");
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const apiUrl = normalizeUrl(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
 
       addLog("NETWORK: Sending request to /api/search/smart...");
 
@@ -345,7 +346,7 @@ export default function CommandCenter() {
           formData.append('file', blob, 'recording.webm');
 
           try {
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+            const apiUrl = normalizeUrl(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
             const response = await fetch(`${apiUrl}/api/voice/transcribe`, {
               method: 'POST',
               body: formData
@@ -381,7 +382,7 @@ export default function CommandCenter() {
   const handleInquiry = async (product: Product) => {
     addLog(`INQUIRY: Initiating quote request for ${product.part_number}...`);
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const apiUrl = normalizeUrl(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
       await fetch(`${apiUrl}/api/inquiries`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -408,7 +409,7 @@ export default function CommandCenter() {
     formData.append('file', file);
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const apiUrl = normalizeUrl(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
       const response = await fetch(`${apiUrl}/api/vision/identify`, {
         method: 'POST',
         body: formData

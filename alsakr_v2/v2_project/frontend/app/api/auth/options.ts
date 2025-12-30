@@ -42,9 +42,11 @@ export const authOptions: NextAuthOptions = {
                         data: error.data
                     });
 
-                    // Pass through the verification error message
-                    if (error.message && (error.message.includes("verify your email") || error.status === 400)) {
-                        throw new Error(error.data?.message || error.message);
+                    if (error.message && (error.message.includes("verify your email") ||
+                        error.message.includes("identities") ||
+                        error.status === 400)) {
+                        const message = error.data?.message || error.message;
+                        throw new Error(message);
                     }
 
                     throw new Error("Invalid email or password");

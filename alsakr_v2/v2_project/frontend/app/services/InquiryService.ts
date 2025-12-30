@@ -1,6 +1,7 @@
 import { getSession } from "next-auth/react";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://app.alsakronline.com";
+const normalizeUrl = (url: string) => url.endsWith('/') ? url.slice(0, -1) : url;
+const API_URL = normalizeUrl(process.env.NEXT_PUBLIC_API_URL || "https://app.alsakronline.com");
 
 export interface Inquiry {
     id: string;
