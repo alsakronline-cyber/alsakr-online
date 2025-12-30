@@ -30,10 +30,13 @@ class QuoteService:
                     "items": quote.items,
                     "total_price": quote.total_price,
                     "currency": quote.currency,
-                    "valid_until": quote.valid_until,
-                    "notes": quote.notes,
                     "status": "pending"
                 }
+                
+                if quote.valid_until:
+                    payload["valid_until"] = quote.valid_until
+                if quote.notes:
+                    payload["notes"] = quote.notes
 
                 # Create the quote
                 response = await client.post(
