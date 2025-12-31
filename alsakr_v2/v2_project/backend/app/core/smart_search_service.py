@@ -92,12 +92,12 @@ class SmartSearchService:
         # Re-sort after re-scoring
         return sorted(results, key=lambda x: x.get('combined_score', 0), reverse=True)
 
-    def smart_search(self, query: str, context: List[Dict] = None) -> Dict:
+    async def smart_search(self, query: str, context: List[Dict] = None) -> Dict:
         """
-        Orchestrate the smart search flow.
+        Orchestrate the smart search flow (Async).
         """
         # 1. Analyze Query with Context
-        analysis = self.analyze_query(query)
+        analysis = await self.analyze_query(query)
         
         if analysis.get('is_ambiguous') and not context: # Only ask if no context (follow-up usually clarifies)
             return {
@@ -113,7 +113,7 @@ class SmartSearchService:
             if len(query.split()) < 3 and last_msg:
                  search_query = f"{last_msg} {query}"
 
-        raw_results = self.search_service.hybrid_search(search_query, size=30)
+        raw_results = await self.search_service.hybrid_search(search_query, size=30)
         
         # 3. Contextual Re-scoring (Boost based on specific technical keywords)
         ranked_results = self.re_score_results(query, raw_results)
