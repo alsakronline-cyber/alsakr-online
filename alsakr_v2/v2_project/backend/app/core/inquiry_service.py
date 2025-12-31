@@ -59,7 +59,17 @@ class InquiryService:
                 )
                 response.raise_for_status()
                 data = response.json()
-                return data.get("items", [])
+                items = data.get("items", [])
+                
+                # Mask Buyer Details for Privacy
+                for item in items:
+                    email = item.get("buyer_id", "")
+                    if "@" in email:
+                        local, domain = email.split("@")
+                        masked_email = local[0] + "***" + local[-1] + "@" + domain
+                        item["buyer_id"] = masked_email
+                
+                return items
             except Exception as e:
                 print(f"Error fetching inquiries: {e}")
                 return []

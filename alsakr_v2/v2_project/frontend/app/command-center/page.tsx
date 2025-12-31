@@ -2,6 +2,12 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+
+// Helper for API URLs
+const normalizeUrl = (url: string) => {
+  if (!url) return '';
+  return url.endsWith('/') ? url.slice(0, -1) : url;
+};
 import {
   Camera, ShoppingCart, Scale, Shield, FileText, Mic,
   MapPin, Activity, Wrench, Users, Bell, Settings, HelpCircle,
@@ -38,12 +44,21 @@ interface Product {
 }
 
 // Minimal Product Modal
-const ProductDetailsModal = ({ product, onClose, onInquiry }: { product: Product, onClose: () => void, onInquiry: (p: Product) => void }) => {
-  const [activeImage, setActiveImage] = useState(product.image_url || product.image_urls?.[0] || null);
+const ProductDetailsModal = ({ product, onClose, onInquiry }: { product: Product, onClose: () => void, onInquiry: (p: Product, q: number) => void }) => {
+  const getImagePath = (path: string) => {
+    if (!path) return null;
+    if (path.startsWith('http')) return path;
+    const apiUrl = normalizeUrl(process.env.NEXT_PUBLIC_API_URL || '');
+    return `${apiUrl}/data/${path}`;
+  };
+
+  const initialImage = product.image_url || getImagePath(product.local_image_paths?.[0]) || product.image_urls?.[0] || null;
+  const [activeImage, setActiveImage] = useState(initialImage);
   const [inquirySent, setInquirySent] = useState(false);
+  const [quantity, setQuantity] = useState(1);
 
   const handleInquiry = () => {
-    onInquiry(product);
+    onInquiry(product, quantity);
     setInquirySent(true);
   };
 
@@ -130,6 +145,26 @@ const ProductDetailsModal = ({ product, onClose, onInquiry }: { product: Product
                   <p className="text-[10px] text-emerald-700/70 dark:text-emerald-400/60 font-medium">Verified by SupplierHub Agent</p>
                 </div>
 
+                {/* Quantity Selector */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+                  <span className="text-sm font-bold text-slate-600 dark:text-slate-300">Quantity</span>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      className="w-8 h-8 rounded-lg bg-white dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors"
+                    >
+                      -
+                    </button>
+                    <span className="text-lg font-bold font-mono w-8 text-center">{quantity}</span>
+                    <button
+                      onClick={() => setQuantity(quantity + 1)}
+                      className="w-8 h-8 rounded-lg bg-white dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+
                 <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-900/30">
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-xs font-bold text-blue-800 dark:text-blue-300">Confidence Analysis</span>
@@ -158,6 +193,24 @@ const ProductDetailsModal = ({ product, onClose, onInquiry }: { product: Product
                     </>
                   )}
                 </button>
+
+                {/* Agent Trigger Hint */}
+                <p className="text-[10px] text-center text-slate-400">
+                  Submitting this request will activate the <strong className="text-blue-500">MultiVendor Agent</strong> to find best prices.
+                </p>
+
+                {/* Datasheet Link */}
+                {product.pdf_url && (
+                  <a
+                    href={`${normalizeUrl(process.env.NEXT_PUBLIC_API_URL || '')}/data/pdfs/${product.part_number}.pdf`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-2 w-full py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl text-slate-700 dark:text-slate-200 font-bold transition-all border border-slate-200 dark:border-slate-700 mt-3"
+                  >
+                    <FileText className="w-4 h-4 text-blue-500" />
+                    View Technical Datasheet
+                  </a>
+                )}
               </div>
             </div>
 
@@ -204,6 +257,7 @@ const ProductDetailsModal = ({ product, onClose, onInquiry }: { product: Product
 };
 
 export default function CommandCenter() {
+  const { data: session } = useSession();
   const router = useRouter();
   const [command, setCommand] = useState('');
   const [isSearching, setIsSearching] = useState(false);
@@ -253,6 +307,30 @@ export default function CommandCenter() {
   useEffect(() => {
     logEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [logs]);
+
+  const triggerAgent = async (input: string) => {
+    // Trigger backend Agent
+    try {
+      const apiUrl = normalizeUrl(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
+      const formData = new FormData();
+      formData.append('message', input);
+      formData.append('user_id', session?.user?.email || "anonymous");
+
+      addLog(`AGENT_ROUTER: Routing task to swarm...`);
+
+      const response = await fetch(`${apiUrl}/api/chat`, {
+        method: 'POST',
+        body: formData
+      });
+      const data = await response.json();
+
+      if (data.response) {
+        addLog(`AGENT: ${data.response}`);
+      }
+    } catch (e) {
+      addLog("ERROR: Agent communication failed.");
+    }
+  };
 
   const handleSearch = async (overrideCommand?: string) => {
     const finalCommand = overrideCommand || command;
@@ -377,22 +455,37 @@ export default function CommandCenter() {
     }
   };
 
-  const { data: session } = useSession();
+  // const { data: session } = useSession(); // REMOVED from here, moved to top
 
-  const handleInquiry = async (product: Product) => {
-    addLog(`INQUIRY: Initiating quote request for ${product.part_number}...`);
+  const handleInquiry = async (product: Product, quantity: number) => {
+    addLog(`INQUIRY: Initiating quote request for ${quantity}x ${product.part_number}...`);
+
+    // Close modal to see logs
+    setSelectedProduct(null);
+
     try {
       const apiUrl = normalizeUrl(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
-      await fetch(`${apiUrl}/api/inquiries`, {
+      const createRes = await fetch(`${apiUrl}/api/inquiries`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           buyer_id: session?.user?.email || "anonymous",
-          products: [product],
-          message: "Requesting official quote for this item."
+          products: [{ ...product, quantity }],
+          message: `Requesting official quote for ${quantity} units.`
         })
       });
-      addLog("INQUIRY: Request sent to vendors successfully.");
+
+      if (createRes.ok) {
+        const inquiryData = await createRes.json();
+        addLog(`INQUIRY: Created ID ${inquiryData.id || '#'}.`);
+        addLog("ACTION: Activating MultiVendor Agent for supplier discovery...");
+
+        // Trigger Agent
+        await triggerAgent(`Find suppliers for inquiry ${inquiryData.id} which contains ${quantity}x ${product.part_number}. Present options in a matrix.`);
+      } else {
+        addLog("ERROR: Inquiry creation failed.");
+      }
+
     } catch (e) {
       addLog("ERROR: Failed to send inquiry.");
     }
@@ -498,7 +591,7 @@ export default function CommandCenter() {
         <div className="flex flex-col gap-3">
           <button
             onClick={() => addLog("SYSTEM: Settings configuration is restricted to Admin.")}
-            className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+            className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-400 hover:bg-slate-100 dark:bg-slate-800 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
           >
             <Settings className="w-5 h-5" />
           </button>
@@ -749,7 +842,7 @@ export default function CommandCenter() {
               <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Neural Log</h2>
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-[10px] font-bold text-slate-400">LIVE</span>
+                <span className="text-xs font-bold text-slate-400">LIVE</span>
               </div>
             </div>
 

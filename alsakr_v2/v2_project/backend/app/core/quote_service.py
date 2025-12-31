@@ -9,11 +9,13 @@ from app.core.email_service import email_service
 class QuoteCreate(BaseModel):
     inquiry_id: str
     vendor_id: str
-    items: List[Dict[str, Any]]  # items with price, lead_time
-    total_price: float
+    price: float
+    items: Optional[List[Dict[str, Any]]] = None
+    total_price: Optional[float] = None
     currency: str = "USD"
     valid_until: Optional[str] = None
     notes: Optional[str] = None
+    lead_time: Optional[str] = None
 
 class QuoteService:
     def __init__(self):
@@ -24,19 +26,20 @@ class QuoteService:
         """Create a new quotation for an inquiry."""
         async with httpx.AsyncClient() as client:
             try:
+                # Support both flat price and items list
+                total_price = quote.total_price if quote.total_price is not None else quote.price
+                items = quote.items if quote.items else [{"price": quote.price, "lead_time": quote.lead_time}]
+
                 payload = {
                     "inquiry_id": quote.inquiry_id,
                     "vendor_id": quote.vendor_id,
-                    "items": quote.items,
-                    "total_price": quote.total_price,
+                    "items": items,
+                    "total_price": total_price,
                     "currency": quote.currency,
-                    "status": "pending"
+                    "status": "pending",
+                    "notes": quote.notes,
+                    "valid_until": quote.valid_until
                 }
-                
-                if quote.valid_until:
-                    payload["valid_until"] = quote.valid_until
-                if quote.notes:
-                    payload["notes"] = quote.notes
 
                 # Create the quote
                 response = await client.post(
@@ -80,15 +83,19 @@ class QuoteService:
                     f"{self.pb_url}/api/collections/{self.collection}/records?filter={filter_query}&sort=-created",
                     timeout=5.0
                 )
-                try:
-                    response.raise_for_status()
-                except Exception as e:
-                    print(f"Error Status: {response.status_code}")
-                    print(f"Error Body: {response.text}")
-                    raise e
-                    
+                response.raise_for_status()
                 data = response.json()
-                return data.get("items", [])
+                items = data.get("items", [])
+                
+                # Mask Vendor Details for Privacy
+                masked_items = []
+                for idx, item in enumerate(items):
+                    # Keep original ID for internal use, but hide vendor_id
+                    item["vendor_identity"] = f"Supplier {chr(65 + idx)}" # Supplier A, B, C...
+                    item["vendor_id"] = "PROTECTED"
+                    masked_items.append(item)
+                
+                return masked_items
             except Exception as e:
                 print(f"Error fetching quotes: {e}")
                 return []

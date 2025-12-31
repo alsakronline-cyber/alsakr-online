@@ -1,4 +1,5 @@
 import json
+import os
 from typing import Dict, Any, List
 from .base import BaseAgent, AgentState
 from ..core.es_client import es_client
@@ -9,85 +10,81 @@ class MultiVendorAgent(BaseAgent):
         system_prompt = """
         You are the 'MultiVendor Aggregator' for Al Sakr Online.
         Your goal is to find the best local suppliers for a part.
-        
-        PRIORITY LOGIC:
-        1. Always search the 'Internal Registered Vendors' first.
-        2. Filter strictly by Brand (e.g. 'SKF Only') if specified.
-        3. Filter by Origin (e.g. 'Germany', 'USA') if specified.
-        4. If < 3 internal results found, suggest 'Outsourcing' (External Web Search).
-        
-        OUTPUT FORMAT (JSON):
-        {
-            "found_internally": true/false,
-            "vendors": [
-                {"name": "...", "price_estimate": "...", "stock_status": "...", "whatsapp": "..."}
-            ],
-            "outsource_required": true/false,
-            "reasoning": "..."
-        }
         """
         super().__init__(name="MultiVendor", system_prompt=system_prompt)
 
-    async def find_suppliers(self, 
-                               part_id: str, 
-                               brand: str = None, 
-                               origin: str = None,
-                               strict_brand: bool = True) -> Dict[str, Any]:
-        """
-        Sourcing Workflow:
-        1. Query ES for Vendors selling this brand/part.
-        2. Apply filters.
-        3. Check stock status.
-        """
+    async def run(self, user_input: str, context: Dict = {}) -> str:
+        """Override run to intercept specific commands."""
         
-        # 1. Elasticsearch Filtered Search
-        search_query = {
-            "query": {
-                "bool": {
-                    "must": [
-                        {"match": {"brands": brand}} if brand else {"match_all": {}}
-                    ],
-                    "filter": []
-                }
-            }
-        }
+        # Intercept "Find suppliers" command
+        if "Find suppliers for inquiry" in user_input:
+            # Extract info (simple parsing)
+            try:
+                # Expected format: "Find suppliers for inquiry {id} which contains {qty}x {part_number}..."
+                # We will just focus on the part number for the search
+                import re
+                qty_match = re.search(r"(\d+)x", user_input)
+                part_match = re.search(r"x\s([A-Za-z0-9-]+)", user_input)
+                
+                qty = int(qty_match.group(1)) if qty_match else 1
+                part_number = part_match.group(1) if part_match else "UNKNOWN"
+                
+                return await self.find_suppliers_dummy(part_number, qty)
+            except Exception as e:
+                return f"Error processing supplier search: {e}"
         
-        # Add Origin Filter if exists
-        if origin:
-            search_query["query"]["bool"]["filter"].append({"term": {"origin": origin.lower()}})
+        # Default LLM behavior
+        return await super().run(user_input, context)
 
-        internal_vendors = []
+    async def find_suppliers_dummy(self, part_number: str, quantity: int) -> str:
+        """Simulate finding suppliers using dummy data."""
+        
+        # Load Dummy Data
         try:
-            resp = await es_client.client.search(
-                index="suppliers",
-                body=search_query
-            )
-            internal_vendors = [hit["_source"] for hit in resp["hits"]["hits"]]
+            data_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "dummy_data.json")
+            with open(data_path, "r") as f:
+                data = json.load(f)
         except Exception as e:
-            print(f"Vendor Search Error: {e}")
+            return "Error: Could not access supplier database (Dummy Data Missing)."
 
-        # 2. LLM Orchestration (Deciding if outsourcing is needed)
-        prompt = f"""
-        Part Request: {part_id}
-        Requested Brand: {brand} (Strict: {strict_brand})
-        Requested Origin: {origin}
+        vendors = data.get("vendors", [])
+        products = data.get("products", [])
         
-        Internal Results: {json.dumps(internal_vendors)}
-        
-        Decide if these vendors are sufficient or if we need to search outside.
-        """
-        
-        response_text = await self.run(prompt)
-        
-        try:
-            return json.loads(response_text)
-        except:
-            return {"raw_response": response_text, "internal_count": len(internal_vendors)}
+        # Find Product Price Reference
+        ref_product = next((p for p in products if p["part_number"] == part_number), None)
+        base_price = ref_product["price"] if ref_product else 100.00
+        product_name = ref_product["name"] if ref_product else part_number
 
-    async def trigger_rfq_workflow(self, vendor_id: str, items: List[Dict]):
-        """
-        This tool will be called to fire n8n webhooks.
-        """
-        # Placeholder for n8n/WhatsApp trigger
-        print(f"🚀 Triggering RFQ via n8n for Vendor {vendor_id}")
-        return {"status": "sent"}
+        # Simulate 3 Vendor Options
+        import random
+        selected_vendors = random.sample(vendors, min(3, len(vendors)))
+        
+        options = []
+        for v in selected_vendors:
+            # Simulate variance
+            price_variance = random.uniform(0.9, 1.2)
+            lead_time = random.choice(["2 Days", "5 Days", "10 Days", "In Stock"])
+            price = round(base_price * price_variance * quantity, 2)
+            
+            options.append({
+                "vendor": v["company_name"],
+                "rating": v["rating"],
+                "total_price": price,
+                "lead_time": lead_time,
+                "status": "Available" if lead_time == "In Stock" else "Backorder"
+            })
+
+        # Format as Markdown Matrix
+        response = f"**Supplier Matrix for {quantity}x {product_name} ({part_number})**\n\n"
+        response += "| Vendor | Rating | Total Price ($) | Lead Time | Status |\n"
+        response += "|---|---|---|---|---|\n"
+        
+        for opt in options:
+            status_icon = "🟢" if opt["status"] == "Available" else "Rx"
+            response += f"| {opt['vendor']} | ⭐ {opt['rating']} | ${opt['total_price']} | {opt['lead_time']} | {status_icon} {opt['status']} |\n"
+            
+        response += "\n\n**AI Recommendation:**\n"
+        best_opt = min(options, key=lambda x: x["total_price"])
+        response += f"Suggest choosing **{best_opt['vendor']}** for best price of **${best_opt['total_price']}**."
+        
+        return response
