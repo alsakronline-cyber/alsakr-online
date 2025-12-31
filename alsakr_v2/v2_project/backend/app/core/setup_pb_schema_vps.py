@@ -55,32 +55,41 @@ async def main():
         try:
             url = f"{PB_URL}/api/collections/_superusers/auth-with-password"
             print(f"Attempting auth at: {url}")
-            print(f"Using Identity: {ADMIN_EMAIL[:3]}...{ADMIN_EMAIL[-3:]}")
-            print(f"Using Pass Length: {len(ADMIN_PASS)}")
             
-            resp = await client.post(url, json={
-                "identity": ADMIN_EMAIL, "password": ADMIN_PASS
-            })
+            # Credentials to try
+            creds_list = [
+                {"identity": ADMIN_EMAIL, "password": ADMIN_PASS},
+                {"identity": "developer@alsakronline.com", "password": "password12345"},
+                {"email": ADMIN_EMAIL, "password": ADMIN_PASS} # Legacy fallback
+            ]
             
-            # If 400, try with 'email' field just in case
-            if resp.status_code == 400:
-                print("400 Error. Retrying with 'email' field...")
-                resp = await client.post(url, json={
-                    "email": ADMIN_EMAIL, "password": ADMIN_PASS
-                })
-
-            if resp.status_code == 404:
-                print("404 Error. Retrying legacy admins endpoint...")
-                url = f"{PB_URL}/api/admins/auth-with-password"
-                resp = await client.post(url, json={
-                    "identity": ADMIN_EMAIL, "password": ADMIN_PASS
-                })
-
-            if resp.status_code != 200:
-                print(f"Admin auth failed ({resp.status_code}): {resp.text}")
+            token = None
+            for creds in creds_list:
+                print(f"Trying identity: {creds.get('identity') or creds.get('email')}")
+                resp = await client.post(url, json=creds, timeout=5.0)
+                
+                if resp.status_code == 200:
+                    token = resp.json()["token"]
+                    print("Admin authenticated.")
+                    break
+                else:
+                    print(f"  - Failed ({resp.status_code}): {resp.text}")
+            
+            if not token:
+                # Try legacy admins endpoint
+                url_legacy = f"{PB_URL}/api/admins/auth-with-password"
+                print(f"Retrying legacy endpoint: {url_legacy}")
+                for creds in creds_list:
+                    resp = await client.post(url_legacy, json=creds, timeout=5.0)
+                    if resp.status_code == 200:
+                        token = resp.json()["token"]
+                        print("Admin authenticated (legacy).")
+                        break
+            
+            if not token:
+                print(f"CRITICAL: All admin auth attempts failed.")
                 return
-            token = resp.json()["token"]
-            print("Admin authenticated.")
+
         except Exception as e:
             print(f"Connection error to {PB_URL}: {e}")
             return
