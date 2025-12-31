@@ -8,6 +8,16 @@ services:
     restart: unless-stopped
     volumes:
       - ../ollama_data:/root/.ollama
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:11434/api/tags" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     deploy:
       resources:
         limits:
@@ -26,6 +36,16 @@ services:
       - "ES_JAVA_OPTS=-Xms1g -Xmx1g" # HEAP LIMIT 1GB (Critical for VPS)
     volumes:
       - ../es_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -q 'status.*green\\|status.*yellow'" ]
+      interval: 20s
+      timeout: 10s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     deploy:
       resources:
         limits:
@@ -41,6 +61,16 @@ services:
     container_name: alsakr-qdrant
     volumes:
       - ../qdrant_data:/qdrant/storage
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:6333/collections" ]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     deploy:
       resources:
         limits:
@@ -58,6 +88,16 @@ services:
       - ../pb_data:/pb_data
     ports:
       - "8090:8090"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8090/api/health" ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     deploy:
       resources:
         limits:
@@ -121,11 +161,19 @@ services:
       - ADMIN_PASSWORD=password123
       - QDRANT_HOST=qdrant
     depends_on:
-      - elasticsearch
-      - ollama
-      - pocketbase
+      elasticsearch:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+      pocketbase:
+        condition: service_healthy
     ports:
       - "8000:8000"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     deploy:
       resources:
         limits:

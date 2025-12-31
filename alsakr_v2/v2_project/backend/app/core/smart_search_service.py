@@ -1,93 +1,66 @@
 """
 Smart Search Service
-Adds intelligence layer over the basic SearchService using LLM for intent analysis
-and score-based result categorization.
+Analyzes user queries for ambiguity and technical specifications.
 """
+import logging
 import json
-import requests
-from typing import Dict, List, Union, Optional
+import httpx
+from typing import List, Dict, Optional
 from .config import settings
 from .search_service import SearchService
 
+logger = logging.getLogger(__name__)
+
 class SmartSearchService:
+    """Intelligent search layer with LLM analysis (Async)"""
+    
     def __init__(self):
         self.search_service = SearchService()
-        self.ollama_url = settings.OLLAMA_HOST
-        self.model = "llama3.2"  # Use the specialized model for logic
+        self.ollama_url = f"{settings.OLLAMA_HOST}/api/generate"
+        self.model = settings.OLLAMA_CHAT_MODEL
+    
+    async def analyze_query(self, query: str, context: Optional[List[Dict]] = None) -> Dict:
+        """
+        Use LLM to detect ambiguity and extract technical constraints (Async)
+        """
+        # Unified prompt for extraction and ambiguity detection
+        prompt = f"""
+        Analyze this industrial procurement query: "{query}"
         
-        # Thresholds
-        self.MATCH_THRESHOLD = 0.80
-        self.ALTERNATIVE_THRESHOLD = 0.50
-
-    def analyze_query(self, query: str) -> Dict:
+        Tasks:
+        1. Determine if the query is specific (e.g., includes a part number or detailed spec) or ambiguous/broad.
+        2. If specific, extract part numbers and requirements.
+        3. If ambiguous, generate a single clear question to narrow down the search.
+        
+        Return JSON format:
+        {{
+            "status": "specific" | "ambiguous",
+            "extracted_part_number": "string or null",
+            "requirements": {{}},
+            "clarification_question": "string or null"
+        }}
         """
-        Ask LLM if the query is specific or ambiguous.
-        """
-        system_prompt = (
-            "You are a search assistant for an industrial automation parts catalog (SICK AG products). "
-            "Determine if the user's query is specific enough to find a part, or if it is too vague. "
-            "Specific examples: 'WL12 photo sensor', 'M12 inductive sensor', 'safety relay 24V', 'WSE4-3P2130'. "
-            "Ambiguous examples: 'sensor', 'switch', 'cable', 'reflector', 'detect object'. "
-            "Return ONLY a JSON object with: "
-            "{'is_ambiguous': bool, 'clarifying_question': str|null}"
-        )
         
         try:
-            response = requests.post(
-                f"{self.ollama_url}/api/generate",
-                json={
-                    "model": self.model,
-                    "prompt": f"Query: '{query}'\nJSON Response:",
-                    "system": system_prompt,
-                    "stream": False,
-                    "format": "json"
-                },
-                timeout=10
-            )
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    self.ollama_url,
+                    json={
+                        "model": self.model,
+                        "prompt": prompt,
+                        "stream": False,
+                        "format": "json"
+                    },
+                    timeout=30 # Increased timeout for slow VPS inference
+                )
             
             if response.status_code == 200:
-                body = response.json()
-                content = body.get('response', '{}')
-                return json.loads(content)
-                
+                result = response.json()
+                return json.loads(result['response'])
+            
+            return {"status": "specific", "extracted_part_number": None, "requirements": {}}
+            
         except Exception as e:
-            print(f"LLM Analysis failed: {e}")
-            # Fallback to assuming it's NOT ambiguous to prevent blocking
-            return {"is_ambiguous": False, "clarifying_question": None}
-            
-        return {"is_ambiguous": False, "clarifying_question": None}
-
-    def re_score_results(self, query: str, results: List[Dict]) -> List[Dict]:
-        """
-        Advanced re-scoring:
-        1. Exact Part Number: 0.99 (Immediate win)
-        2. Technical Tokens: Boost (24V, PNP, M12, etc.)
-        3. Strict Mismatch: Penalty (if conflict found)
-        """
-        query_lower = query.lower()
-        query_words = set(query_lower.split())
-        
-        # Technical keywords that carry high weight
-        tech_tokens = {"24v", "pnp", "npn", "m12", "m8", "ip67", "ip65", "analog", "digital", "io-link"}
-        found_tech_tokens = query_words.intersection(tech_tokens)
-
-        for result in results:
-            boost = 0
-            penalty = 0
-            part_number = result.get('part_number', '').lower()
-            name = result.get('name', '').lower()
-            specifications = result.get('specifications', {})
-            
-            
-            # 1. Exact Part Number or Name Match (highest priority)
-            if (query_lower == part_number or 
-                query_lower.replace('-', '') == part_number.replace('-', '') or
-                query_lower == name or
-                query_lower.replace('-', '') == name.replace('-', '')):
-                result['combined_score'] = 0.99
-                continue
-
-            # 2. Partial match in part_number or name
             if query_lower in part_number or query_lower in name:
                 boost += 0.15
 

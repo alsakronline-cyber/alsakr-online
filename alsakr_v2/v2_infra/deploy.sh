@@ -181,34 +181,29 @@ EOF
     print_info "Waiting for Elasticsearch..."
     timeout=120
     counter=0
-    until docker exec alsakr-es curl -s http://localhost:9200/_cluster/health > /dev/null 2>&1; do
+    until [ "$(docker inspect -f '{{.State.Health.Status}}' alsakr-es 2>/dev/null)" == "healthy" ]; do
         counter=$((counter + 1))
         if [ $counter -gt $timeout ]; then
-            print_error "Elasticsearch failed to start"
+            print_error "Elasticsearch failed to become healthy"
             exit 1
         fi
         sleep 2
         echo -n "."
     done
-    print_success "Elasticsearch ready"
+    print_success "Elasticsearch healthy"
     
     print_info "Waiting for Qdrant..."
     counter=0
-    until docker exec alsakr-qdrant wget --no-verbose --tries=1 --spider http://localhost:6333/collections > /dev/null 2>&1 || [ "$(docker inspect -f '{{.State.Running}}' alsakr-qdrant)" == "true" ]; do
+    until [ "$(docker inspect -f '{{.State.Health.Status}}' alsakr-qdrant 2>/dev/null)" == "healthy" ]; do
         counter=$((counter + 1))
         if [ $counter -gt $timeout ]; then
-            print_error "Qdrant failed to start"
+            print_error "Qdrant failed to become healthy"
             exit 1
         fi
         sleep 2
         echo -n "."
-        # If we can't wget but container is running, it might just be the missing tool again
-        if [ $counter -gt 10 ] && [ "$(docker inspect -f '{{.State.Running}}' alsakr-qdrant)" == "true" ]; then
-             print_warning "Qdrant container is running, proceeding..."
-             break
-        fi
     done
-    print_success "Qdrant ready"
+    print_success "Qdrant healthy"
     
     print_info "Waiting for Backend..."
     counter=0
@@ -223,8 +218,8 @@ EOF
     done
     print_success "Backend ready"
     
-    # Step 8: Pull AI Models
-    print_header "[8/8] Pulling AI Models"
+    # Step 8: Pull and Warm AI Models
+    print_header "[8/8] Pulling and Warming AI Models"
     
     print_info "Checking Ollama models..."
     
@@ -233,8 +228,6 @@ EOF
         print_info "Pulling nomic-embed-text model..."
         docker exec alsakr-ollama ollama pull nomic-embed-text
         print_success "Embedding model pulled"
-    else
-        print_info "Embedding model already exists"
     fi
     
     # Pull chat model
@@ -242,18 +235,19 @@ EOF
         print_info "Pulling llama3.2 model..."
         docker exec alsakr-ollama ollama pull llama3.2
         print_success "Chat model pulled"
-    else
-        print_info "Chat model already exists"
     fi
 
-    # Pull vision model (Phase 3)
+    # Pull vision model
     if ! docker exec alsakr-ollama ollama list | grep -q "llava"; then
         print_info "Pulling llava vision model..."
         docker exec alsakr-ollama ollama pull llava
         print_success "Vision model pulled"
-    else
-        print_info "Vision model already exists"
     fi
+
+    # Model Warming: Trigger a small inference to load model into memory
+    print_info "Warming up LLM (loading into VRAM)..."
+    docker exec alsakr-ollama ollama run llama3.2 "Hi" > /dev/null 2>&1
+    print_success "LLM warmed up"
     
     # Final Summary
     print_header "✨ DEPLOYMENT COMPLETE!"

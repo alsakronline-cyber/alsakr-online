@@ -322,10 +322,24 @@ export default function CommandCenter() {
 
       addLog(`AGENT_ROUTER: Routing task to swarm...`);
 
+      // Adaptive loading feedback
+      const loadingInterval = setInterval(() => {
+        const messages = [
+          "AGENT: Reviewing technical requirements...",
+          "AGENT: Checking inventory cross-references...",
+          "AGENT: Negotiating with virtual suppliers...",
+          "AGENT: Analyzing lead times and lead scoring...",
+          "SYSTEM: Extending connection timeout for deep analysis..."
+        ];
+        addLog(messages[Math.floor(Math.random() * messages.length)]);
+      }, 5000);
+
       const response = await fetch(`${apiUrl}/api/chat`, {
         method: 'POST',
         body: formData
       });
+
+      clearInterval(loadingInterval);
       const data = await response.json();
 
       if (data.response) {
@@ -369,6 +383,18 @@ export default function CommandCenter() {
 
       addLog("NETWORK: Sending request to /api/search/smart...");
 
+      // Pulse log messages while waiting
+      const pulseInterval = setInterval(() => {
+        const pulses = [
+          "PROCESSING: Indexing search query tokens...",
+          "PROCESSING: Querying Elasticsearch for technical matches...",
+          "PROCESSING: Activating Qdrant vector retrieval...",
+          "SYSTEM: Aggregating hybrid results...",
+          "ORCHESTRATOR: Refining match confidence..."
+        ];
+        addLog(pulses[Math.floor(Math.random() * pulses.length)]);
+      }, 4000);
+
       const response = await fetch(`${apiUrl}/api/search/smart`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -378,6 +404,7 @@ export default function CommandCenter() {
         })
       });
 
+      clearInterval(pulseInterval);
       const data = await response.json();
       addLog("ORCHESTRATOR: Response received.");
 

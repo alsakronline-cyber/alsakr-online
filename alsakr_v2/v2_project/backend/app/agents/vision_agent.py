@@ -1,11 +1,15 @@
 import os
 import json
 import base64
+import httpx
+import asyncio
+import logging
 from typing import Dict, Any, List
 from .base import BaseAgent
-from ..core.es_client import es_client
-import requests
 from ..core.config import settings
+from ..core.search_service import SearchService
+
+logger = logging.getLogger(__name__)
 
 class VisualMatchAgent(BaseAgent):
     def __init__(self):
@@ -14,21 +18,23 @@ class VisualMatchAgent(BaseAgent):
         Identify industrial parts from images.
         """
         super().__init__(name="VisualMatch", system_prompt=system_prompt)
-        self.ollama_url = settings.OLLAMA_HOST
-        self.vision_model = "llava" # or llama3.2-vision
+        self.ollama_url = f"{settings.OLLAMA_HOST}/api/generate"
+        self.vision_model = "llava" 
+        self.search_service = SearchService()
 
     async def identify_and_match(self, image_data: str, mode: str = "path") -> Dict[str, Any]:
         """
-        Identify part from image using Ollama Vision.
-        mode: 'path' (local file path) or 'base64' (raw data)
+        Identify part from image using Ollama Vision (Async)
         """
         
-        # Prepare image for Ollama
         b64_image = ""
         if mode == "path":
             try:
-                with open(image_data, "rb") as f:
-                    b64_image = base64.b64encode(f.read()).decode("utf-8")
+                # Read file in thread to not block loop
+                def read_file():
+                    with open(image_data, "rb") as f:
+                        return base64.b64encode(f.read()).decode("utf-8")
+                b64_image = await asyncio.to_thread(read_file)
             except Exception as e:
                 return {"error": f"Failed to read image: {str(e)}"}
         else:
@@ -37,19 +43,21 @@ class VisualMatchAgent(BaseAgent):
         prompt = "Identify this industrial part. Return JSON with: brand, series, part_number (if visible), and description."
 
         try:
-            response = requests.post(
-                f"{self.ollama_url}/api/generate",
-                json={
-                    "model": self.vision_model,
-                    "prompt": prompt,
-                    "images": [b64_image],
-                    "stream": False,
-                    "format": "json"
-                },
-                timeout=60
-            )
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    self.ollama_url,
+                    json={
+                        "model": self.vision_model,
+                        "prompt": prompt,
+                        "images": [b64_image],
+                        "stream": False,
+                        "format": "json"
+                    },
+                    timeout=60
+                )
             
             if response.status_code != 200:
+                logger.error(f"Ollama Vision Error: {response.text}")
                 return {"error": f"Ollama Error: {response.text}"}
                 
             result = response.json().get("response", "{}")
@@ -58,12 +66,11 @@ class VisualMatchAgent(BaseAgent):
             # Enhancer: Cross-reference with ES if brand/part detected
             matches = []
             if vision_data.get("part_number"):
-                from ..core.search_service import SearchService
-                ss = SearchService()
-                matches = ss.text_search(vision_data["part_number"], size=3)
+                # Await the now-async search methods
+                matches = await self.search_service.text_search(vision_data["part_number"], size=3)
                 
                 if not matches and vision_data.get("description"):
-                    matches = ss.semantic_search(vision_data["description"], limit=3)
+                    matches = await self.search_service.semantic_search(vision_data["description"], limit=3)
 
             return {
                 "identification": vision_data,
@@ -72,4 +79,5 @@ class VisualMatchAgent(BaseAgent):
             }
 
         except Exception as e:
+            logger.error(f"Vision processing failed: {e}")
             return {"error": f"Vision processing failed: {str(e)}"}

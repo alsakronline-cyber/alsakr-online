@@ -31,7 +31,8 @@ class VoiceService:
 
         try:
             model = self._get_model()
-            segments, info = model.transcribe(temp_filename, beam_size=5)
+            # Wrap blocking transcription in a thread to keep event loop free
+            segments, info = await asyncio.to_thread(model.transcribe, temp_filename, beam_size=5)
             
             text = " ".join([segment.text for segment in segments])
             return text.strip()

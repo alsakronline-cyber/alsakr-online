@@ -1,10 +1,13 @@
-from fastapi import FastAPI, UploadFile, File, Form, Depends, Query, HTTPException, Body
-from fastapi.concurrency import run_in_threadpool
-from fastapi.middleware.cors import CORSMiddleware
-from typing import List, Dict, Any, Optional
+from fastapi import FastAPI, Form, File, UploadFile, HTTPException, Query, Body, BackgroundTasks, Depends
 from pydantic import BaseModel
-from .core.es_client import es_client
-from .agents.orchestrator import AgentManager
+from typing import List, Dict, Optional, Union
+import os
+import json
+import logging
+import asyncio
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from contextlib import asynccontextmanager
 from .core.search_service import SearchService
 from .core.smart_search_service import SmartSearchService
 from .core.voice_service import VoiceService
@@ -229,8 +232,8 @@ async def search_products(
 
 @app.post("/api/search/semantic")
 async def semantic_search(request: SemanticSearchRequest):
-    """Semantic vector search using Qdrant"""
-    results = search_service.semantic_search(request.query, limit=request.limit)
+    """Semantic vector search using Qdrant (Async)"""
+    results = await search_service.semantic_search(request.query, limit=request.limit)
     
     return {
         "query": request.query,
@@ -242,10 +245,9 @@ async def semantic_search(request: SemanticSearchRequest):
 @app.post("/api/search/smart")
 async def smart_search(request: SmartSearchRequest):
     """
-    Intelligent search with ambiguity detection and result categorization.
-    - {"type": "results", "matches": [...], "alternatives": [...]}
+    Intelligent search with ambiguity detection and result categorization (Async)
     """
-    return await run_in_threadpool(smart_search_service.smart_search, request.query)
+    return await smart_search_service.smart_search(request.query, context=request.context)
 
 
 @app.get("/api/search/hybrid")

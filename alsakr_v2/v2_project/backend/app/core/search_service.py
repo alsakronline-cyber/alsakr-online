@@ -1,38 +1,32 @@
 """
 Search Service Layer
-Unified search interface for Elasticsearch and Qdrant
+Unified search interface for Elasticsearch and Qdrant (Asynchronous)
 """
 from typing import List, Dict, Optional
-from elasticsearch import Elasticsearch
-from qdrant_client import QdrantClient
-import requests
+from elasticsearch import AsyncElasticsearch
+from qdrant_client import AsyncQdrantClient
+import httpx
+import logging
 
 from .config import settings, get_es_url, get_qdrant_url
 
+logger = logging.getLogger(__name__)
 
 class SearchService:
-    """Unified search service for products"""
+    """Unified asynchronous search service for products"""
     
     def __init__(self):
-        self.es = Elasticsearch([get_es_url()])
-        self.qdrant = QdrantClient(url=get_qdrant_url())
+        self.es = AsyncElasticsearch([get_es_url()])
+        # Note: QdrantClient has an async version but usually we use AsyncQdrantClient
+        self.qdrant = AsyncQdrantClient(url=get_qdrant_url())
         self.ollama_url = settings.OLLAMA_HOST
     
-    def text_search(self, query: str, size: int = 10, filters: Optional[Dict] = None) -> List[Dict]:
+    async def text_search(self, query: str, size: int = 10, filters: Optional[Dict] = None) -> List[Dict]:
         """
-        Full-text search in Elasticsearch
-        
-        Args:
-            query: Search query string
-            size: Number of results
-            filters: Optional filters (category, phased_out, etc.)
-            
-        Returns:
-            List of product documents
+        Full-text search in Elasticsearch (Async)
         """
         # Build query - use should clauses for better part number matching
         should_clauses = [
-            # Exact part number match (highest priority)
             {
                 "term": {
                     "part_number": {
@@ -41,7 +35,6 @@ class SearchService:
                     }
                 }
             },
-            # Case-insensitive part number match
             {
                 "match": {
                     "part_number": {
@@ -50,7 +43,6 @@ class SearchService:
                     }
                 }
             },
-            # Multi-field search for other fields
             {
                 "multi_match": {
                     "query": query,
@@ -61,7 +53,6 @@ class SearchService:
             }
         ]
         
-        # Add filters
         filter_clauses = []
         if filters:
             if 'category' in filters:
@@ -69,7 +60,6 @@ class SearchService:
             if 'phased_out' in filters:
                 filter_clauses.append({"term": {"phased_out": filters['phased_out']}})
         
-        # Build ES query
         es_query = {
             "query": {
                 "bool": {
@@ -87,14 +77,12 @@ class SearchService:
             }
         }
         
-        # Execute search
         try:
-            result = self.es.search(
+            result = await self.es.search(
                 index=settings.ES_PRODUCTS_INDEX,
                 body=es_query
             )
             
-            # Format results
             products = []
             for hit in result['hits']['hits']:
                 product = hit['_source']
@@ -105,44 +93,37 @@ class SearchService:
             return products
             
         except Exception as e:
-            print(f"Elasticsearch search error: {e}")
+            logger.error(f"Elasticsearch search error: {e}")
             return []
     
-    def semantic_search(self, query: str, limit: int = 10) -> List[Dict]:
+    async def semantic_search(self, query: str, limit: int = 10) -> List[Dict]:
         """
-        Vector similarity search in Qdrant
-        
-        Args:
-            query: Natural language query
-            limit: Number of results
-            
-        Returns:
-            List of similar products
+        Vector similarity search in Qdrant (Async)
         """
         try:
-            # Generate query embedding
-            response = requests.post(
-                f"{self.ollama_url}/api/embeddings",
-                json={
-                    "model": settings.OLLAMA_EMBEDDING_MODEL,
-                    "prompt": query
-                },
-                timeout=30
-            )
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    f"{self.ollama_url}/api/embeddings",
+                    json={
+                        "model": settings.OLLAMA_EMBEDDING_MODEL,
+                        "prompt": query
+                    },
+                    timeout=30
+                )
             
             if response.status_code != 200:
+                logger.error(f"Ollama embedding failed: {response.text}")
                 return []
             
             query_vector = response.json()['embedding']
             
             # Search Qdrant
-            results = self.qdrant.search(
+            results = await self.qdrant.search(
                 collection_name=settings.QDRANT_PRODUCTS_COLLECTION,
                 query_vector=query_vector,
                 limit=limit
             )
             
-            # Format results
             products = []
             for result in results:
                 product = result.payload
@@ -152,43 +133,30 @@ class SearchService:
             return products
             
         except Exception as e:
-            print(f"Qdrant search error: {e}")
+            logger.error(f"Qdrant search error: {e}")
             return []
     
-    def hybrid_search(self, query: str, size: int = 10) -> List[Dict]:
+    async def hybrid_search(self, query: str, size: int = 10) -> List[Dict]:
         """
-        Combine text and semantic search for best results
-        
-        Args:
-            query: Search query
-            size: Number of results
-            
-        Returns:
-            Merged and ranked results
+        Combine text and semantic search for best results (Async)
         """
         # Get results from both
-        text_results = self.text_search(query, size=size)
-        semantic_results = self.semantic_search(query, limit=size)
+        text_results = await self.text_search(query, size=size)
+        semantic_results = await self.semantic_search(query, limit=size)
         
-        # Merge by part_number
         merged = {}
         
-        # Add text results
         for product in text_results:
             part_no = product.get('part_number')
             if part_no:
                 merged[part_no] = product
                 merged[part_no]['text_score'] = product.get('_score', 0)
-                # Initialize combined_score effectively as text_score * 0.3 (assuming semantic is 0)
-                # This ensures valid sorting even if semantic search misses it
                 merged[part_no]['combined_score'] = product.get('_score', 0) * 0.3
         
-        # Add semantic results
         for product in semantic_results:
             part_no = product.get('part_number')
             if part_no:
                 if part_no in merged:
-                    # Boost if in both
                     merged[part_no]['semantic_score'] = product.get('_score', 0)
                     merged[part_no]['combined_score'] = (
                         merged[part_no]['text_score'] * 0.6 +
@@ -199,7 +167,6 @@ class SearchService:
                     merged[part_no]['semantic_score'] = product.get('_score', 0)
                     merged[part_no]['combined_score'] = product.get('_score', 0) * 0.4
         
-        # Sort by combined score
         results = sorted(
             merged.values(),
             key=lambda x: x.get('combined_score', 0),
@@ -208,10 +175,10 @@ class SearchService:
         
         return results[:size]
     
-    def get_product(self, part_number: str) -> Optional[Dict]:
-        """Get single product by part number"""
+    async def get_product(self, part_number: str) -> Optional[Dict]:
+        """Get single product by part number (Async)"""
         try:
-            result = self.es.get(
+            result = await self.es.get(
                 index=settings.ES_PRODUCTS_INDEX,
                 id=part_number
             )
@@ -219,24 +186,21 @@ class SearchService:
         except:
             return None
     
-    def get_similar_products(self, part_number: str, limit: int = 5) -> List[Dict]:
-        """Find similar products based on a given product"""
-        # Get the product
-        product = self.get_product(part_number)
+    async def get_similar_products(self, part_number: str, limit: int = 5) -> List[Dict]:
+        """Find similar products based on a given product (Async)"""
+        product = await self.get_product(part_number)
         if not product:
             return []
         
-        # Use its description for semantic search
         query = f"{product.get('name')} {product.get('description', '')}"
-        results = self.semantic_search(query, limit=limit + 1)
+        results = await self.semantic_search(query, limit=limit + 1)
         
-        # Remove the original product
         return [r for r in results if r.get('part_number') != part_number][:limit]
     
-    def get_categories(self) -> List[str]:
-        """Get all unique product categories"""
+    async def get_categories(self) -> List[str]:
+        """Get all unique product categories (Async)"""
         try:
-            result = self.es.search(
+            result = await self.es.search(
                 index=settings.ES_PRODUCTS_INDEX,
                 body={
                     "size": 0,
@@ -256,3 +220,8 @@ class SearchService:
             
         except:
             return []
+
+    async def close(self):
+        """Cleanly close connections"""
+        await self.es.close()
+        # Qdrant client close if needed

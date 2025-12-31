@@ -37,13 +37,17 @@ class MultiVendorAgent(BaseAgent):
         return await super().run(user_input, context)
 
     async def find_suppliers_dummy(self, part_number: str, quantity: int) -> Dict[str, Any]:
-        """Simulate finding suppliers using dummy data."""
+        """Simulate finding suppliers using dummy data (Async)."""
         
         # Load Dummy Data
         try:
             data_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "dummy_data.json")
-            with open(data_path, "r") as f:
-                data = json.load(f)
+            
+            def read_json():
+                with open(data_path, "r") as f:
+                    return json.load(f)
+            
+            data = await asyncio.to_thread(read_json)
         except Exception as e:
             return {
                 "response": "Error: Could not access supplier database (Dummy Data Missing).",
