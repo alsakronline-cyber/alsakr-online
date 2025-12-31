@@ -112,6 +112,7 @@ services:
       context: ../v2_project/backend
       dockerfile: Dockerfile
     container_name: alsakr-backend
+    restart: always
     environment:
       - ES_HOST=elasticsearch
       - OLLAMA_HOST=http://ollama:11434
