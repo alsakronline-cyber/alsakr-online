@@ -8,7 +8,7 @@ PB_URL = os.getenv("PB_URL", "http://pocketbase:8090")
 ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "admin@alsakronline.com")
 ADMIN_PASS = os.getenv("ADMIN_PASSWORD", "password123")
 
-async def create_collection(client, token, name, schema, rules=None):
+async def create_collection(client, token, name, schema, rules=None, type="base"):
     print(f"Syncing collection {name}...")
     headers = {"Authorization": token}
     
@@ -26,15 +26,14 @@ async def create_collection(client, token, name, schema, rules=None):
     resp = await client.get(f"{PB_URL}/api/collections/{name}", headers=headers)
     exists = resp.status_code == 200
     
-    data = {
-        "name": name,
-        "type": "base",
-        "schema": schema,
-        **rules
-    }
-
     if exists:
-        # Update existing
+        # Patch existing - we don't send type for patch to avoid issues
+        existing_data = resp.json()
+        data = {
+            "name": name,
+            "schema": schema,
+            **rules
+        }
         resp = await client.patch(f"{PB_URL}/api/collections/{name}", json=data, headers=headers)
         if resp.status_code == 200:
             print(f"  - Updated successfully.")
@@ -42,6 +41,12 @@ async def create_collection(client, token, name, schema, rules=None):
             print(f"  - Update failed: {resp.status_code} {resp.text}")
     else:
         # Create new
+        data = {
+            "name": name,
+            "type": type,
+            "schema": schema,
+            **rules
+        }
         resp = await client.post(f"{PB_URL}/api/collections", json=data, headers=headers)
         if resp.status_code == 200:
             print(f"  - Created successfully.")
@@ -93,6 +98,16 @@ async def main():
         except Exception as e:
             print(f"Connection error to {PB_URL}: {e}")
             return
+
+        # 0. Users (Patch existing auth collection)
+        await create_collection(client, token, "users", [
+            {"name": "name", "type": "text"},
+            {"name": "company", "type": "text"},
+            {"name": "phone", "type": "text"},
+            {"name": "jobTitle", "type": "text"},
+            {"name": "country", "type": "text"},
+            {"name": "role", "type": "select", "options": ["admin", "vendor", "buyer"]}
+        ])
 
         # 1. Inquiries
         await create_collection(client, token, "inquiries", [
@@ -148,6 +163,17 @@ async def main():
             {"name": "user_id", "type": "text", "required": True},
             {"name": "messages", "type": "json"},
             {"name": "summary", "type": "text"}
+        ])
+
+        # 7. Products (Reference Collection)
+        await create_collection(client, token, "products", [
+            {"name": "part_number", "type": "text", "required": True},
+            {"name": "name", "type": "text"},
+            {"name": "category", "type": "text"},
+            {"name": "url", "type": "text"},
+            {"name": "image_url", "type": "text"},
+            {"name": "pdf_url", "type": "text"},
+            {"name": "description", "type": "text"}
         ])
 
 if __name__ == "__main__":
