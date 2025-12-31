@@ -1,4 +1,5 @@
 from fastapi import FastAPI, UploadFile, File, Form, Depends, Query, HTTPException, Body
+from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Dict, Any, Optional
 from pydantic import BaseModel
@@ -242,11 +243,9 @@ async def semantic_search(request: SemanticSearchRequest):
 async def smart_search(request: SmartSearchRequest):
     """
     Intelligent search with ambiguity detection and result categorization.
-    Returns:
-    - {"type": "clarification", "question": "..."}
     - {"type": "results", "matches": [...], "alternatives": [...]}
     """
-    return smart_search_service.smart_search(request.query)
+    return await run_in_threadpool(smart_search_service.smart_search, request.query)
 
 
 @app.get("/api/search/hybrid")
