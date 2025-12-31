@@ -158,7 +158,7 @@ services:
       - OLLAMA_HOST=http://ollama:11434
       - PB_URL=http://pocketbase:8090
       - ADMIN_EMAIL=admin@alsakronline.com
-      - ADMIN_PASSWORD=password123
+      - ADMIN_PASSWORD='#Anas231#Bkar3110'
       - QDRANT_HOST=qdrant
     depends_on:
       elasticsearch:
