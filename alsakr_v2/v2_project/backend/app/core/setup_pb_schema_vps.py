@@ -58,9 +58,9 @@ async def main():
             
             # Credentials to try
             creds_list = [
+                {"identity": "admin@alsakronline.com", "password": "#Anas231#Bkar3110"},
                 {"identity": ADMIN_EMAIL, "password": ADMIN_PASS},
-                {"identity": "developer@alsakronline.com", "password": "password12345"},
-                {"email": ADMIN_EMAIL, "password": ADMIN_PASS} # Legacy fallback
+                {"identity": "developer@alsakronline.com", "password": "password12345"}
             ]
             
             token = None
