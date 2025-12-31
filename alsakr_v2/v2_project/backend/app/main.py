@@ -30,6 +30,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from fastapi.staticfiles import StaticFiles
+import os
+
+# Mount static files
+if os.path.exists("/data"):
+    app.mount("/data", StaticFiles(directory="/data"), name="data")
+
 agent_manager = AgentManager()
 search_service = SearchService()
 
