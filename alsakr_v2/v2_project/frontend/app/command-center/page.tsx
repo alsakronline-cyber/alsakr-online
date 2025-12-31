@@ -268,6 +268,10 @@ export default function CommandCenter() {
   const [alternatives, setAlternatives] = useState<Product[]>([]);
   const [clarification, setClarification] = useState<string | null>(null);
   const [history, setHistory] = useState<string[]>([]);
+
+  // Vendor Agent State
+  const [vendorData, setVendorData] = useState<any>(null);
+
   const normalizeUrl = (url: string) => url.endsWith('/') ? url.slice(0, -1) : url;
 
   // Modal State
@@ -327,6 +331,15 @@ export default function CommandCenter() {
       if (data.response) {
         addLog(`AGENT: ${data.response}`);
       }
+
+      // Handle Structured Data (Vendor Comparison)
+      if (data.data && data.data.type === 'vendor_comparison') {
+        addLog("DISPLAY: Rendering Interactive Supplier Comparison Cards...");
+        // Clear previous search results to focus on vendor comparison
+        setMatches([]);
+        setAlternatives([]);
+        setVendorData(data.data);
+      }
     } catch (e) {
       addLog("ERROR: Agent communication failed.");
     }
@@ -340,6 +353,7 @@ export default function CommandCenter() {
     setClarification(null);
     setMatches([]);
     setAlternatives([]);
+    setVendorData(null); // Clear vendor data on new search
     setLogs([]);
 
     // Update context

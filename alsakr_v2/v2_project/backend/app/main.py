@@ -89,6 +89,15 @@ async def startup_event():
 async def chat(message: str = Form(...), user_id: str = Form(...)):
     """Main chat endpoint for Command Center"""
     response = await agent_manager.handle_request(message, context={"user_id": user_id})
+    
+    if isinstance(response, dict):
+        # If the agent returned a dictionary (structured data), merge it or return as is
+        # We ensure 'response' key exists for text display
+        if "response" not in response:
+             response["response"] = "Processed."
+        return response
+    
+    # Legacy/String response
     return {"response": response}
 
 

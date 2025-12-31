@@ -13,7 +13,7 @@ class MultiVendorAgent(BaseAgent):
         """
         super().__init__(name="MultiVendor", system_prompt=system_prompt)
 
-    async def run(self, user_input: str, context: Dict = {}) -> str:
+    async def run(self, user_input: str, context: Dict = {}) -> Any:
         """Override run to intercept specific commands."""
         
         # Intercept "Find suppliers" command
@@ -36,7 +36,7 @@ class MultiVendorAgent(BaseAgent):
         # Default LLM behavior
         return await super().run(user_input, context)
 
-    async def find_suppliers_dummy(self, part_number: str, quantity: int) -> str:
+    async def find_suppliers_dummy(self, part_number: str, quantity: int) -> Dict[str, Any]:
         """Simulate finding suppliers using dummy data."""
         
         # Load Dummy Data
@@ -45,7 +45,10 @@ class MultiVendorAgent(BaseAgent):
             with open(data_path, "r") as f:
                 data = json.load(f)
         except Exception as e:
-            return "Error: Could not access supplier database (Dummy Data Missing)."
+            return {
+                "response": "Error: Could not access supplier database (Dummy Data Missing).",
+                "data": None
+            }
 
         vendors = data.get("vendors", [])
         products = data.get("products", [])
@@ -54,9 +57,13 @@ class MultiVendorAgent(BaseAgent):
         ref_product = next((p for p in products if p["part_number"] == part_number), None)
         base_price = ref_product["price"] if ref_product else 100.00
         product_name = ref_product["name"] if ref_product else part_number
+        category = ref_product["category"] if ref_product else "Industrial Part"
 
         # Simulate 3 Vendor Options
         import random
+        # deterministic seed for demo based on part number
+        random.seed(sum(ord(c) for c in part_number))
+        
         selected_vendors = random.sample(vendors, min(3, len(vendors)))
         
         options = []
@@ -67,24 +74,33 @@ class MultiVendorAgent(BaseAgent):
             price = round(base_price * price_variance * quantity, 2)
             
             options.append({
-                "vendor": v["company_name"],
+                "vendor_id": v.get("email", "unknown"), # Use email as ID for now
+                "vendor_name": v["company_name"],
                 "rating": v["rating"],
                 "total_price": price,
+                "unit_price": round(price / quantity, 2),
+                "currency": "USD",
                 "lead_time": lead_time,
-                "status": "Available" if lead_time == "In Stock" else "Backorder"
+                "status": "Available" if lead_time == "In Stock" else "Backorder",
+                "verified": True
             })
 
-        # Format as Markdown Matrix
-        response = f"**Supplier Matrix for {quantity}x {product_name} ({part_number})**\n\n"
-        response += "| Vendor | Rating | Total Price ($) | Lead Time | Status |\n"
-        response += "|---|---|---|---|---|\n"
-        
-        for opt in options:
-            status_icon = "🟢" if opt["status"] == "Available" else "Rx"
-            response += f"| {opt['vendor']} | ⭐ {opt['rating']} | ${opt['total_price']} | {opt['lead_time']} | {status_icon} {opt['status']} |\n"
-            
-        response += "\n\n**AI Recommendation:**\n"
+        # Find best option for summary
         best_opt = min(options, key=lambda x: x["total_price"])
-        response += f"Suggest choosing **{best_opt['vendor']}** for best price of **${best_opt['total_price']}**."
         
-        return response
+        # Format Text Summary
+        summary = f"I found **{len(options)} verified suppliers** for {quantity}x {product_name} ({part_number}).\n\n"
+        summary += f"The best price is **${best_opt['total_price']}** from **{best_opt['vendor_name']}**.\n"
+        summary += "Please review the comparison cards below to make your selection."
+
+        return {
+            "response": summary,
+            "data": {
+                "type": "vendor_comparison",
+                "part_number": part_number,
+                "product_name": product_name,
+                "category": category,
+                "quantity": quantity,
+                "options": options
+            }
+        }
