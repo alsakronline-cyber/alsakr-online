@@ -8,6 +8,7 @@ import asyncio
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
+from .agents.orchestrator import AgentManager
 from .core.search_service import SearchService
 from .core.smart_search_service import SmartSearchService
 from .core.voice_service import VoiceService
