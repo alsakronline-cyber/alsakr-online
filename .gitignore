@@ -26,3 +26,10 @@ build/
 alsakr_v2/Data/
 alsakr_v2/v2_infra/backend/
 alsakr_v2/v2_infra/frontend/
+*.zip
+*.key
+*.pub
+*.ppk
+alsakr_console_rsa
+oracle_new_key
+connect_console.bat
